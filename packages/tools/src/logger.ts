@@ -59,7 +59,7 @@ export function createLogger(
     return options.customLogger
 
   const loggedErrors = new WeakSet<Error | RollupError>()
-  const { prefix = '[bcz]', allowClearScreen = true } = options
+  const { prefix = '[tools]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
   const canClearScreen
     = allowClearScreen && process.stdout.isTTY && !process.env.CI

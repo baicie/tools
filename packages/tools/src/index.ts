@@ -18,14 +18,15 @@ cli
   })
 
 cli
-  .command('backup', 'backup workkspace')
+  .command('backup [...external]', 'backup workkspace')
   .option('-s,--source <source>', '[string] source path to backup')
   .option('-o,--output <output>', '[string] output path to backup')
+  .option('-e,--external ', 'external files backup')
   .option('-r,--root <root>', 'cwd ')
-  .action(async (options) => {
+  .action(async (sources, options) => {
     const { backupService } = await import('./server/backup')
     try {
-      consola.info(options)
+      consola.info(sources, options)
       await backupService(options, {
         logger,
       })

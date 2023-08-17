@@ -1,3 +1,12 @@
 #!/usr/bin/env node
 
-require('../dist/index.js')
+function start() {
+  try {
+    return import('../dist/index.js')
+  }
+  catch (error) {
+    console.error(error)
+  }
+}
+
+start()

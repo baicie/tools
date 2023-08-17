@@ -19,7 +19,10 @@ async function createExternal() {
 
   const pkg = pkgs['@baicie/tools']
 
-  return [...Object.keys(pkg.manifest.dependencies ?? {}), ...Object.keys(pkg.manifest.devDependencies ?? {}), 'esbuild']
+  return [
+    ...Object.keys(pkg.manifest.dependencies ?? {}),
+    ...Object.keys(pkg.manifest.devDependencies ?? {}),
+    'esbuild']
 }
 
 async function createNodeConfig() {
@@ -30,7 +33,7 @@ async function createNodeConfig() {
       entryFileNames: '[name].js',
       chunkFileNames: 'chunks/dep-[hash].js',
       exports: 'named',
-      format: 'cjs',
+      format: 'esm',
       externalLiveBindings: false,
       freeze: false,
       sourcemap: true,
@@ -57,7 +60,7 @@ async function createNodeConfig() {
         ignore: ['bufferutil', 'utf-8-validate'],
       }),
       json(),
-      // cjsPatchPlugin(),
+      cjsPatchPlugin(),
     ],
     external: await createExternal(),
   })

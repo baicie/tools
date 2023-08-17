@@ -8,13 +8,14 @@ import type { Logger } from '../logger'
 interface BackUpOptions {
   source?: string
   output?: string
+  external?: string[]
   root?: string
 }
 export async function backupService(options: BackUpOptions, extra: {
   logger: Logger
 }) {
   const logger = extra.logger
-
+  const external = ['node_modules', ...(options.external ? options.external : [])]
   if (!(options.output && options.source)) {
     logger.warn('backup output and sources is required')
     return
@@ -27,9 +28,16 @@ export async function backupService(options: BackUpOptions, extra: {
   if (!fs.existsSync(output))
     fs.mkdirSync(output, { recursive: true })
 
+  fs.emptyDirSync(output)
+
   const spinner = ora(`backup projects from ${picocolors.cyan(source)} to ${picocolors.cyan(output)}`).start()
+
   try {
-    fs.copyFileSync(source, output)
+    fs.copySync(source, output, {
+      filter: (src) => {
+        return !external.some(item => src.includes(item))
+      },
+    })
     spinner.color = 'green'
     spinner.succeed('backup successfully')
   }
