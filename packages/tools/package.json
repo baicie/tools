@@ -1,0 +1,24 @@
+{
+  "name": "@baicie/tools",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "tools": "./bin/index.js"
+  },
+  "scripts": {
+    "dev": "../../node_modules/.bin/rimraf dist && pnpm run build-bundle -w",
+    "cli": "node ./dist/node/cli.js",
+    "build-bundle": "../../node_modules/.bin/rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cac": "^6.7.14",
+    "consola": "^3.2.3",
+    "fs-extra": "^11.1.1",
+    "ora": "^7.0.1",
+    "picocolors": "^1.0.0"
+  }
+}
