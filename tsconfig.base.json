@@ -1,22 +1,16 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "target": "es2018",
-    "module": "esnext",
-    "baseUrl": ".",
-    "sourceMap": false,
+    "target": "ES2020",
+    "module": "ESNext",
     "moduleResolution": "node",
-    "allowJs": false,
     "strict": true,
+    "declaration": true,
+    "noImplicitOverride": true,
     "noUnusedLocals": true,
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "removeComments": false,
-    "rootDir": ".",
-    "types": [],
+    "useUnknownInCatchVariables": false,
     "paths": {
-      "@design-template/*": ["packages/*"]
+      "@baicie/*": ["packages/*"]
     }
   }
 }
