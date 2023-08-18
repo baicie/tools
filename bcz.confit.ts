@@ -5,5 +5,4 @@ export default defineConfig({
     subjectLimit: 200,
     useDefaultSteps: true,
   },
-  steps: [],
 })
