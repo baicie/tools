@@ -42,13 +42,9 @@ cli
   .option('-t,--token <token>', 'token')
   .option('-r,--root <root>', 'cwd')
   .option('-u,--unzip <boolean>', 'unzip')
-  .action(async (sources) => {
+  .action(async (options) => {
     const { backupService } = await import('./server/git-backup')
     try {
-      const options = {
-        token: '',
-      }
-      consola.info(sources, options)
       await backupService(options, {
         logger,
       })

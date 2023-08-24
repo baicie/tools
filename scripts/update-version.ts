@@ -15,7 +15,7 @@ function errorAndExit(err: Error): never {
 }
 
 async function main() {
-  const version = process.env.TAG_VERSION
+  const version = process.env.TAG_VERSION || '0.3.0'
   const gitHead = process.env.GIT_HEAD
   if (!version) {
     errorAndExit(

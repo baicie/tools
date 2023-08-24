@@ -24,7 +24,7 @@ export async function backupService(options: GitOptions, extra: {
   logger: Logger
 }) {
   const logger = extra.logger
-  const root = path.resolve(process.cwd(), options.root || 'backup')
+  const root = path.resolve(process.cwd(), options?.root || 'backup')
 
   // logger.warn()
   if (!fs.existsSync(root))

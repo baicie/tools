@@ -1,6 +1,6 @@
 {
   "name": "@baicie/commitizen",
-  "version": "0.0.4",
+  "version": "0.3.0",
   "description": "",
   "type": "module",
   "module": "dist/index.js",
@@ -35,6 +35,5 @@
   "devDependencies": {
     "@types/node": "^20.4.7",
     "rollup": "^3.28.0"
-  },
-  "gitHead": "802244048fd2c6fc512b25dc7710fd97ddcdec19"
+  }
 }
