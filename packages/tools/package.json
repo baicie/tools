@@ -13,6 +13,10 @@
     "build-bundle": "pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
     "build": "pnpm run build-bundle"
   },
+  "files": [
+    "dist",
+    "bin"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",
