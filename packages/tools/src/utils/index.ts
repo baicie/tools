@@ -2,6 +2,8 @@ import path from 'node:path'
 import os from 'node:os'
 import fs from 'node:fs'
 
+export * from './git-clone'
+
 export const isWindows = os.platform() === 'win32'
 
 export function normalizePath(id: string): string {

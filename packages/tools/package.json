@@ -8,9 +8,10 @@
     "tools": "./bin/index.js"
   },
   "scripts": {
-    "dev": "../../node_modules/.bin/rimraf dist && pnpm run build-bundle -w",
+    "dev": "pnpm rimraf dist && pnpm run build-bundle -w",
     "cli": "node ./dist/node/cli.js",
-    "build-bundle": "../../node_modules/.bin/rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript"
+    "build-bundle": "pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
+    "build": "pnpm run build-bundle"
   },
   "keywords": [],
   "author": "",
@@ -18,7 +19,10 @@
   "dependencies": {
     "cac": "^6.7.14",
     "consola": "^3.2.3",
+    "download-git-repo": "^3.0.2",
     "fs-extra": "^11.1.1",
+    "git-clone": "^0.2.0",
+    "octokit": "^3.1.0",
     "ora": "^7.0.1",
     "picocolors": "^1.0.0"
   }

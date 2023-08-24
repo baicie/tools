@@ -6,9 +6,17 @@ pnpm i --frozen-lockfile --ignore-scripts
 
 pnpm update-version
 
+cd packages/commitizen-mini
+
 pnpm build
 
-cd packages/commitizen-mini
+npm publish --access public
+
+cd -
+
+cd packages/tools
+
+pnpm build
 
 npm publish --access public
 

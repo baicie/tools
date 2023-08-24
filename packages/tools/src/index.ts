@@ -37,6 +37,28 @@ cli
     }
   })
 
+cli
+  .command('backgit', 'backup github files')
+  .option('-t,--token <token>', 'token')
+  .option('-r,--root <root>', 'cwd')
+  .option('-u,--unzip <boolean>', 'unzip')
+  .action(async (sources) => {
+    const { backupService } = await import('./server/git-backup')
+    try {
+      const options = {
+        token: '',
+      }
+      consola.info(sources, options)
+      await backupService(options, {
+        logger,
+      })
+    }
+    catch (error) {
+      logger.error(picocolors.red(error))
+      process.exit(1)
+    }
+  })
+
 cli.help()
 
 cli.parse()

@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build-bundle": "rollup --config rollup.config.ts --configPlugin @rollup/plugin-typescript",
+    "build": "pnpm run build-bundle",
     "dev": "rimraf dist && pnpm run build-bundle -w",
     "cz": "pnpm run -C commit cz",
     "postinstall": "node bin/postinstall.js"
