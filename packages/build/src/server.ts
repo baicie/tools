@@ -30,8 +30,8 @@ export async function server(inline: InlineOptions = {}) {
   else {
     if (options.ant) {
       await build(root, config);
-      await compile(config, "esm");
-      await compile(config, "cjs");
+      await compile(root, config, "esm");
+      await compile(root, config, "cjs");
     } else {
       await build(root, config);
     }

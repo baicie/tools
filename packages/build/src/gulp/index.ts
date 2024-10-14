@@ -1,31 +1,31 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import type { Readable } from 'node:stream';
-import { antdPath } from '@bees-ui/internal-path';
-import gulp from 'gulp';
-import babel from 'gulp-babel';
-import stripCode from 'gulp-strip-code';
-import ts from 'gulp-typescript';
-import assign from 'object-assign';
-import { rimraf } from 'rimraf';
-import through2 from 'through2';
-import typescript from 'typescript';
+import fs from "node:fs";
+import path from "node:path";
+import type { Readable } from "node:stream";
+import gulp from "gulp";
+import babel from "gulp-babel";
+import stripCode from "gulp-strip-code";
+import ts from "gulp-typescript";
+import assign from "object-assign";
+import { rimraf } from "rimraf";
+import through2 from "through2";
+import typescript from "typescript";
+import { Buffer } from "node:buffer";
 
-import type { Options } from '../build';
-import type { Module } from '../utils';
-import getBabelCommonConfig from './babel';
-import replaceLib from './replace-lib';
-import { getProjectPath } from './utils';
+import type { Module } from "../utils";
+import getBabelCommonConfig from "./babel";
+import replaceLib from "./replace-lib";
+import { getProjectPath } from "./utils";
+import { ConfigExport } from "../config";
 
 const tsDefaultReporter = ts.reporter.defaultReporter();
-const libDir = getProjectPath('lib');
-const esDir = getProjectPath('es');
+const libDir = getProjectPath("lib");
+const esDir = getProjectPath("es");
 
-async function getTsConfig(): Promise<any> {
+async function getTsConfig(root: string): Promise<any> {
   let my = {
     compilerOptions: {},
   };
-  const tsconfigPath = path.resolve(antdPath, 'tsconfig.json');
+  const tsconfigPath = path.resolve(root, "tsconfig.json");
   if (fs.existsSync(tsconfigPath)) {
     my = await import(tsconfigPath);
   }
@@ -34,13 +34,13 @@ async function getTsConfig(): Promise<any> {
       noUnusedParameters: true,
       noUnusedLocals: true,
       strictNullChecks: true,
-      target: 'es6',
-      jsx: 'preserve',
-      moduleResolution: 'node',
+      target: "es6",
+      jsx: "preserve",
+      moduleResolution: "node",
       declaration: true,
       allowSyntheticDefaultImports: true,
     },
-    my.compilerOptions,
+    my.compilerOptions
   );
 }
 
@@ -52,7 +52,7 @@ interface Config {
 }
 
 async function getConfig(): Promise<Config> {
-  const configPath = getProjectPath('.antd-tools.config.js');
+  const configPath = getProjectPath(".antd-tools.config.js");
   if (fs.existsSync(configPath)) {
     return await import(configPath);
   }
@@ -82,21 +82,26 @@ function insertUseClient() {
 export async function babelify(js: Readable, modules: Module) {
   const babelConfig = await getBabelCommonConfig(modules);
   // delete babelConfig.cacheDirectory;
-  if (modules === 'esm') {
+  if (modules === "esm") {
     babelConfig.plugins.push(replaceLib as any);
   }
   const stream = js.pipe(babel(babelConfig as any));
-  return stream.pipe(gulp.dest(modules === 'esm' ? esDir : libDir));
+  return stream.pipe(gulp.dest(modules === "esm" ? esDir : libDir));
 }
 
-export async function compile(options: Options = {}, modules: Module) {
+export async function compile(
+  root: string,
+  config: ConfigExport,
+  modules: Module
+) {
+  const { options } = config;
   const { compile: { transformTSFile } = {} } = await getConfig();
   !options.watch &&
-    rimraf(modules === 'esm' ? esDir : libDir, {
-      filter: (path) => path.endsWith('.d.ts'),
+    rimraf(modules === "esm" ? esDir : libDir, {
+      filter: (path) => path.endsWith(".d.ts"),
     });
 
-  const tsConfig = await getTsConfig();
+  const tsConfig = await getTsConfig(root);
   // const assets = gulp
   //   .src(['components/**/*.@(png|svg)'])
   //   .pipe(gulp.dest(modules === 'cjs' ? libDir : esDir));
@@ -121,25 +126,25 @@ export async function compile(options: Options = {}, modules: Module) {
 
   // ================================ TS ================================
   const source = [
-    'components/**/*.tsx',
-    'components/**/*.ts',
-    'typings/**/*.d.ts',
-    '!components/**/__tests__/**',
-    '!components/**/demo/**',
-    '!components/**/design/**',
+    "components/**/*.tsx",
+    "components/**/*.ts",
+    "typings/**/*.d.ts",
+    "!components/**/__tests__/**",
+    "!components/**/demo/**",
+    "!components/**/design/**",
   ];
 
   if (tsConfig.allowJs) {
-    source.unshift('components/**/*.jsx');
+    source.unshift("components/**/*.jsx");
   }
 
-  let sourceStream = gulp.src(source, { cwd: antdPath });
-  if (modules === 'esm') {
+  let sourceStream = gulp.src(source, { cwd: root });
+  if (modules === "esm") {
     sourceStream = sourceStream.pipe(
       stripCode({
-        start_comment: '@remove-on-es-build-begin',
-        end_comment: '@remove-on-es-build-end',
-      }),
+        start_comment: "@remove-on-es-build-begin",
+        end_comment: "@remove-on-es-build-end",
+      })
     );
   }
 
@@ -150,7 +155,7 @@ export async function compile(options: Options = {}, modules: Module) {
         nextFile = Array.isArray(nextFile) ? nextFile : [nextFile];
         nextFile.forEach((f: any) => this.push(f));
         next();
-      }),
+      })
     );
   }
 
@@ -159,23 +164,25 @@ export async function compile(options: Options = {}, modules: Module) {
   const tsResult = sourceStream.pipe(
     ts(tsConfig, {
       error(e) {
-        tsDefaultReporter.error(e, typescript);
+        if (tsDefaultReporter.error) {
+          tsDefaultReporter.error(e, typescript);
+        }
         error = 1;
       },
       finish: tsDefaultReporter.finish,
-    }),
+    })
   );
 
   function check() {
-    if (error && !options['ignore-error']) {
+    if (error && !options["ignore-error"]) {
       process.exit(1);
     }
   }
 
-  tsResult.on('finish', check);
-  tsResult.on('end', check);
+  tsResult.on("finish", check);
+  tsResult.on("end", check);
 
   // const tsFilesStream = await babelify(tsResult.js, modules);
-  const tsd = tsResult.dts.pipe(gulp.dest(modules === 'esm' ? esDir : libDir));
+  const tsd = tsResult.dts.pipe(gulp.dest(modules === "esm" ? esDir : libDir));
   return tsd;
 }

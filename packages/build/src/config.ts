@@ -5,14 +5,9 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Plugin } from "rollup";
 import { CONFIGFILE } from "./constants";
-import { Logger, createLogger } from "../../commitizen/src/logger";
-import { defaultPlugin } from "../../commitizen/src/plugins/default";
-import { transformTypeScript } from "../../commitizen/src/transform";
-import {
-  dynamicImport,
-  isObject,
-  tranformPath,
-} from "../../commitizen/src/utils";
+import { Logger, createLogger } from "./logger";
+import { transformTypeScript } from "./transform";
+import { dynamicImport, isObject, tranformPath } from "./utils";
 import { resolveId } from "./resolve";
 import { InlineOptions } from "./server";
 
@@ -57,9 +52,6 @@ function setDefaultConfig(config: ConfigExport) {
   // add default plugins
   if (!config.plugins) config.plugins = [];
 
-  if (config.plugins && Array.isArray(config.plugins)) {
-    config.plugins.push(defaultPlugin());
-  }
   return config;
 }
 
@@ -74,6 +66,9 @@ async function resolveConfigFile(
 
     if (root) {
       filePath = path.resolve(root, CONFIGFILE);
+      if (!fs.existsSync(filePath)) {
+        return;
+      }
       raw = fs.readFileSync(filePath, { encoding: "utf8" });
     } else {
       raw = "";

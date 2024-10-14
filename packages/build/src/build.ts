@@ -8,7 +8,6 @@ import typescript from "@rollup/plugin-typescript";
 import type {
   InputPluginOption,
   OutputOptions,
-  Plugin,
   RollupBuild,
   RollupOptions,
   RollupOutput,
@@ -33,7 +32,6 @@ import {
   resolveTsConfig,
   target,
 } from "./utils";
-import { InlineOptions } from "./server";
 import { ConfigExport } from "./config";
 
 let cache: RollupOptions["cache"];

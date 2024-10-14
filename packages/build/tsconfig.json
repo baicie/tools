@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": ["./src", "./rollup.config.ts", "./tsup.config.ts"],
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "target": "ES2022",
+    "skipLibCheck": true,
+    "stripInternal": true
+  }
+}
