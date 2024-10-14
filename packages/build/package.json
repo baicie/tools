@@ -1,6 +1,5 @@
 {
   "name": "@baicie/build",
-  "private": true,
   "version": "0.0.0",
   "description": "",
   "main": "dist/index.cjs",
@@ -15,6 +14,10 @@
     "build": "pnpm unbuild --stub",
     "clean": "pnpm rimraf node_modules .turbo dist"
   },
+  "files": [
+    "dist",
+    "index.js"
+  ],
   "keywords": [],
   "author": "",
   "license": "MIT",
