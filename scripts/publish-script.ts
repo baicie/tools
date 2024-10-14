@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import process from "node:process";
 import type { Project } from "@pnpm/find-workspace-packages";
 import { findWorkspacePackages } from "@pnpm/find-workspace-packages";
@@ -8,44 +9,41 @@ const rootPath = process.cwd();
 
 const getWorkspacePackages = () => findWorkspacePackages(rootPath);
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function errorAndExit(err: Error): void {
   consola.error(err);
   process.exit(1);
 }
 
 async function main() {
-  const version = process.env.TAG_VERSION?.replace("v", "") ?? "0.0.0";
-  const gitHead = process.env.GIT_HEAD;
-  if (!version) {
-    errorAndExit(new Error("No version"));
-  }
+  consola.debug(chalk.yellow("publish-script started"));
 
-  consola.log(chalk.cyan(`$new version: ${version}`));
-  consola.log(chalk.cyan(`$GIT_HEAD: ${gitHead}`));
-  consola.debug(chalk.yellow("Updating package.json"));
   const pkgs = Object.fromEntries(
     (await getWorkspacePackages()).map((pkg) => [pkg.manifest.name!, pkg])
   );
 
-  const writeVersion = async (project: Project) => {
-    await project.writeProjectManifest({
-      ...project.manifest,
-      version,
-      gitHead,
-    } as any);
+  const publishPackage = async (project: Project) => {
+    if (project.manifest.private !== true) {
+      execSync("pnpm publish --access public --no-git-checks", {
+        cwd: project.dir,
+        stdio: "inherit",
+      });
+      await sleep(1000);
+    }
   };
 
   try {
     for (const [, project] of Object.entries(pkgs)) {
-      await writeVersion(project);
+      await publishPackage(project);
     }
   } catch (error) {
     errorAndExit(error as Error);
   }
 
-  consola.success(
-    chalk.green(`packages updated successfully to version ${version}`)
-  );
+  consola.success(chalk.green(`packages published successfully`));
 }
 
 main();

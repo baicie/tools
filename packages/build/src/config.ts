@@ -13,15 +13,15 @@ import {
   isObject,
   tranformPath,
 } from "../../commitizen/src/utils";
-import { InlineOptions } from "./build";
 import { resolveId } from "./resolve";
+import { InlineOptions } from "./server";
 
 // file config
 export interface UserConfigExport {
   /**
    * 一些设置
    */
-  options?: {};
+  options: InlineOptions;
   /**
    * 简单的插件实现
    */
@@ -29,32 +29,31 @@ export interface UserConfigExport {
 }
 
 export interface InnerConfigExport {
-  inline: InlineOptions;
   logger: Logger;
 }
 
-export type CommitizenConfigExport = UserConfigExport & InnerConfigExport;
+export type ConfigExport = UserConfigExport & InnerConfigExport;
 
 //  inline config
 export async function resolveConfig(
   root: string,
-  inlineConfig: InnerConfigExport["inline"] = {}
+  inlineConfig: InlineOptions = {}
 ) {
-  const config: InnerConfigExport = {
-    inline: inlineConfig,
+  const config: ConfigExport = {
+    options: inlineConfig,
     logger: createLogger(),
   };
 
   const fileConfig = await resolveConfigFile(root, config);
 
-  let merge = mergeConfigs(config, fileConfig ?? {}) as CommitizenConfigExport;
+  let merge = mergeConfigs(config, fileConfig ?? {}) as ConfigExport;
 
   merge = setDefaultConfig(merge);
 
   return merge;
 }
 
-function setDefaultConfig(config: CommitizenConfigExport) {
+function setDefaultConfig(config: ConfigExport) {
   // add default plugins
   if (!config.plugins) config.plugins = [];
 

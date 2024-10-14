@@ -33,25 +33,8 @@ import {
   resolveTsConfig,
   target,
 } from "./utils";
-
-export interface InlineOptions {
-  /**
-   * @description
-   */
-  input?: string;
-  sourcemap?: boolean;
-  dts?: boolean;
-  ant?: boolean;
-  dtsDir?: string;
-  tsconfig?: string;
-  watch?: boolean;
-  minify?: boolean;
-  full?: boolean;
-  name?: string;
-  visualizer?: boolean;
-  "ignore-error"?: boolean;
-  treeshake?: boolean;
-}
+import { InlineOptions } from "./server";
+import { ConfigExport } from "./config";
 
 let cache: RollupOptions["cache"];
 
@@ -68,8 +51,7 @@ async function writeBundles(
 
 export async function resolveRollupConfig(
   root: string,
-  options: InlineOptions = {},
-  plugin: Plugin[] = [],
+  config: ConfigExport,
   module: Module
 ): Promise<RollupOptions> {
   const {
@@ -79,7 +61,8 @@ export async function resolveRollupConfig(
     minify = false,
     full = false,
     tsconfig = resolveTsConfig(root),
-  } = options;
+  } = config.options;
+  const { options, plugins = [] } = config;
   const inputPath = resolveInput(root, input);
 
   const outputPath = path.resolve(root, module === "esm" ? "es" : "lib");
@@ -87,7 +70,7 @@ export async function resolveRollupConfig(
   const watchOptions: WatcherOptions = {
     clearScreen: true,
   };
-  const plugins = [
+  const innerPlugins = [
     cleanOutputPlugin(outputPath, options),
     // alias({
     //   entries: [
@@ -138,13 +121,13 @@ export async function resolveRollupConfig(
           include: inputPath,
         })
       : null,
-    ...plugin,
+    ...plugins,
   ] as unknown as InputPluginOption[];
   const external = full ? [] : await generateExternal(root);
 
   return {
     input: inputPath,
-    plugins,
+    plugins: innerPlugins,
     external,
     treeshake: options.treeshake,
     watch: watch ? watchOptions : false,
@@ -152,13 +135,13 @@ export async function resolveRollupConfig(
   };
 }
 
-export async function build(root: string, options: InlineOptions = {}) {
+export async function build(root: string, _config: ConfigExport) {
+  const { options } = _config;
   await Promise.all(
     resolveBuildConfig(root).map(async ([module, config]) => {
       const bundleConfig = await resolveRollupConfig(
         root,
-        options,
-        [],
+        _config,
         module as Module
       );
       const bundle = await rollup(bundleConfig);
@@ -177,16 +160,16 @@ export async function build(root: string, options: InlineOptions = {}) {
   );
 }
 
-export async function watchFuc(root: string, options: InlineOptions = {}) {
+export async function watchFuc(root: string, _config: ConfigExport) {
+  const { options } = _config;
   const bundles = resolveBuildConfig(root).map(async ([module, config]) => {
-    const _config = await resolveRollupConfig(
+    const bundleConfig = await resolveRollupConfig(
       root,
-      options,
-      [],
+      _config,
       module as Module
     );
     return {
-      ..._config,
+      ...bundleConfig,
       output: {
         format: config.format,
         dir: config.output.path,

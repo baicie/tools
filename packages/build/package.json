@@ -66,6 +66,7 @@
     "merge2": "1.2.3",
     "postcss": "^8.4.47",
     "rollup-plugin-postcss": "^4.0.2",
-    "through2": "^4.0.2"
+    "through2": "^4.0.2",
+    "tsup": "^8.3.0"
   }
 }
