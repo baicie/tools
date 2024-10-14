@@ -10,8 +10,11 @@
     "update-version": "tsx scripts/update-version.ts",
     "docs-dev": "vitepress dev docs",
     "docs-build": "vitepress build docs",
-    "docs-preview": "vitepress preview docs"
+    "docs-preview": "vitepress preview docs",
+    "postinstall": "simple-git-hooks && pnpm run stub",
+    "stub": "turbo run stub"
   },
+  "packageManager": "pnpm@9.12.1",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -32,9 +35,11 @@
     "prompts": "^2.4.2",
     "rimraf": "^6.0.1",
     "rollup": "^4.24.0",
+    "simple-git-hooks": "^2.11.1",
     "tsx": "^4.19.1",
+    "turbo": "^2.1.3",
     "typescript": "^5.6.3",
     "unbuild": "^2.0.0",
-    "vitepress": "1.4.0"
+    "vitepress": "1.4.1"
   }
 }
