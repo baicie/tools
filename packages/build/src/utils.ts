@@ -3,6 +3,7 @@ import path from 'node:path'
 import { findWorkspacePackages } from '@pnpm/find-workspace-packages'
 import { globSync } from 'fast-glob'
 import type { ModuleFormat } from 'rollup'
+// import name fr
 
 export const DEFAULT = 'src'
 const deps_default = ['preact/compat']
@@ -88,10 +89,10 @@ export function resolveInput(root: string, input: string): string[] {
   })
 }
 
-export function resolveTsConfig(root: string, rootPath: string, tsconfig = 'tsconfig.json') {
+export function resolveTsConfig(root: string, tsconfig = 'tsconfig.json') {
   let tsconfigPath = path.resolve(root, tsconfig)
   if (!fs.existsSync(tsconfigPath)) {
-    tsconfigPath = path.resolve(rootPath, tsconfig)
+    console.log('tsconfig.json not found, use default tsconfig.json');
   }
   return tsconfigPath
 }

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { rootPath } from '@bees-ui/internal-path';
+// import { rootPath } from '@bees-ui/internal-path';
 import babel from '@rollup/plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
@@ -75,7 +75,7 @@ export async function resolveConfig(
     watch = false,
     minify = false,
     full = false,
-    tsconfig = resolveTsConfig(root, rootPath),
+    tsconfig = resolveTsConfig(root),
   } = options;
   const inputPath = resolveInput(root, input);
 
@@ -86,23 +86,23 @@ export async function resolveConfig(
   };
   const plugins = [
     cleanOutputPlugin(outputPath, options),
-    alias({
-      entries: [
-        { find: 'react', replacement: 'preact/compat' },
-        { find: 'react-dom/test-utils', replacement: 'preact/test-utils' },
-        { find: 'react-dom', replacement: 'preact/compat' },
-        { find: 'react/jsx-runtime', replacement: 'preact/jsx-runtime' },
-        {
-          find: /^@ant-design\/icons\/([A-Za-z][A-Za-z0-9]*)$/,
-          replacement: `@bees-ui/icons/${module === 'cjs' ? 'lib' : 'es'}/icons/$1`,
-        },
-        ...deps,
-      ],
-      module,
-    }),
-    postcss({
-      modules: true,
-    }),
+    // alias({
+    //   entries: [
+    //     { find: 'react', replacement: 'preact/compat' },
+    //     { find: 'react-dom/test-utils', replacement: 'preact/test-utils' },
+    //     { find: 'react-dom', replacement: 'preact/compat' },
+    //     { find: 'react/jsx-runtime', replacement: 'preact/jsx-runtime' },
+    //     {
+    //       find: /^@ant-design\/icons\/([A-Za-z][A-Za-z0-9]*)$/,
+    //       replacement: `@bees-ui/icons/${module === 'cjs' ? 'lib' : 'es'}/icons/$1`,
+    //     },
+    //     ...deps,
+    //   ],
+    //   module,
+    // }),
+    // postcss({
+    //   modules: true,
+    // }),
     json(),
     babel({
       babelHelpers: 'runtime',
@@ -119,7 +119,7 @@ export async function resolveConfig(
       sourceMap: sourcemap,
       minify,
       target,
-      tsconfig: path.resolve(rootPath, 'tsconfig.json'),
+      tsconfig: tsconfig,
       treeShaking: false,
       loaders: {
         '.js': 'jsx',
@@ -129,7 +129,7 @@ export async function resolveConfig(
       },
     }),
     options.visualizer ? visualizer({ open: true }) : null,
-    options.dts && !options.ant
+    options.dts
       ? typescript({
           tsconfig,
           compilerOptions: {
