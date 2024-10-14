@@ -10,8 +10,8 @@
     "bai": "./index.js"
   },
   "scripts": {
-    "stub": "pnpm unbuild --stub",
-    "build": "pnpm unbuild --stub",
+    "stub": "pnpm bai build",
+    "build": "pnpm bai build",
     "clean": "pnpm rimraf node_modules .turbo dist"
   },
   "files": [
