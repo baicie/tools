@@ -253,7 +253,11 @@ importers:
         specifier: ^3.3.2
         version: 3.3.2
 
-  packages/utils: {}
+  packages/utils:
+    devDependencies:
+      '@baicie/build':
+        specifier: workspace:^
+        version: link:../build
 
 packages:
 
