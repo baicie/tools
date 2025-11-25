@@ -28,8 +28,7 @@
     "bench": "node --import @oxc-node/core/register benchmark/bench.ts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
-    "test": "vitest run"
+    "prepublishOnly": "napi prepublish -t npm"
   },
   "engines": {
     "node": ">=20"

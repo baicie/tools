@@ -54,7 +54,7 @@
     "@types/node": "^24.10.1",
     "@types/prompts": "^2.4.9",
     "@types/resolve": "^1.20.6",
-    "@vitest/eslint-plugin": "^1.4.3",
+    "@vitest/eslint-plugin": "^1.5.0",
     "commitizen": "^4.3.1",
     "cross-spawn": "^7.0.6",
     "cz-customizable": "^7.5.1",
@@ -63,27 +63,27 @@
     "execa": "^9.6.0",
     "jsdom": "^27.2.0",
     "kolorist": "^1.8.0",
-    "lint-staged": "^16.2.6",
+    "lint-staged": "^16.2.7",
     "minimist": "^1.2.8",
     "npm-run-all2": "^8.0.4",
     "picocolors": "^1.1.1",
     "prettier": "^3.6.2",
     "prompts": "^2.4.2",
-    "rolldown": "1.0.0-beta.50",
+    "rolldown": "1.0.0-beta.51",
     "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.16.5",
+    "tsdown": "^0.16.6",
     "tsup": "^8.5.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.4",
+    "typescript-eslint": "^8.48.0",
     "unbuild": "^3.6.1",
-    "vitest": "^4.0.9"
+    "vitest": "^4.0.13"
   },
   "dependencies": {
     "@pnpm/find-workspace-packages": "^6.0.9",
     "@types/cross-spawn": "^6.0.6",
     "consola": "^3.4.2",
-    "rimraf": "^6.1.0"
+    "rimraf": "^6.1.2"
   },
-  "packageManager": "pnpm@10.22.0"
+  "packageManager": "pnpm@10.23.0"
 }

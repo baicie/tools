@@ -25,7 +25,7 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.22.0",
+  "packageManager": "pnpm@10.23.0",
   "dependencies": {
     "conventional-changelog": "^7.1.1",
     "conventional-changelog-conventionalcommits": "^9.1.0",
@@ -45,7 +45,7 @@
     "fs-fixture": "^2.11.0",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.9"
+    "vitest": "^4.0.13"
   },
   "publishConfig": {
     "access": "public",
