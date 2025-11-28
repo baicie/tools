@@ -36,5 +36,9 @@
   "devDependencies": {
     "tsdown": "^0.16.6",
     "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
