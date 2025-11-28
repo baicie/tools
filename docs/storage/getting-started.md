@@ -10,66 +10,80 @@ pnpm add @baicie/storage
 yarn add @baicie/storage
 ```
 
-## 创建 Store
+## 订阅变更
 
 ```ts
-import {
-  createStorageStore,
-  createLocalStorageAdapter,
-  createJSONCodec,
-} from '@baicie/storage'
+import { subscribeStorageChanges } from '@baicie/storage'
 
-const store = createStorageStore(createLocalStorageAdapter())
-const userBinding = store.bind('user', createJSONCodec<UserInfo>())
-```
-
-## 写入与订阅
-
-```ts
-await userBinding.write({ id: 'u1', name: 'baicie' })
-
-userBinding.subscribe((value, change) => {
-  console.info('[storage] user updated', value, change)
+const stop = subscribeStorageChanges(change => {
+  console.info('[storage]', change.key, change.type, change.value)
 })
+
+localStorage.setItem('user', JSON.stringify({ id: 'u1' }))
+sessionStorage.removeItem('legacyToken')
+
+stop()
 ```
 
-`subscribe('*', listener)` 可以一次性监听所有 key：
+## 手动控制劫持
+
+在 SSR 或多实例环境下，你可以显式调用 `startNativeHijack`：
 
 ```ts
-store.subscribe('*', (change) => {
-  console.log('any change', change.key, change.type)
+import { startNativeHijack, stopNativeHijack } from '@baicie/storage'
+
+startNativeHijack({
+  windowRef: window,
+  local: true,
+  session: false,
 })
+
+// ... do something
+
+stopNativeHijack()
 ```
 
-## 在没有 Web Storage 的环境中使用
+`storages` 选项允许你注入任意实现了 Storage 接口的对象：
 
 ```ts
-import { createCookieAdapter } from '@baicie/storage'
+import { startNativeHijack } from '@baicie/storage'
 
-const kv = createStorageStore(
-  createCookieAdapter({ path: '/', sameSite: 'Lax', maxAgeSeconds: 3600 }),
-)
-```
-
-Adapter 会在检测到 API 不可用时自动回退至内存模式。
-
-## 保持数据结构安全
-
-通过 `createJSONCodec()` 或自定义 Codec，确保写入与读出的数据结构一致：
-
-```ts
-import type { StorageCodec } from '@baicie/storage'
-
-const base64Codec: StorageCodec<string> = {
-  encode(value) {
-    return btoa(value)
-  },
-  decode(serialized) {
-    return serialized ? atob(serialized) : null
-  },
+const memoryStorage: Storage = {
+  // 自行实现 Storage 接口
 }
 
-const token = store.bind('token', base64Codec)
-await token.write('secret')
+startNativeHijack({
+  local: false,
+  session: false,
+  storages: [{ storage: memoryStorage, id: 'memory' }],
+})
 ```
+
+## 仅劫持单个 Storage
+
+如果不想启用全局逻辑，可以直接使用 `hijackWebStorage`：
+
+```ts
+import { hijackWebStorage } from '@baicie/storage'
+
+const handle = hijackWebStorage(localStorage, 'local-storage', change => {
+  console.log(change)
+})
+
+// 需要恢复时
+handle?.restore()
+```
+
+## StorageChange 类型
+
+```ts
+interface StorageChange {
+  key: string
+  value: string | null
+  type: 'write' | 'remove' | 'clear'
+  source: string
+}
+```
+
+默认 Source 为 `local-storage` 与 `session-storage`，你也可以在自定义劫持时传入任意 ID。
 

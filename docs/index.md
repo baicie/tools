@@ -90,25 +90,23 @@ const pkg = createPackageJson({
 const formatted = prettifyPackageJson(pkg)
 ```
 
-### 统一存储
+### 监听 Web Storage
 
 ```typescript
-import {
-  createStorageStore,
-  createLocalStorageAdapter,
-} from '@baicie/storage'
+import { subscribeStorageChanges } from '@baicie/storage'
 
-const store = createStorageStore(createLocalStorageAdapter())
-
-store.subscribe('*', change => {
-  console.info(change.key, change.type)
+const unsubscribe = subscribeStorageChanges(change => {
+  console.info('[storage]', change.key, change.type, change.value)
 })
+
+localStorage.setItem('demo', 'value')
+unsubscribe()
 ```
 
 ## 包说明
 
 - **@baicie/cli** - 项目脚手架工具
 - **@baicie/pkg** - package.json 操作工具
-- **@baicie/storage** - 浏览器/内存统一存储代理
+- **@baicie/storage** - Web Storage 劫持与通知工具
 - **@baicie/tools** - 工具函数库
 - **@baicie/release** - 发布工具

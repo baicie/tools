@@ -1,63 +1,33 @@
-import type { StorageChange, StorageSubscriber } from './types'
-
-interface SubscribersMap {
-  [key: string]: StorageSubscriber[]
-}
+import type { StorageChange, StorageChangeListener } from './types'
 
 export function createEmitter() {
-  var subscribers: SubscribersMap = {}
+  var listeners: StorageChangeListener[] = []
 
-  function subscribe(key: string, listener: StorageSubscriber) {
-    var list = subscribers[key]
-    if (!list) {
-      list = []
-      subscribers[key] = list
-    }
-    list.push(listener)
+  function subscribe(listener: StorageChangeListener) {
+    listeners.push(listener)
     return function unsubscribe() {
-      removeListener(key, listener)
+      var index = listeners.indexOf(listener)
+      if (index !== -1) {
+        listeners.splice(index, 1)
+      }
     }
   }
 
   function emit(change: StorageChange) {
-    dispatchToKey(change.key, change)
-    dispatchToKey('*', change)
-  }
-
-  function clear() {
-    subscribers = {}
-  }
-
-  function dispatchToKey(key: string, change: StorageChange) {
-    var list = subscribers[key]
-    if (!list || list.length === 0) {
-      return
-    }
     var index = 0
-    while (index < list.length) {
-      list[index](change)
+    while (index < listeners.length) {
+      listeners[index](change)
       index += 1
     }
   }
 
-  function removeListener(key: string, listener: StorageSubscriber) {
-    var list = subscribers[key]
-    if (!list || list.length === 0) {
-      return
-    }
-    var index = list.indexOf(listener)
-    if (index === -1) {
-      return
-    }
-    list.splice(index, 1)
-    if (list.length === 0) {
-      delete subscribers[key]
-    }
+  function clear() {
+    listeners = []
   }
 
   return {
-    subscribe,
-    emit,
-    clear,
+    subscribe: subscribe,
+    emit: emit,
+    clear: clear,
   }
 }

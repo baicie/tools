@@ -1,60 +1,50 @@
 import './style.css'
-import {
-  type StorageBinding,
-  type StorageStore,
-  WILDCARD_KEY,
-  createJSONCodec,
-  createLocalStorageAdapter,
-  createMemoryAdapter,
-  createSessionStorageAdapter,
-  createStorageStore,
-} from '@baicie/storage'
+import { subscribeStorageChanges } from '@baicie/storage'
 
-type AdapterKind = 'local' | 'session' | 'memory'
+type StorageKind = 'local' | 'session'
 
-interface AdapterMeta {
+interface StorageMeta {
   label: string
-  create: () => StorageStore
+  source: string
+  resolve(): Storage
 }
 
 const defaultKey = 'demo-item'
-const adapterMap: Record<AdapterKind, AdapterMeta> = {
+const storageMap: Record<StorageKind, StorageMeta> = {
   local: {
     label: 'localStorage',
-    create: function () {
-      return createStorageStore(createLocalStorageAdapter())
+    source: 'local-storage',
+    resolve: function () {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        throw new Error('localStorage 不可用')
+      }
+      return window.localStorage
     },
   },
   session: {
     label: 'sessionStorage',
-    create: function () {
-      return createStorageStore(createSessionStorageAdapter())
-    },
-  },
-  memory: {
-    label: 'memory',
-    create: function () {
-      return createStorageStore(createMemoryAdapter('playground'))
+    source: 'session-storage',
+    resolve: function () {
+      if (typeof window === 'undefined' || !window.sessionStorage) {
+        throw new Error('sessionStorage 不可用')
+      }
+      return window.sessionStorage
     },
   },
 }
 
-const jsonCodec = createJSONCodec<unknown>()
-
-var store = adapterMap.local.create()
-var binding: StorageBinding<unknown> | null = null
-var unsubscribeBinding: (() => void) | undefined
-var unsubscribeWildcard: (() => void) | undefined
+let activeKind: StorageKind = 'local'
+let currentKey = defaultKey
 
 const splashTemplate = `
   <main class="layout">
     <section class="hero">
       <div class="badge">Playground</div>
-      <h1>@baicie/storage 响应式存储示例</h1>
-      <p>切换不同适配器，读写同一个 key，实时观察事件广播结果。</p>
+      <h1>@baicie/storage 原生劫持演示</h1>
+      <p>业务照常使用 Web Storage，本面板仅通过订阅获取通知。</p>
       <div class="status-line">
-        <span>当前适配器：<strong id="adapterLabel">${adapterMap.local.label}</strong></span>
-        <span>绑定 key：<strong id="currentKey">${defaultKey}</strong></span>
+        <span>当前存储：<strong id="adapterLabel">${storageMap.local.label}</strong></span>
+        <span>监听 key：<strong id="currentKey">${defaultKey}</strong></span>
       </div>
     </section>
 
@@ -62,18 +52,17 @@ const splashTemplate = `
       <div class="panel-title">配置</div>
       <div class="controls">
         <div>
-          <label for="adapterSelect">适配器</label>
+          <label for="adapterSelect">目标 Storage</label>
           <select id="adapterSelect">
             <option value="local">localStorage</option>
             <option value="session">sessionStorage</option>
-            <option value="memory">memory</option>
           </select>
         </div>
         <div>
           <label for="keyInput">Key</label>
           <input id="keyInput" placeholder="demo key" />
         </div>
-        <div>
+  <div>
           <label for="valueInput">Value（JSON 或 字符串）</label>
           <textarea id="valueInput" spellcheck="false"></textarea>
         </div>
@@ -86,20 +75,20 @@ const splashTemplate = `
         <button id="writeButton">写入 / 覆盖</button>
         <button id="readButton" class="secondary">读取</button>
         <button id="removeButton" class="secondary">删除当前 key</button>
-        <button id="clearButton" class="danger">清空当前适配器</button>
+        <button id="clearButton" class="danger">清空当前 Storage</button>
       </div>
-      <div class="result-line" id="resultOutput">准备就绪。</div>
+      <div class="result-line" id="resultOutput">等待操作…</div>
     </section>
 
     <section class="grid">
       <div class="panel">
-        <div class="panel-title">绑定实时值</div>
+        <div class="panel-title">当前值</div>
         <pre id="bindingValue">null</pre>
-      </div>
+    </div>
       <div class="panel">
         <div class="panel-title">事件流（最新在前）</div>
         <ul class="logs" id="logList"></ul>
-      </div>
+  </div>
     </section>
   </main>
 `
@@ -127,7 +116,7 @@ const logList = document.getElementById('logList') as HTMLUListElement
 const adapterLabel = document.getElementById('adapterLabel') as HTMLElement
 const currentKeyLabel = document.getElementById('currentKey') as HTMLElement
 
-adapterSelect.value = 'local'
+adapterSelect.value = activeKind
 keyInput.value = defaultKey
 valueInput.value = JSON.stringify(
   { user: 'baicie', visitedAt: new Date().toISOString(), count: 1 },
@@ -135,117 +124,98 @@ valueInput.value = JSON.stringify(
   2,
 )
 
-subscribeWildcard()
-refreshBinding()
-pushLog('adapter', 'localStorage 就绪')
+const unsubscribe = subscribeStorageChanges(function (change) {
+  pushLog(
+    change.type,
+    `${change.source} · ${change.key} -> ${formatRawValue(change.value)}`,
+  )
+  if (
+    change.source === storageMap[activeKind].source &&
+    change.key === currentKey
+  ) {
+    bindingValue.textContent = formatValue(parseInput(change.value ?? ''))
+  }
+})
+
+renderCurrentValue()
 
 adapterSelect.addEventListener('change', function () {
-  var nextKind = adapterSelect.value as AdapterKind
-  switchAdapter(nextKind)
+  activeKind = adapterSelect.value as StorageKind
+  adapterLabel.textContent = storageMap[activeKind].label
+  renderCurrentValue()
+  setResult('已切换到 ' + storageMap[activeKind].label)
 })
 
 keyInput.addEventListener('input', function () {
-  refreshBinding()
+  currentKey = normalizeKey(keyInput.value)
+  keyInput.value = currentKey
+  currentKeyLabel.textContent = currentKey
+  renderCurrentValue()
 })
 
 writeButton.addEventListener('click', function () {
-  var payload = parseInput(valueInput.value)
-  var targetBinding = ensureBinding()
-  targetBinding
-    .write(payload)
-    .then(function () {
-      setResult('写入成功：' + formatValue(payload))
-    })
-    .then(refreshBinding)
-    .catch(function (error) {
-      setResult('写入失败：' + resolveErrorMessage(error))
-    })
+  try {
+    const payload = parseInput(valueInput.value)
+    const storage = resolveStorage()
+    if (payload === null) {
+      storage.setItem(currentKey, '')
+    } else if (typeof payload === 'string') {
+      storage.setItem(currentKey, payload)
+    } else {
+      storage.setItem(currentKey, JSON.stringify(payload))
+    }
+    setResult('写入成功')
+    renderCurrentValue()
+  } catch (error) {
+    setResult('写入失败：' + resolveErrorMessage(error))
+  }
 })
 
 readButton.addEventListener('click', function () {
-  var targetBinding = ensureBinding()
-  targetBinding
-    .read()
-    .then(function (value) {
-      setResult('当前值：' + formatValue(value))
-    })
-    .catch(function (error) {
-      setResult('读取失败：' + resolveErrorMessage(error))
-    })
+  try {
+    const storage = resolveStorage()
+    const value = storage.getItem(currentKey)
+    setResult('读取结果：' + formatRawValue(value))
+  } catch (error) {
+    setResult('读取失败：' + resolveErrorMessage(error))
+  }
 })
 
 removeButton.addEventListener('click', function () {
-  var targetBinding = ensureBinding()
-  targetBinding
-    .remove()
-    .then(function () {
-      setResult('已删除 key：' + currentKeyLabel.textContent)
-    })
-    .catch(function (error) {
-      setResult('删除失败：' + resolveErrorMessage(error))
-    })
+  try {
+    resolveStorage().removeItem(currentKey)
+    setResult('已删除 ' + currentKey)
+    renderCurrentValue()
+  } catch (error) {
+    setResult('删除失败：' + resolveErrorMessage(error))
+  }
 })
 
 clearButton.addEventListener('click', function () {
-  store
-    .clear()
-    .then(function () {
-      setResult('当前适配器数据已清空')
-    })
-    .catch(function (error) {
-      setResult('清空失败：' + resolveErrorMessage(error))
-    })
+  try {
+    resolveStorage().clear()
+    setResult('已清空 ' + storageMap[activeKind].label)
+    renderCurrentValue()
+  } catch (error) {
+    setResult('清空失败：' + resolveErrorMessage(error))
+  }
 })
 
-function switchAdapter(kind: AdapterKind) {
-  disposeListeners()
-  store.dispose()
-  store = adapterMap[kind].create()
-  adapterLabel.textContent = adapterMap[kind].label
-  subscribeWildcard()
-  refreshBinding()
-  setResult('已切换到 ' + adapterMap[kind].label)
-  pushLog('adapter', '切换至 ' + adapterMap[kind].label)
+function resolveStorage() {
+  return storageMap[activeKind].resolve()
 }
 
-function subscribeWildcard() {
-  if (typeof unsubscribeWildcard === 'function') {
-    unsubscribeWildcard()
-  }
-  unsubscribeWildcard = store.subscribe(WILDCARD_KEY, function (change) {
-    var details = change.key + ' → ' + formatRawValue(change.value)
-    pushLog(change.type, details)
-  })
-}
-
-function refreshBinding() {
-  if (typeof unsubscribeBinding === 'function') {
-    unsubscribeBinding()
-    unsubscribeBinding = undefined
-  }
-  var nextKey = normalizeKey(keyInput.value)
-  keyInput.value = nextKey
-  currentKeyLabel.textContent = nextKey
-  binding = store.bind(nextKey, jsonCodec)
-  binding.read().then(renderBindingValue)
-  unsubscribeBinding = binding.subscribe(function (value) {
-    renderBindingValue(value)
-  })
-}
-
-function disposeListeners() {
-  if (typeof unsubscribeBinding === 'function') {
-    unsubscribeBinding()
-    unsubscribeBinding = undefined
-  }
-  if (typeof unsubscribeWildcard === 'function') {
-    unsubscribeWildcard()
-    unsubscribeWildcard = undefined
+function renderCurrentValue() {
+  try {
+    const value = resolveStorage().getItem(currentKey)
+    bindingValue.textContent = formatValue(parseInput(value || ''))
+  } catch (_error) {
+    bindingValue.textContent = '无法读取'
   }
 }
 
 function parseInput(raw: string) {
-  var trimmed = raw.trim()
+  const trimmed = raw.trim()
   if (!trimmed) {
     return null
   }
@@ -257,22 +227,11 @@ function parseInput(raw: string) {
 }
 
 function normalizeKey(raw: string) {
-  var trimmed = raw.trim()
+  const trimmed = raw.trim()
   if (!trimmed) {
     return defaultKey
   }
   return trimmed
-}
-
-function ensureBinding() {
-  if (!binding) {
-    throw new Error('绑定尚未准备好')
-  }
-  return binding
-}
-
-function renderBindingValue(value: unknown) {
-  bindingValue.textContent = formatValue(value)
 }
 
 function formatValue(value: unknown) {
@@ -293,7 +252,7 @@ function formatRawValue(value: string | null) {
   if (value === null) {
     return 'null'
   }
-  var trimmed = value.trim()
+  const trimmed = value.trim()
   if (!trimmed) {
     return '""'
   }
@@ -309,23 +268,23 @@ function setResult(message: string) {
 }
 
 function pushLog(eventType: string, message: string) {
-  var entry = document.createElement('li')
+  const entry = document.createElement('li')
   entry.className = 'log-entry'
 
-  var badge = document.createElement('span')
+  const badge = document.createElement('span')
   badge.className = 'badge'
   badge.textContent = eventType
 
-  var text = document.createElement('span')
+  const text = document.createElement('span')
   text.textContent = message
 
   entry.appendChild(badge)
   entry.appendChild(text)
   logList.prepend(entry)
 
-  var limit = 12
+  const limit = 12
   while (logList.children.length > limit) {
-    var lastChild = logList.lastElementChild
+    const lastChild = logList.lastElementChild
     if (!lastChild) {
       break
     }
@@ -343,3 +302,7 @@ function resolveErrorMessage(error: unknown) {
     return String(error)
   }
 }
+
+window.addEventListener('beforeunload', () => {
+  unsubscribe()
+})
