@@ -51,10 +51,10 @@ cli
 cli
   .command('pkg [root]', 'Format or create package.json file')
   .option('-c, --create', 'Create a new package.json file', {
-    default: true,
+    default: false,
   })
   .option('-f, --format', 'Format existing package.json file', {
-    default: false,
+    default: true,
   })
   .option('-p, --preset <preset>', 'Preset of the project')
   .option('-n, --name <name>', 'Package name (for create)')

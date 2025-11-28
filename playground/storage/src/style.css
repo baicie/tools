@@ -1,0 +1,230 @@
+:root {
+  font-family: 'Inter', 'HarmonyOS Sans', 'SF Pro Display', system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #f3f4f6;
+  background-color: #05070f;
+  line-height: 1.6;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 20%, rgba(79, 70, 229, 0.25), transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(16, 185, 129, 0.2), transparent 45%),
+    #05070f;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+main.layout {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hero {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.35);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.hero p {
+  margin: 8px 0 0;
+  color: #cbd5f5;
+}
+
+.panel {
+  background: rgba(13, 17, 23, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(5, 7, 15, 0.5);
+}
+
+.panel-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: #cbd5f5;
+  margin-bottom: 6px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #f3f4f6;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.25);
+  outline: none;
+}
+
+textarea {
+  min-height: 96px;
+  resize: vertical;
+  font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(120deg, #7c3aed, #2563eb);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s;
+}
+
+button.secondary {
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+button.danger {
+  background: linear-gradient(120deg, #f43f5e, #be123c);
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.3);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.status-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 14px;
+  color: #cbd5f5;
+  margin-top: 8px;
+}
+
+.badge {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(79, 70, 229, 0.15);
+  color: #c3b5fd;
+}
+
+pre {
+  margin: 0;
+  background: rgba(2, 6, 23, 0.8);
+  border-radius: 12px;
+  padding: 16px;
+  font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.logs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.log-entry strong {
+  font-weight: 600;
+  color: #fef3c7;
+}
+
+.result-line {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+@media (max-width: 640px) {
+  main.layout {
+    padding: 32px 16px 48px;
+  }
+
+  .hero h1 {
+    font-size: 24px;
+  }
+
+  button {
+    width: 100%;
+  }
+}

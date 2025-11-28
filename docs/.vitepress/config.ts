@@ -11,6 +11,7 @@ export default defineConfig({
       { text: 'CLI', link: '/cli/' },
       { text: 'Pkg', link: '/pkg/' },
       { text: 'Tools', link: '/tools/' },
+      { text: 'Storage', link: '/storage/' },
       { text: 'Release', link: '/release/' },
     ],
 
@@ -54,6 +55,16 @@ export default defineConfig({
             { text: '验证工具', link: '/tools/validate' },
             { text: 'URL 工具', link: '/tools/url' },
             { text: '随机工具', link: '/tools/random' },
+          ],
+        },
+      ],
+      '/storage/': [
+        {
+          text: '@baicie/storage',
+          items: [
+            { text: '介绍', link: '/storage/' },
+            { text: '快速开始', link: '/storage/getting-started' },
+            { text: 'API 文档', link: '/storage/api' },
           ],
         },
       ],

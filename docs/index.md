@@ -20,6 +20,8 @@ features:
     details: 功能强大的 package.json 工具包，用于创建、格式化、验证和操作 package.json 文件
   - title: 🛠️ @baicie/tools
     details: 实用的 JavaScript/TypeScript 工具函数库，提供常用的工具方法，提高开发效率
+  - title: 🔐 @baicie/storage
+    details: 统一 localStorage / sessionStorage / Cookie / IndexedDB 的响应式数据代理
   - title: 🎯 @baicie/release
     details: 自动化发布工具，支持版本管理、变更日志生成和包发布
 ---
@@ -40,6 +42,14 @@ pnpm add -g @baicie/cli
 npm install @baicie/tools @baicie/pkg
 # 或
 pnpm add @baicie/tools @baicie/pkg
+```
+
+### 存储代理
+
+```bash
+npm install @baicie/storage
+# 或
+pnpm add @baicie/storage
 ```
 
 ## 快速开始
@@ -80,9 +90,25 @@ const pkg = createPackageJson({
 const formatted = prettifyPackageJson(pkg)
 ```
 
+### 统一存储
+
+```typescript
+import {
+  createStorageStore,
+  createLocalStorageAdapter,
+} from '@baicie/storage'
+
+const store = createStorageStore(createLocalStorageAdapter())
+
+store.subscribe('*', change => {
+  console.info(change.key, change.type)
+})
+```
+
 ## 包说明
 
 - **@baicie/cli** - 项目脚手架工具
 - **@baicie/pkg** - package.json 操作工具
+- **@baicie/storage** - 浏览器/内存统一存储代理
 - **@baicie/tools** - 工具函数库
 - **@baicie/release** - 发布工具

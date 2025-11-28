@@ -58,6 +58,25 @@ export default defineConfig(
     },
   },
 
+  // storage package
+  {
+    name: 'storage',
+    files: ['packages/storage/src/**'],
+    rules: {
+      'no-restricted-globals': ['error', ...NodeGlobals],
+    },
+  },
+
+  // playground packages
+  {
+    name: 'playground',
+    files: ['playground/**'],
+    rules: {
+      'no-restricted-globals': 'off',
+      'no-console': 'off',
+    },
+  },
+
   // tests, no restrictions (runs in Node / Vitest with jsdom)
   {
     files: ['**/__tests__/**', '**/*.{test,spec}.{js,ts,tsx}'],

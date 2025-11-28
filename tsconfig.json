@@ -36,5 +36,6 @@
     "playground/benchmarks",
     "scripts/*",
     "rollup.*.js"
-  ]
+  ],
+  "exclude": ["**/dist", "**/temp", "packages/storage"]
 }

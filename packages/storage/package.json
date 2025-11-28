@@ -1,0 +1,40 @@
+{
+  "name": "@baicie/storage",
+  "version": "0.0.1",
+  "packageManager": "pnpm@10.23.0",
+  "type": "module",
+  "description": "轻量响应式数据存储代理，统一 localStorage / sessionStorage / Cookie / IndexedDB",
+  "keywords": [
+    "storage",
+    "localStorage",
+    "sessionStorage",
+    "cookie",
+    "indexeddb",
+    "reactive",
+    "typescript"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --incremental --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "tsdown": "^0.16.6",
+    "typescript": "^5.9.3"
+  }
+}
