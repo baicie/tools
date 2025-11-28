@@ -18,8 +18,9 @@ env:
       - '**/*.gitignore'
       - .editorconfig
       - docs/**
-    path:
-      - 'packages/napi/**'
+    paths:
+      - packages/napi/**
+
   pull_request: null
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
