@@ -10,6 +10,7 @@ on:
       - 'cli@*'
       - 'polyfill@*'
       - 'storage@*'
+      - 'logger@*'
 
 jobs:
   publish:

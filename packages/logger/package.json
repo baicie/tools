@@ -1,0 +1,45 @@
+{
+  "name": "@baicie/logger",
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.23.0",
+  "type": "module",
+  "description": "通用日志工具模块，提供统一的日志记录功能，支持日志级别和配置",
+  "keywords": [
+    "logger",
+    "log",
+    "logging",
+    "debug",
+    "typescript"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --incremental --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "tsdown": "^0.16.6",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
