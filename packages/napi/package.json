@@ -36,10 +36,10 @@
   "devDependencies": {
     "@emnapi/core": "^1.7.1",
     "@emnapi/runtime": "^1.7.1",
-    "@napi-rs/cli": "^3.4.1",
-    "@oxc-node/core": "^0.0.34",
+    "@napi-rs/cli": "^3.5.0",
+    "@oxc-node/core": "^0.0.35",
     "@tybys/wasm-util": "^0.10.1",
-    "tinybench": "^5.1.0"
+    "tinybench": "^6.0.0"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",

@@ -22,7 +22,7 @@
     "types": ["vitest/globals", "node"],
     "rootDir": ".",
     "paths": {
-      "@zeus-js/*": ["packages/*/src"]
+      "@tools/*": ["packages/*/src"]
     },
     "isolatedDeclarations": true,
     "composite": true,
