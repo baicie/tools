@@ -1,6 +1,6 @@
 {
   "name": "@baicie/logger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packageManager": "pnpm@10.24.0",
   "type": "module",
   "description": "通用日志工具模块，提供统一的日志记录功能，支持日志级别和配置",
@@ -41,5 +41,8 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1"
   }
 }

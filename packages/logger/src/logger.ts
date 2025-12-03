@@ -6,6 +6,7 @@
  * 兼容 SSR 环境
  */
 
+import pc from 'picocolors'
 import { getWindow, isBrowser } from './browser'
 import { extend } from './general'
 
@@ -127,6 +128,25 @@ function shouldLog(level: LogLevel, force?: boolean): boolean {
 }
 
 /**
+ * 根据日志级别为消息增加颜色
+ */
+function colorizeMessage(level: LogLevel, message: string): string {
+  if (level === 'debug') {
+    return pc.gray(message)
+  }
+  if (level === 'info') {
+    return pc.blue(message)
+  }
+  if (level === 'warn') {
+    return pc.yellow(message)
+  }
+  if (level === 'error') {
+    return pc.red(message)
+  }
+  return message
+}
+
+/**
  * 格式化日志消息
  */
 function formatMessage(
@@ -150,7 +170,8 @@ function formatMessage(
 
   parts.push(codeOrMessage)
 
-  return parts.join(' ')
+  const message = parts.join(' ')
+  return colorizeMessage(level, message)
 }
 
 /**
