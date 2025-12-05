@@ -1,4 +1,6 @@
 import { createEmitter } from './emitter'
+import { hijackCookie } from './hijack-cookie'
+import { hijackIndexedDB } from './hijack-indexeddb'
 import { hijackWebStorage } from './hijack-web-storage'
 import type {
   HijackHandle,
@@ -10,6 +12,8 @@ export interface NativeHijackOptions {
   windowRef?: Window
   local?: boolean
   session?: boolean
+  cookie?: boolean
+  indexedDB?: boolean
   storages?: Array<{ storage: Storage; id: string }>
 }
 
@@ -40,6 +44,30 @@ export function startNativeHijack(options?: NativeHijackOptions) {
         id: 'session-storage',
       })
     }
+
+    // 劫持 Cookie
+    if (options?.cookie !== false && windowRef.document) {
+      const cookieHandle = hijackCookie(
+        windowRef.document,
+        'cookie',
+        handleChange,
+      )
+      if (cookieHandle) {
+        handles.push(cookieHandle)
+      }
+    }
+
+    // 劫持 IndexedDB
+    if (options?.indexedDB !== false && windowRef.indexedDB) {
+      const indexedDBHandle = hijackIndexedDB(
+        windowRef.indexedDB,
+        'indexeddb',
+        handleChange,
+      )
+      if (indexedDBHandle) {
+        handles.push(indexedDBHandle)
+      }
+    }
   }
 
   let attached = false
@@ -54,7 +82,7 @@ export function startNativeHijack(options?: NativeHijackOptions) {
       attached = true
     }
   }
-  if (attached) {
+  if (attached || handles.length > 0) {
     started = true
   }
 }

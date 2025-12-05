@@ -48,7 +48,7 @@
     ]
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^6.3.0",
+    "@antfu/eslint-config": "^6.4.2",
     "@taplo/cli": "^0.7.0",
     "@types/minimist": "^1.2.5",
     "@types/node": "^24.10.1",
@@ -69,9 +69,9 @@
     "picocolors": "^1.1.1",
     "prettier": "^3.7.4",
     "prompts": "^2.4.2",
-    "rolldown": "1.0.0-beta.52",
+    "rolldown": "1.0.0-beta.53",
     "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.16.8",
+    "tsdown": "^0.17.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
