@@ -1,23 +1,52 @@
+import type { NativeSubscribeOptions } from './native-watcher'
 import type { StorageChange, StorageChangeListener } from './types'
 
 export function createEmitter() {
-  var listeners: StorageChangeListener[] = []
+  type Sub = {
+    listener: StorageChangeListener
+    options?: NativeSubscribeOptions
+  }
 
-  function subscribe(listener: StorageChangeListener) {
-    listeners.push(listener)
-    return function unsubscribe() {
-      var index = listeners.indexOf(listener)
-      if (index !== -1) {
-        listeners.splice(index, 1)
-      }
+  let listeners: Sub[] = []
+
+  function matchesFilter(change: StorageChange, opts?: NativeSubscribeOptions) {
+    if (!opts) return true
+
+    const { include, exclude } = opts
+
+    const matches = (arr?: Partial<StorageChange>[]) =>
+      arr?.some(
+        rule =>
+          (rule.key == null || rule.key === change.key) &&
+          (rule.value == null || rule.value === change.value) &&
+          (rule.type == null || rule.type === change.type) &&
+          (rule.source == null || rule.source === change.source),
+      )
+
+    // include 优先
+    if (include && include.length > 0 && !matches(include)) return false
+    if (exclude && matches(exclude)) return false
+
+    return true
+  }
+
+  function subscribe(
+    listener: StorageChangeListener,
+    options?: NativeSubscribeOptions,
+  ) {
+    const obj = { listener, options }
+    listeners.push(obj)
+    return () => {
+      const i = listeners.indexOf(obj)
+      if (i > -1) listeners.splice(i, 1)
     }
   }
 
   function emit(change: StorageChange) {
-    var index = 0
-    while (index < listeners.length) {
-      listeners[index](change)
-      index += 1
+    for (const sub of listeners) {
+      if (matchesFilter(change, sub.options)) {
+        sub.listener(change)
+      }
     }
   }
 
@@ -25,9 +54,5 @@ export function createEmitter() {
     listeners = []
   }
 
-  return {
-    subscribe: subscribe,
-    emit: emit,
-    clear: clear,
-  }
+  return { subscribe, emit, clear }
 }

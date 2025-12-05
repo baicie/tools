@@ -17,14 +17,22 @@ export interface NativeHijackOptions {
   storages?: Array<{ storage: Storage; id: string }>
 }
 
+export interface NativeSubscribeOptions {
+  include?: Partial<StorageChange>[]
+  exclude?: Partial<StorageChange>[]
+}
+
 const emitter = createEmitter()
 
 let started = false
 let handles: HijackHandle[] = []
 
-export function subscribeStorageChanges(listener: StorageChangeListener) {
+export function subscribeStorageChanges(
+  listener: StorageChangeListener,
+  options?: NativeSubscribeOptions,
+) {
   ensureStarted()
-  return emitter.subscribe(listener)
+  return emitter.subscribe(listener, options)
 }
 
 export function startNativeHijack(options?: NativeHijackOptions) {
@@ -118,5 +126,12 @@ function resolveWindow(windowRef?: Window) {
   return undefined
 }
 
-// auto attempt on module load (no-op in SSR)
-startNativeHijack()
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      startNativeHijack()
+    })
+  } else {
+    startNativeHijack()
+  }
+}
