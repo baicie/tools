@@ -1,30 +1,24 @@
 {
   "name": "@baicie/scripts",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
-  "main": "dist/index.cjs.js",
-  "module": "dist/index.esm.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
     "dev": "rolldown --watch -c",
-    "build": "rolldown --minify -c",
+    "build": "rolldown -c",
     "typecheck": "tsc --incremental --noEmit",
     "prepublishOnly": "npm run build"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": {
-        "production": "./dist/index.cjs.prod.js",
-        "development": "./dist/index.cjs.js",
-        "default": "./dist/index.cjs.js"
-      },
-      "module": "./dist/index.esm.js",
-      "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     },
     "./*": "./*"
   },

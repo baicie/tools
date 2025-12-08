@@ -17,13 +17,13 @@ export default defineConfig([
       {
         format: 'cjs',
         dir: 'dist',
-        entryFileNames: 'index.cjs.js',
+        entryFileNames: 'index.cjs',
         sourcemap: true,
       },
       {
         format: 'esm',
         dir: 'dist',
-        entryFileNames: 'index.esm.js',
+        entryFileNames: 'index.js',
         sourcemap: true,
       },
     ],
