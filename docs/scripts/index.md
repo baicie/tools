@@ -42,4 +42,3 @@ npx husky add .husky/commit-msg "pnpm exec tsx scripts/verify-commit.ts"
 pnpm --filter @baicie/scripts build      # 生成 dist
 pnpm --filter @baicie/scripts typecheck  # 类型检查
 ```
-

@@ -42,7 +42,11 @@ log('LOG_CODE_001')
 ```ts
 import { createLoggerInstance } from '@baicie/logger'
 
-const custom = createLoggerInstance({ enabled: true, level: 'warn', prefix: '[Custom]' })
+const custom = createLoggerInstance({
+  enabled: true,
+  level: 'warn',
+  prefix: '[Custom]',
+})
 custom.warn('仅输出 warn/error')
 ```
 
@@ -60,4 +64,3 @@ custom.warn('仅输出 warn/error')
 pnpm --filter @baicie/logger build      # 打包
 pnpm --filter @baicie/logger typecheck  # 类型检查
 ```
-
