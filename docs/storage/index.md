@@ -32,12 +32,12 @@ stop()
 
 ## API
 
-| API | 说明 |
-| --- | --- |
-| `subscribeStorageChanges(listener)` | 订阅所有写入/删除/清空，返回取消函数 |
-| `startNativeHijack(options?)` | 手动启动劫持，可注入 `windowRef` 或自定义 `storages` |
-| `stopNativeHijack()` | 恢复所有被劫持的方法 |
-| `hijackWebStorage(storage, id, listener)` | 劫持单个 `Storage` 实例，返回 `restore()` |
+| API                                       | 说明                                                 |
+| ----------------------------------------- | ---------------------------------------------------- |
+| `subscribeStorageChanges(listener)`       | 订阅所有写入/删除/清空，返回取消函数                 |
+| `startNativeHijack(options?)`             | 手动启动劫持，可注入 `windowRef` 或自定义 `storages` |
+| `stopNativeHijack()`                      | 恢复所有被劫持的方法                                 |
+| `hijackWebStorage(storage, id, listener)` | 劫持单个 `Storage` 实例，返回 `restore()`            |
 
 ### StorageChange
 

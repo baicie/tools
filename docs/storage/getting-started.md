@@ -86,4 +86,3 @@ interface StorageChange {
 ```
 
 默认 Source 为 `local-storage` 与 `session-storage`，你也可以在自定义劫持时传入任意 ID。
-

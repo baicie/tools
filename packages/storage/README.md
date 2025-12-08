@@ -33,11 +33,11 @@ unsubscribe()
 
 ## API 速览
 
-| API | 说明 |
-| --- | --- |
-| `subscribeStorageChanges(listener)` | 订阅全部变更，返回取消函数 |
-| `startNativeHijack(options?)` | 手动启动劫持，可注入 `windowRef` 或自定义 `storages` |
-| `stopNativeHijack()` | 停止劫持并恢复所有原始方法 |
+| API                                       | 说明                                                 |
+| ----------------------------------------- | ---------------------------------------------------- |
+| `subscribeStorageChanges(listener)`       | 订阅全部变更，返回取消函数                           |
+| `startNativeHijack(options?)`             | 手动启动劫持，可注入 `windowRef` 或自定义 `storages` |
+| `stopNativeHijack()`                      | 停止劫持并恢复所有原始方法                           |
 | `hijackWebStorage(storage, id, listener)` | 仅针对单个 `Storage` 实例劫持，返回 `restore()` 句柄 |
 
 ### StorageChange
@@ -56,4 +56,3 @@ interface StorageChange {
 - **是否影响原生行为？** 不会。劫持仅包裹原函数，在执行后发送通知，返回值与异常保持一致。
 - **可以监听 Cookie/IndexedDB 吗？** 当前专注 Web Storage。可参考 `hijackWebStorage` 的实现自行扩展。
 - **SSR 会报错吗？** 不会。如果 `window` 不存在则不会启动劫持，等到客户端调用 `subscribeStorageChanges` 或 `startNativeHijack` 时再尝试一次。
-

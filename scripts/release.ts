@@ -4,6 +4,6 @@ release({
   repo: 'baicie',
   packages: ['cli', 'release', 'tools', 'pkg', 'polyfill', 'storage', 'logger'],
   toTag: (pkg, version) => `${pkg}@${version}`,
-  logChangelog: pkg => {},
-  generateChangelog: pkg => {},
+  logChangelog: _pkg => {},
+  generateChangelog: _pkg => {},
 })

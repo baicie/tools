@@ -30,12 +30,12 @@ let handles: HijackHandle[] = []
 export function subscribeStorageChanges(
   listener: StorageChangeListener,
   options?: NativeSubscribeOptions,
-) {
+): () => void {
   ensureStarted()
   return emitter.subscribe(listener, options)
 }
 
-export function startNativeHijack(options?: NativeHijackOptions) {
+export function startNativeHijack(options?: NativeHijackOptions): void {
   if (started) {
     return
   }
@@ -95,7 +95,7 @@ export function startNativeHijack(options?: NativeHijackOptions) {
   }
 }
 
-export function stopNativeHijack() {
+export function stopNativeHijack(): void {
   if (!started) {
     return
   }

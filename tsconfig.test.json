@@ -15,14 +15,16 @@
   "include": [
     "packages/*/src",
     "packages/*/__tests__",
-    "scripts/**/*",
-    "playground/**/*"
+    "packages/*/__test__",
+    "packages/*/*.test.ts",
+    "packages/*/*.spec.ts",
+    "scripts/setup-vitest.ts"
   ],
   "exclude": [
     "**/dist",
     "**/temp",
     "**/node_modules",
     "**/tsconfig.tsbuildinfo",
-    "playground/vue"
+    "**/templates/**"
   ]
 }

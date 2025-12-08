@@ -92,9 +92,10 @@ export class Headers implements globalThis.Headers {
 /**
  * Request 类实现
  */
-export class Request
-  implements Omit<globalThis.Request, 'signal' | 'body' | 'bytes'>
-{
+export class Request implements Omit<
+  globalThis.Request,
+  'signal' | 'body' | 'bytes'
+> {
   readonly method: string
   readonly url: string
   readonly headers: Headers

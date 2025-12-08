@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    /* 基础配置 */
+    "target": "ES2016",
+    "module": "ESNext",
+    "lib": ["ES2016", "DOM"],
+    "moduleResolution": "bundler",
+    "newLine": "LF",
+
+    /* 输出配置 */
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "removeComments": false,
+
+    /* 类型检查 */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* 模块解析 */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+
+    /* 装饰器支持 */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    /* 类字段 */
+    "useDefineForClassFields": false,
+
+    /* 项目引用 */
+    "composite": true,
+    "isolatedDeclarations": true
+  }
+}

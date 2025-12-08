@@ -91,12 +91,12 @@ logger.setConfig({
 
 ```typescript
 interface LoggerConfig {
-  enabled: boolean        // 是否启用日志
-  force?: boolean         // 是否强制输出（忽略 enabled 设置）
-  level?: LogLevel        // 日志级别阈值
+  enabled: boolean // 是否启用日志
+  force?: boolean // 是否强制输出（忽略 enabled 设置）
+  level?: LogLevel // 日志级别阈值
   showTimestamp?: boolean // 是否显示时间戳
-  showLevel?: boolean     // 是否显示日志级别标签
-  prefix?: string         // 日志前缀
+  showLevel?: boolean // 是否显示日志级别标签
+  prefix?: string // 日志前缀
 }
 ```
 
@@ -153,4 +153,3 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 ## License
 
 MIT
-
