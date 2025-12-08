@@ -1,0 +1,63 @@
+{
+  "name": "@baicie/scripts",
+  "version": "0.1.1",
+  "description": "",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "rolldown --watch -c",
+    "build": "rolldown --minify -c",
+    "typecheck": "tsc --incremental --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": {
+        "production": "./dist/index.cjs.prod.js",
+        "development": "./dist/index.cjs.js",
+        "default": "./dist/index.cjs.js"
+      },
+      "module": "./dist/index.esm.js",
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js"
+    },
+    "./*": "./*"
+  },
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "",
+    "directory": ""
+  },
+  "buildOptions": {
+    "name": "default",
+    "formats": [
+      "esm-bundler",
+      "esm-browser",
+      "cjs",
+      "global"
+    ]
+  },
+  "keywords": [
+    "default"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": ""
+  },
+  "homepage": "",
+  "dependencies": {
+    "picocolors": "^1.1.1"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
