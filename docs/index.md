@@ -24,6 +24,10 @@ features:
     details: 统一 localStorage / sessionStorage / Cookie / IndexedDB 的响应式数据代理
   - title: 🎯 @baicie/release
     details: 自动化发布工具，支持版本管理、变更日志生成和包发布
+  - title: 🧰 @baicie/scripts
+    details: 内部脚本工具包，提供提交信息校验等脚本能力
+  - title: 📰 @baicie/logger
+    details: 轻量日志工具，支持可配置级别、前缀与时间戳输出
 ---
 
 ## 安装
@@ -110,3 +114,13 @@ unsubscribe()
 - **@baicie/storage** - Web Storage 劫持与通知工具
 - **@baicie/tools** - 工具函数库
 - **@baicie/release** - 发布工具
+- **@baicie/scripts** - 脚本工具包（如提交信息校验）
+- **@baicie/logger** - 轻量日志工具（浏览器/Node 通用）
+
+## 环境与约束
+
+- Node.js：推荐 >= 18（CLI 需 >= 20）
+- TypeScript：严格模式，编译目标 ES2016
+- 禁用特性：可选链、空值合并、对象展开、async/await、const enum
+- 模块：ESM 优先，Node 内置模块需使用 `node:` 前缀
+- 包管理：pnpm workspace；开发命令可用 `pnpm lint` / `pnpm check` / `pnpm test`
