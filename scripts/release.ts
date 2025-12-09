@@ -11,6 +11,7 @@ release({
     'storage',
     'logger',
     'scripts',
+    'napi',
   ],
   toTag: (pkg, version) => `${pkg}@${version}`,
   logChangelog: _pkg => {},

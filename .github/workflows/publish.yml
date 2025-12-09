@@ -14,8 +14,83 @@ on:
       - 'napi@*'
 
 jobs:
+  build-napi:
+    name: Build napi packages
+    uses: ./.github/workflows/build-napi.yml
+
+  publish-napi:
+    needs: build-napi
+    if: github.repository == 'baicie/tools'
+    name: Publish npm Packages
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Setup node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+          cache: 'pnpm'
+
+      - name: Download Binding Artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          path: packages/rolldown/artifacts
+
+      - name: Create rolldown/npm dirs
+        run: pnpm --filter rolldown exec napi create-npm-dirs
+
+      - name: Move Binding Artifacts
+        run: pnpm --filter rolldown artifacts
+
+      - name: List Rolldown Bindings
+        run: ls -R ./packages/rolldown/npm
+        shell: bash
+
+      - name: Download Node Artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          path: packages/rolldown/dist
+          name: node-artifact
+
+      - name: Download `@rolldown/browser` Artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          path: packages/browser/dist
+          name: browser-artifact
+
+      - name: Download `@rolldown/debug` Artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          path: packages/debug/dist
+          name: debug-artifact
+
+      - name: Download Pluginutils Artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          path: packages/pluginutils/dist
+          name: pluginutils-artifact
+
+      - name: Copy Licenses
+        run: |
+          find ./packages/ -type d -maxdepth 1 -exec cp LICENSE {} \;
+          find ./packages/ -type d -maxdepth 1 -exec cp THIRD-PARTY-LICENSE {} \;
+
+      - name: Publish(Dry Run)
+        run: |
+          pnpm publish -r --tag latest --dry-run --no-git-checks
+
+      - name: Publish
+        run: |
+          npm install -g npm
+          pnpm publish -r --tag latest --no-git-checks
+
   publish:
-    # prevents this action from running on forks
     if: github.repository == 'baicie/tools'
     runs-on: ubuntu-latest
     permissions:

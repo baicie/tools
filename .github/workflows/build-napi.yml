@@ -228,7 +228,7 @@ jobs:
   build-rolldown-browser:
     strategy:
       fail-fast: false
-    name: Build `@baicie/napi` browser Package
+    name: Build `@baicie/binding` browser Package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
