@@ -48,10 +48,10 @@
     ]
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^6.4.2",
+    "@antfu/eslint-config": "^6.5.1",
     "@taplo/cli": "^0.7.0",
     "@types/minimist": "^1.2.5",
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.10.2",
     "@types/prompts": "^2.4.9",
     "@types/resolve": "^1.20.6",
     "@vitest/eslint-plugin": "^1.5.2",
@@ -62,7 +62,7 @@
     "eslint-plugin-import-x": "^4.16.1",
     "execa": "^9.6.1",
     "fast-glob": "^3.3.3",
-    "jsdom": "^27.2.0",
+    "jsdom": "^27.3.0",
     "kolorist": "^1.8.0",
     "lint-staged": "^16.2.7",
     "minimist": "^1.2.8",
@@ -73,11 +73,11 @@
     "rolldown": "1.0.0-beta.53",
     "rolldown-plugin-dts": "^0.18.3",
     "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.17.1",
+    "tsdown": "^0.17.2",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.48.1",
+    "typescript-eslint": "^8.49.0",
     "unbuild": "^3.6.1",
     "vitest": "^4.0.15"
   },
@@ -87,5 +87,5 @@
     "consola": "^3.4.2",
     "rimraf": "^6.1.2"
   },
-  "packageManager": "pnpm@10.24.0"
+  "packageManager": "pnpm@10.25.0"
 }

@@ -1,7 +1,7 @@
 {
   "name": "@baicie/logger",
   "version": "0.1.1",
-  "packageManager": "pnpm@10.24.0",
+  "packageManager": "pnpm@10.25.0",
   "type": "module",
   "description": "通用日志工具模块，提供统一的日志记录功能，支持日志级别和配置",
   "keywords": [
@@ -35,7 +35,7 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "tsdown": "^0.17.1",
+    "tsdown": "^0.17.2",
     "typescript": "^5.9.3"
   },
   "publishConfig": {
