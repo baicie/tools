@@ -203,24 +203,12 @@ importers:
 
   packages/napi:
     devDependencies:
-      '@emnapi/core':
-        specifier: ^1.7.1
-        version: 1.7.1
-      '@emnapi/runtime':
-        specifier: ^1.7.1
-        version: 1.7.1
       '@napi-rs/cli':
         specifier: ^3.5.0
         version: 3.5.0(@emnapi/runtime@1.7.1)(@types/node@24.10.1)
-      '@oxc-node/core':
+      '@oxc-node/cli':
         specifier: ^0.0.35
         version: 0.0.35
-      '@tybys/wasm-util':
-        specifier: ^0.10.1
-        version: 0.10.1
-      tinybench:
-        specifier: ^6.0.0
-        version: 6.0.0
 
   packages/pkg:
     devDependencies:
@@ -1861,6 +1849,10 @@ packages:
 
   '@octokit/types@16.0.0':
     resolution: {integrity: sha512-sKq+9r1Mm4efXW1FCk7hFSeJo4QKreL/tTbR0rz/qx/r1Oa2VV83LTA/H/MuCOX7uCIJmQVRKBcbmWoySjAnSg==}
+
+  '@oxc-node/cli@0.0.35':
+    resolution: {integrity: sha512-FTsYtymv6E4tyV2kxQEFLjsi6ZLmtsBpirFnbv5l7JGmQj65TCGM/WJlkZW+mPAM/9QN+ZY6cIOpnTTl8Qc7uA==}
+    hasBin: true
 
   '@oxc-node/core-android-arm-eabi@0.0.35':
     resolution: {integrity: sha512-Vgw/DtArB1fZJ7LX4FX7YDpRvWzwv80lFNngTcamS+9Kbd83HpZb6Tg38t6f7Ubyc/+cL0TTMo55Kg8gwnQGHQ==}
@@ -6370,10 +6362,6 @@ packages:
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
-  tinybench@6.0.0:
-    resolution: {integrity: sha512-BWlWpVbbZXaYjRV0twGLNQO00Zj4HA/sjLOQP2IvzQqGwRGp+2kh7UU3ijyJ3ywFRogYDRbiHDMrUOfaMnN56g==}
-    engines: {node: '>=20.0.0'}
-
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
 
@@ -7175,14 +7163,17 @@ snapshots:
     dependencies:
       '@emnapi/wasi-threads': 1.1.0
       tslib: 2.8.1
+    optional: true
 
   '@emnapi/runtime@1.7.1':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@emnapi/wasi-threads@1.1.0':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@es-joy/jsdoccomment@0.50.2':
     dependencies:
@@ -8105,6 +8096,10 @@ snapshots:
     dependencies:
       '@octokit/openapi-types': 27.0.0
 
+  '@oxc-node/cli@0.0.35':
+    dependencies:
+      '@oxc-node/core': 0.0.35
+
   '@oxc-node/core-android-arm-eabi@0.0.35':
     optional: true
 
@@ -8769,6 +8764,7 @@ snapshots:
   '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@types/adm-zip@0.5.7':
     dependencies:
@@ -12808,8 +12804,6 @@ snapshots:
   through@2.3.8: {}
 
   tinybench@2.9.0: {}
-
-  tinybench@6.0.0: {}
 
   tinyexec@0.3.2: {}
 

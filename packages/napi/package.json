@@ -1,67 +1,82 @@
 {
   "name": "@baicie/napi",
   "version": "0.1.0",
-  "packageManager": "yarn@4.11.0",
-  "description": "Template project for writing node package with napi-rs",
-  "keywords": [
-    "napi-rs",
-    "NAPI",
-    "N-API",
-    "Rust",
-    "node-addon",
-    "node-addon-api"
-  ],
+  "type": "module",
+  "keywords": [],
   "license": "MIT",
   "files": [
-    "index.d.ts",
-    "index.js",
-    "browser.js"
+    "bin",
+    "cli",
+    "dist",
+    "!dist/*.node"
   ],
-  "main": "index.js",
-  "browser": "browser.js",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/napi-rs/package-template.git"
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "dev": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    }
   },
   "scripts": {
-    "artifacts": "napi artifacts",
-    "bench": "node --import @oxc-node/core/register benchmark/bench.ts",
-    "build": "napi build --platform --release",
-    "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm"
+    "# Scrips for binding #": "_",
+    "artifacts": "napi artifacts --cwd ./src --package-json-path ../package.json -o=../artifacts --npm-dir ../npm",
+    "build-binding": "oxnode ./build-binding.ts",
+    "build-binding:release": "pnpm build-binding --release",
+    "build-binding:profile": "pnpm build-binding --profile profile",
+    "build-binding:wasi": "pnpm build-binding --target wasm32-wasip1-threads",
+    "build-binding:wasi:release": "pnpm build-binding --profile release-wasi --target wasm32-wasip1-threads",
+    "# Scrips for node #": "_",
+    "build-node": "oxnode -C dev ./build.ts",
+    "build-types-check": "tsc -p ./tsconfig.check.json",
+    "build-js-glue": "pnpm run --sequential '/^build-(node|types-check)$/'",
+    "build-native:debug": "pnpm run --sequential '/^build-(binding|js-glue)$/'",
+    "build-native:release": "pnpm run --sequential '/^build-(binding:release|js-glue)$/'",
+    "build-native:profile": "pnpm run build-binding:profile && pnpm run build-js-glue",
+    "build-native:memory-profile": "pnpm run build-binding:profile --features default_global_allocator && pnpm run build-js-glue",
+    "build-wasi:debug": "TARGET='rolldown-wasi' pnpm run --sequential '/^build-(binding|binding:wasi|node)$/'",
+    "build-wasi:release": "TARGET='rolldown-wasi' pnpm run --sequential '/^build-(binding|binding:wasi:release|node)$/'",
+    "build-browser-pkg:debug": "TARGET='browser' pnpm run --sequential '/^build-(binding|binding:wasi|node)$/'",
+    "build-browser-pkg:release": "TARGET='browser' pnpm run --sequential '/^build-(binding|binding:wasi:release|node)$/'",
+    "# Scrips for docs #": "_",
+    "prepublishOnly": "napi pre-publish -t npm --no-gh-release"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "devDependencies": {
-    "@emnapi/core": "^1.7.1",
-    "@emnapi/runtime": "^1.7.1",
     "@napi-rs/cli": "^3.5.0",
-    "@oxc-node/core": "^0.0.35",
-    "@tybys/wasm-util": "^0.10.1",
-    "tinybench": "^6.0.0"
+    "@oxc-node/cli": "^0.0.35"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
   "napi": {
-    "binaryName": "baicie-napi",
+    "binaryName": "baicie-binding",
+    "packageName": "@baicie/binding",
     "targets": [
-      "x86_64-pc-windows-msvc",
       "x86_64-apple-darwin",
+      "x86_64-pc-windows-msvc",
       "x86_64-unknown-linux-gnu",
       "x86_64-unknown-linux-musl",
-      "aarch64-unknown-linux-gnu",
-      "i686-pc-windows-msvc",
-      "armv7-unknown-linux-gnueabihf",
-      "aarch64-apple-darwin",
-      "aarch64-linux-android",
       "x86_64-unknown-freebsd",
+      "armv7-unknown-linux-gnueabihf",
+      "aarch64-unknown-linux-gnu",
+      "aarch64-apple-darwin",
       "aarch64-unknown-linux-musl",
+      "aarch64-unknown-linux-ohos",
       "aarch64-pc-windows-msvc",
-      "armv7-linux-androideabi",
+      "aarch64-linux-android",
       "wasm32-wasip1-threads"
-    ]
+    ],
+    "wasm": {
+      "initialMemory": 16384,
+      "browser": {
+        "fs": true,
+        "asyncInit": true
+      }
+    }
   }
 }

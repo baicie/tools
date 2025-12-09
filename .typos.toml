@@ -1,0 +1,24 @@
+# https://github.com/crate-ci/typos
+# cargo install typos-cli
+# typos
+
+[files]
+extend-exclude = [
+  "*.snap",
+  "*.json",
+  "/CHANGELOG*.md",
+  "node_modules/**",
+  "dist/**",
+  "packages/*/dist/**",
+  "packages/*/node_modules/**",
+  "temp/**",
+  "coverage/**",
+  "target/**",
+  ".pnpm-store/**",
+]
+
+[default.extend-words]
+splitted = "splitted"
+styl     = "styl"
+
+[default.extend-identifiers]

@@ -1,14 +1,23 @@
 {
+  "extends": "../../tsconfig.base.json",
+  "include": ["./src/**/*"],
+  "exclude": [
+    "*.js",
+    "*.mjs",
+    "*.cjs",
+    "dist",
+    "lib",
+    "./src/log/locate-character" // the extracted .d.ts from js files has typing error, ignore it because it's not used
+  ],
   "compilerOptions": {
-    "target": "ESNext",
-    "strict": true,
-    "moduleResolution": "node",
-    "module": "CommonJS",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
-  },
-  "include": ["."],
-  "exclude": ["node_modules", "bench", "__test__"]
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "resolveJsonModule": true,
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "experimentalDecorators": true
+  }
 }

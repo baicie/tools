@@ -70,13 +70,13 @@ function requireNative() {
   } else if (process.platform === 'android') {
     if (process.arch === 'arm64') {
       try {
-        return require('./baicie-napi.android-arm64.node')
+        return require('./baicie-binding.android-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-android-arm64')
-        const bindingPackageVersion = require('@baicie/napi-android-arm64/package.json').version
+        const binding = require('@baicie/binding-android-arm64')
+        const bindingPackageVersion = require('@baicie/binding-android-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -86,13 +86,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./baicie-napi.android-arm-eabi.node')
+        return require('./baicie-binding.android-arm-eabi.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-android-arm-eabi')
-        const bindingPackageVersion = require('@baicie/napi-android-arm-eabi/package.json').version
+        const binding = require('@baicie/binding-android-arm-eabi')
+        const bindingPackageVersion = require('@baicie/binding-android-arm-eabi/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -107,46 +107,46 @@ function requireNative() {
     if (process.arch === 'x64') {
       if (process.config?.variables?.shlib_suffix === 'dll.a' || process.config?.variables?.node_target_type === 'shared_library') {
         try {
-        return require('./baicie-napi.win32-x64-gnu.node')
-      } catch (e) {
-        loadErrors.push(e)
-      }
-      try {
-        const binding = require('@baicie/napi-win32-x64-gnu')
-        const bindingPackageVersion = require('@baicie/napi-win32-x64-gnu/package.json').version
-        if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
-          throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          return require('./baicie-binding.win32-x64-gnu.node')
+        } catch (e) {
+          loadErrors.push(e)
         }
-        return binding
-      } catch (e) {
-        loadErrors.push(e)
-      }
+        try {
+          const binding = require('@baicie/binding-win32-x64-gnu')
+          const bindingPackageVersion = require('@baicie/binding-win32-x64-gnu/package.json').version
+          if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
+        } catch (e) {
+          loadErrors.push(e)
+        }
       } else {
         try {
-        return require('./baicie-napi.win32-x64-msvc.node')
-      } catch (e) {
-        loadErrors.push(e)
-      }
-      try {
-        const binding = require('@baicie/napi-win32-x64-msvc')
-        const bindingPackageVersion = require('@baicie/napi-win32-x64-msvc/package.json').version
-        if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
-          throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          return require('./baicie-binding.win32-x64-msvc.node')
+        } catch (e) {
+          loadErrors.push(e)
         }
-        return binding
-      } catch (e) {
-        loadErrors.push(e)
-      }
+        try {
+          const binding = require('@baicie/binding-win32-x64-msvc')
+          const bindingPackageVersion = require('@baicie/binding-win32-x64-msvc/package.json').version
+          if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
+            throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
+          }
+          return binding
+        } catch (e) {
+          loadErrors.push(e)
+        }
       }
     } else if (process.arch === 'ia32') {
       try {
-        return require('./baicie-napi.win32-ia32-msvc.node')
+        return require('./baicie-binding.win32-ia32-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-win32-ia32-msvc')
-        const bindingPackageVersion = require('@baicie/napi-win32-ia32-msvc/package.json').version
+        const binding = require('@baicie/binding-win32-ia32-msvc')
+        const bindingPackageVersion = require('@baicie/binding-win32-ia32-msvc/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -156,13 +156,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./baicie-napi.win32-arm64-msvc.node')
+        return require('./baicie-binding.win32-arm64-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-win32-arm64-msvc')
-        const bindingPackageVersion = require('@baicie/napi-win32-arm64-msvc/package.json').version
+        const binding = require('@baicie/binding-win32-arm64-msvc')
+        const bindingPackageVersion = require('@baicie/binding-win32-arm64-msvc/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -175,13 +175,13 @@ function requireNative() {
     }
   } else if (process.platform === 'darwin') {
     try {
-      return require('./baicie-napi.darwin-universal.node')
+      return require('./baicie-binding.darwin-universal.node')
     } catch (e) {
       loadErrors.push(e)
     }
     try {
-      const binding = require('@baicie/napi-darwin-universal')
-      const bindingPackageVersion = require('@baicie/napi-darwin-universal/package.json').version
+      const binding = require('@baicie/binding-darwin-universal')
+      const bindingPackageVersion = require('@baicie/binding-darwin-universal/package.json').version
       if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
         throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
       }
@@ -191,13 +191,13 @@ function requireNative() {
     }
     if (process.arch === 'x64') {
       try {
-        return require('./baicie-napi.darwin-x64.node')
+        return require('./baicie-binding.darwin-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-darwin-x64')
-        const bindingPackageVersion = require('@baicie/napi-darwin-x64/package.json').version
+        const binding = require('@baicie/binding-darwin-x64')
+        const bindingPackageVersion = require('@baicie/binding-darwin-x64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -207,13 +207,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./baicie-napi.darwin-arm64.node')
+        return require('./baicie-binding.darwin-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-darwin-arm64')
-        const bindingPackageVersion = require('@baicie/napi-darwin-arm64/package.json').version
+        const binding = require('@baicie/binding-darwin-arm64')
+        const bindingPackageVersion = require('@baicie/binding-darwin-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -227,13 +227,13 @@ function requireNative() {
   } else if (process.platform === 'freebsd') {
     if (process.arch === 'x64') {
       try {
-        return require('./baicie-napi.freebsd-x64.node')
+        return require('./baicie-binding.freebsd-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-freebsd-x64')
-        const bindingPackageVersion = require('@baicie/napi-freebsd-x64/package.json').version
+        const binding = require('@baicie/binding-freebsd-x64')
+        const bindingPackageVersion = require('@baicie/binding-freebsd-x64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -243,13 +243,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./baicie-napi.freebsd-arm64.node')
+        return require('./baicie-binding.freebsd-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-freebsd-arm64')
-        const bindingPackageVersion = require('@baicie/napi-freebsd-arm64/package.json').version
+        const binding = require('@baicie/binding-freebsd-arm64')
+        const bindingPackageVersion = require('@baicie/binding-freebsd-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -264,13 +264,13 @@ function requireNative() {
     if (process.arch === 'x64') {
       if (isMusl()) {
         try {
-          return require('./baicie-napi.linux-x64-musl.node')
+          return require('./baicie-binding.linux-x64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-x64-musl')
-          const bindingPackageVersion = require('@baicie/napi-linux-x64-musl/package.json').version
+          const binding = require('@baicie/binding-linux-x64-musl')
+          const bindingPackageVersion = require('@baicie/binding-linux-x64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -280,13 +280,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./baicie-napi.linux-x64-gnu.node')
+          return require('./baicie-binding.linux-x64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-x64-gnu')
-          const bindingPackageVersion = require('@baicie/napi-linux-x64-gnu/package.json').version
+          const binding = require('@baicie/binding-linux-x64-gnu')
+          const bindingPackageVersion = require('@baicie/binding-linux-x64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -298,13 +298,13 @@ function requireNative() {
     } else if (process.arch === 'arm64') {
       if (isMusl()) {
         try {
-          return require('./baicie-napi.linux-arm64-musl.node')
+          return require('./baicie-binding.linux-arm64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-arm64-musl')
-          const bindingPackageVersion = require('@baicie/napi-linux-arm64-musl/package.json').version
+          const binding = require('@baicie/binding-linux-arm64-musl')
+          const bindingPackageVersion = require('@baicie/binding-linux-arm64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -314,13 +314,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./baicie-napi.linux-arm64-gnu.node')
+          return require('./baicie-binding.linux-arm64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-arm64-gnu')
-          const bindingPackageVersion = require('@baicie/napi-linux-arm64-gnu/package.json').version
+          const binding = require('@baicie/binding-linux-arm64-gnu')
+          const bindingPackageVersion = require('@baicie/binding-linux-arm64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -332,13 +332,13 @@ function requireNative() {
     } else if (process.arch === 'arm') {
       if (isMusl()) {
         try {
-          return require('./baicie-napi.linux-arm-musleabihf.node')
+          return require('./baicie-binding.linux-arm-musleabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-arm-musleabihf')
-          const bindingPackageVersion = require('@baicie/napi-linux-arm-musleabihf/package.json').version
+          const binding = require('@baicie/binding-linux-arm-musleabihf')
+          const bindingPackageVersion = require('@baicie/binding-linux-arm-musleabihf/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -348,13 +348,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./baicie-napi.linux-arm-gnueabihf.node')
+          return require('./baicie-binding.linux-arm-gnueabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-arm-gnueabihf')
-          const bindingPackageVersion = require('@baicie/napi-linux-arm-gnueabihf/package.json').version
+          const binding = require('@baicie/binding-linux-arm-gnueabihf')
+          const bindingPackageVersion = require('@baicie/binding-linux-arm-gnueabihf/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -366,13 +366,13 @@ function requireNative() {
     } else if (process.arch === 'loong64') {
       if (isMusl()) {
         try {
-          return require('./baicie-napi.linux-loong64-musl.node')
+          return require('./baicie-binding.linux-loong64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-loong64-musl')
-          const bindingPackageVersion = require('@baicie/napi-linux-loong64-musl/package.json').version
+          const binding = require('@baicie/binding-linux-loong64-musl')
+          const bindingPackageVersion = require('@baicie/binding-linux-loong64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -382,13 +382,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./baicie-napi.linux-loong64-gnu.node')
+          return require('./baicie-binding.linux-loong64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-loong64-gnu')
-          const bindingPackageVersion = require('@baicie/napi-linux-loong64-gnu/package.json').version
+          const binding = require('@baicie/binding-linux-loong64-gnu')
+          const bindingPackageVersion = require('@baicie/binding-linux-loong64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -400,13 +400,13 @@ function requireNative() {
     } else if (process.arch === 'riscv64') {
       if (isMusl()) {
         try {
-          return require('./baicie-napi.linux-riscv64-musl.node')
+          return require('./baicie-binding.linux-riscv64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-riscv64-musl')
-          const bindingPackageVersion = require('@baicie/napi-linux-riscv64-musl/package.json').version
+          const binding = require('@baicie/binding-linux-riscv64-musl')
+          const bindingPackageVersion = require('@baicie/binding-linux-riscv64-musl/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -416,13 +416,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./baicie-napi.linux-riscv64-gnu.node')
+          return require('./baicie-binding.linux-riscv64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('@baicie/napi-linux-riscv64-gnu')
-          const bindingPackageVersion = require('@baicie/napi-linux-riscv64-gnu/package.json').version
+          const binding = require('@baicie/binding-linux-riscv64-gnu')
+          const bindingPackageVersion = require('@baicie/binding-linux-riscv64-gnu/package.json').version
           if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -433,13 +433,13 @@ function requireNative() {
       }
     } else if (process.arch === 'ppc64') {
       try {
-        return require('./baicie-napi.linux-ppc64-gnu.node')
+        return require('./baicie-binding.linux-ppc64-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-linux-ppc64-gnu')
-        const bindingPackageVersion = require('@baicie/napi-linux-ppc64-gnu/package.json').version
+        const binding = require('@baicie/binding-linux-ppc64-gnu')
+        const bindingPackageVersion = require('@baicie/binding-linux-ppc64-gnu/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -449,13 +449,13 @@ function requireNative() {
       }
     } else if (process.arch === 's390x') {
       try {
-        return require('./baicie-napi.linux-s390x-gnu.node')
+        return require('./baicie-binding.linux-s390x-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-linux-s390x-gnu')
-        const bindingPackageVersion = require('@baicie/napi-linux-s390x-gnu/package.json').version
+        const binding = require('@baicie/binding-linux-s390x-gnu')
+        const bindingPackageVersion = require('@baicie/binding-linux-s390x-gnu/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -469,13 +469,13 @@ function requireNative() {
   } else if (process.platform === 'openharmony') {
     if (process.arch === 'arm64') {
       try {
-        return require('./baicie-napi.openharmony-arm64.node')
+        return require('./baicie-binding.openharmony-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-openharmony-arm64')
-        const bindingPackageVersion = require('@baicie/napi-openharmony-arm64/package.json').version
+        const binding = require('@baicie/binding-openharmony-arm64')
+        const bindingPackageVersion = require('@baicie/binding-openharmony-arm64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -485,13 +485,13 @@ function requireNative() {
       }
     } else if (process.arch === 'x64') {
       try {
-        return require('./baicie-napi.openharmony-x64.node')
+        return require('./baicie-binding.openharmony-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-openharmony-x64')
-        const bindingPackageVersion = require('@baicie/napi-openharmony-x64/package.json').version
+        const binding = require('@baicie/binding-openharmony-x64')
+        const bindingPackageVersion = require('@baicie/binding-openharmony-x64/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -501,13 +501,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./baicie-napi.openharmony-arm.node')
+        return require('./baicie-binding.openharmony-arm.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('@baicie/napi-openharmony-arm')
-        const bindingPackageVersion = require('@baicie/napi-openharmony-arm/package.json').version
+        const binding = require('@baicie/binding-openharmony-arm')
+        const bindingPackageVersion = require('@baicie/binding-openharmony-arm/package.json').version
         if (bindingPackageVersion !== '0.1.0' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 0.1.0 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -529,7 +529,7 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
   let wasiBinding = null
   let wasiBindingError = null
   try {
-    wasiBinding = require('./baicie-napi.wasi.cjs')
+    wasiBinding = require('./baicie-binding.wasi.cjs')
     nativeBinding = wasiBinding
   } catch (err) {
     if (process.env.NAPI_RS_FORCE_WASI) {
@@ -538,7 +538,7 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
   }
   if (!nativeBinding) {
     try {
-      wasiBinding = require('@baicie/napi-wasm32-wasi')
+      wasiBinding = require('@baicie/binding-wasm32-wasi')
       nativeBinding = wasiBinding
     } catch (err) {
       if (process.env.NAPI_RS_FORCE_WASI) {
@@ -558,8 +558,8 @@ if (!nativeBinding) {
   if (loadErrors.length > 0) {
     throw new Error(
       `Cannot find native binding. ` +
-        `npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). ` +
-        'Please try `npm i` again after removing both package-lock.json and node_modules directory.',
+      `npm has a bug related to optional dependencies (https://github.com/npm/cli/issues/4828). ` +
+      'Please try `npm i` again after removing both package-lock.json and node_modules directory.',
       {
         cause: loadErrors.reduce((err, cur) => {
           cur.cause = err
