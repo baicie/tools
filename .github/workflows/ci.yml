@@ -97,7 +97,7 @@ jobs:
     with:
       os: ${{ matrix.target }}
       changed: ${{ needs.changes.outputs.node-changes == 'true' }}
-  
+
   other-test:
     needs: changes
     strategy:
@@ -115,71 +115,70 @@ jobs:
       changed: ${{ needs.changes.outputs.node-changes == 'true' }}
 
   build-browser:
-        name: Build `@baicie/napi-browser`
-        needs: [changes]
-        if: ${{ needs.changes.outputs.node-changes == 'true' }}
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-            with:
-              submodules: true # Pull submodules for additional files
-              persist-credentials: false
-    
-          - name: Setup Rust
-            uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
-            with:
-              tools: just
-              cache-key: debug-build-wasi
-    
-          - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
-    
-          - name: Add WASI target
-            run: rustup target add wasm32-wasip1-threads
-    
-          - name: Build `@baicie/napi-browser`
-            run: just build-browser
-    
-  wasi-test:
-        needs: [changes, build-napi-wasi]
-        if: |
-          always() &&
-          (needs.build-napi-wasi.result == 'success' || needs.build-napi-wasi.result == 'skipped')
-        strategy:
-          matrix:
-            target: [ubuntu-latest, macos-latest, windows-latest]
-        uses: ./.github/workflows/reusable-wasi-test.yml
+    name: Build `@baicie/napi-browser`
+    needs: [changes]
+    if: ${{ needs.changes.outputs.node-changes == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
-          os: ${{ matrix.target }}
-          changed: ${{ needs.changes.outputs.node-changes == 'true' }}
+          submodules: true # Pull submodules for additional files
+          persist-credentials: false
+
+      - name: Setup Rust
+        uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
+        with:
+          tools: just
+          cache-key: debug-build-wasi
+
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
+      - name: Add WASI target
+        run: rustup target add wasm32-wasip1-threads
+
+      - name: Build `@baicie/napi-browser`
+        run: just build-browser
+
+  wasi-test:
+    needs: [changes, build-napi-wasi]
+    if: |
+      always() &&
+      (needs.build-napi-wasi.result == 'success' || needs.build-napi-wasi.result == 'skipped')
+    strategy:
+      matrix:
+        target: [ubuntu-latest, macos-latest, windows-latest]
+    uses: ./.github/workflows/reusable-wasi-test.yml
+    with:
+      os: ${{ matrix.target }}
+      changed: ${{ needs.changes.outputs.node-changes == 'true' }}
 
   node-validation:
-        name: Node Validation
-        needs: changes
-        if: ${{ needs.changes.outputs.node-changes == 'true' }}
-        runs-on: ubuntu-latest
-        steps:
-          - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
-    
-          - name: Setup Rust
-            uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
-            with:
-              tools: just
-              cache-key: debug-build
-    
-          - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
-    
-          - name: Build Native Napi
-            run: just build-napi
+    name: Node Validation
+    needs: changes
+    if: ${{ needs.changes.outputs.node-changes == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
-          - name: Lint Code
-            run: pnpm lint
-    
+      - name: Setup Rust
+        uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
+        with:
+          tools: just
+          cache-key: debug-build
+
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
+      - name: Build Native Napi
+        run: just build-napi
+
+      - name: Lint Code
+        run: pnpm lint
+
   typos:
-        name: Spell Check
-        runs-on: ubuntu-latest
-        steps:
-          - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
-          - uses: crate-ci/typos@2d0ce569feab1f8752f1dde43cc2f2aa53236e06 # v1.40.0
-            with:
-              files: .
-    
+    name: Spell Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+      - uses: crate-ci/typos@2d0ce569feab1f8752f1dde43cc2f2aa53236e06 # v1.40.0
+        with:
+          files: .
