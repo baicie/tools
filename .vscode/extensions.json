@@ -1,7 +1,6 @@
 {
   "recommendations": [
     "editorconfig.editorconfig",
-    "rust-lang.rust-analyzer",
-    "dprint.dprint"
+    "rust-lang.rust-analyzer"
   ]
 }
