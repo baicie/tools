@@ -17,25 +17,25 @@ const buildMeta = (function makeBuildMeta() {
   type TargetBrowserPkg = 'browser-pkg'
 
   // Refer to `rolldown` package
-  type TargetRolldownPkg = 'rolldown-pkg'
+  type TargetRolldownPkg = 'napi-pkg'
 
-  type TargetRolldownPkgWasi = 'rolldown-pkg-wasi'
+  type TargetRolldownPkgWasi = 'napi-pkg-wasi'
 
   const target: TargetBrowserPkg | TargetRolldownPkg | TargetRolldownPkgWasi =
     (function determineTarget() {
       switch (process.env.TARGET) {
         case undefined:
-        case 'rolldown':
-          return 'rolldown-pkg'
+        case 'napi':
+          return 'napi-pkg'
         case 'browser':
           return 'browser-pkg'
-        case 'rolldown-wasi':
-          return 'rolldown-pkg-wasi'
+        case 'napi-wasi':
+          return 'napi-pkg-wasi'
         default:
           console.warn(
-            `Unknown target: ${process.env.TARGET}, defaulting to 'rolldown-pkg'`,
+            `Unknown target: ${process.env.TARGET}, defaulting to 'napi-pkg'`,
           )
-          return 'rolldown-pkg'
+          return 'napi-pkg'
       }
     })()
 
@@ -53,7 +53,7 @@ const buildMeta = (function makeBuildMeta() {
     pkgJson: JSON.parse(
       fs.readFileSync(nodePath.resolve(pkgRoot, 'package.json'), 'utf-8'),
     ),
-    desireWasmFiles: target === 'browser-pkg' || target === 'rolldown-pkg-wasi',
+    desireWasmFiles: target === 'browser-pkg' || target === 'napi-pkg-wasi',
   }
 })()
 
