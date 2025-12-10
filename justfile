@@ -15,20 +15,12 @@ setup:
   corepack enable
   pnpm install
   just setup-submodule
-  just setup-bench
   @echo "✅✅✅ Setup complete!"
 
 setup-submodule:
   git submodule update --init
 
-setup-bench:
-  node --import @oxc-node/core/register ./scripts/misc/setup-benchmark-input/index.js
-
-# Update the submodule to the latest commit
-update-submodule:
-  git submodule update --init
-
-# --- `roll` series commands will run all relevant commands in one go.
+<!-- # --- `roll` series commands will run all relevant commands in one go.
 
 # Run all relevant commands.
 roll: pnpm-install roll-rust roll-node roll-repo
@@ -52,12 +44,12 @@ test-update:
 
 # Update snapshots for Node.js tests.
 test-update-node:
-  just test-node --update
+  just test-node --update -->
 
 # Run Rust tests.
 test-rust: pnpm-install
-  cargo test --workspace --exclude rolldown_binding
-
+  cargo test --workspace
+<!-- 
 # Run Node.js tests for Rolldown.
 test-node-rolldown *args="": build-rolldown
   just t-node-rolldown {{ args }}
@@ -84,9 +76,9 @@ test-node-hmr-only *args:
 
 # Run Vite's test suite to check Rolldown's behaviors.
 test-vite: # We don't use `test-node-vite` because it's not expected to run in `just test-node`.
-  pnpm run --filter vite-tests test
+  pnpm run --filter vite-tests test -->
 
-# --- `t` series commands provide scenario-specific shortcut commands for testing compared to `test` series commands.
+<!-- # --- `t` series commands provide scenario-specific shortcut commands for testing compared to `test` series commands.
 
 # Run both Rolldown's tests and Rollup's test suite without building Rolldown.
 t-node: t-node-rolldown t-node-rollup
@@ -133,7 +125,7 @@ fix-repo:
 
 lint: lint-rust lint-node lint-repo
 
-# Linting formatting, syntax and linting issues for Rust files.
+# Linting formatting, syntax and linting issues for Rust files. -->
 lint-rust: clippy
   cargo fmt --all --check
   cargo check --workspace --all-features --all-targets --locked
@@ -147,86 +139,49 @@ clippy:
 lint-node:
   pnpm lint-code
   pnpm type-check
-  pnpm lint-knip
 
 lint-repo:
   typos # Check if the spelling is correct.
   cargo ls-lint # Check if the file names are correct.
-  pnpm fmt-check # Check if files are formatted correctly.
+  pnpm format-check # Check if files are formatted correctly.
 
 # --- `build` series commands aim to provide a easy way to build the project.
 
 
 
-# Build both `@rolldown/pluginutils` and rolldown
-build: build-pluginutils build-rolldown
+# Build `@baicie/napi`
+build: build-napi
 
-# Build `@rolldown/debug` located in `packages/debug`.
-build-rolldown-debug:
-  pnpm run --filter "@rolldown/debug" build
-
-# Only build `rolldown` located in `packages/rolldown` itself without triggering building binding `crates/rolldown_binding`.
-build-glue:
-  pnpm run --filter rolldown build-js-glue
-
-# Only build `.node` binding located in `packages/rolldown`.
-build-rolldown-binding:
+# Only build `.node` binding located in `packages/napi`.
+build-binding:
   pnpm run --filter @baicie/napi build-binding
 
 # Build `@baicie/napi` located in `packages/napi` itself and its `.node` binding.
 build-napi:
   pnpm run --filter @baicie/napi build-native:debug
 
-# Build `napi` located in `packages/npi` itself and its `.wasm` binding for WASI.
+# Build `@baicie/napi` located in `packages/npi` itself and its `.wasm` binding for WASI.
 build-napi-wasi:
   pnpm run --filter @baicie/napi build-wasi:debug
 
-# Build `rolldown` located in `packages/rolldown` itself and its `.node` binding in release mode.
-build-rolldown-release: build-pluginutils
-  pnpm run --filter rolldown build-native:release
+# Build `@baicie/napi` located in `packages/napi` itself and its `.node` binding in release mode.
+build-napi-release:
+  pnpm run --filter @baicie/napi build-native:release
 
-# Build `rolldown` located in `packages/rolldown` itself and its `.node` binding in profile mode.
-build-rolldown-profile:
-  pnpm run --filter rolldown build-native:profile
+# Build `@baicie/napi` located in `packages/napi` itself and its `.node` binding in profile mode.
+build-napi-profile:
+  pnpm run --filter @baicie/napi build-native:profile
 
-build-rolldown-memory-profile:
-  pnpm run --filter rolldown build-native:memory-profile
+build-napi-memory-profile:
+  pnpm run --filter @baicie/napi build-native:memory-profile
 
 # Build `@baicie/napi-browser` located in `packages/napi-browser` itself and its `.wasm` binding.
 build-browser:
   pnpm run --filter "@baicie/napi-browser" build:debug
 
-# Build `@rolldown/browser` located in `packages/browser` itself and its `.wasm` binding in release mode.
-build-browser-release: build-pluginutils
-  pnpm run --filter "@rolldown/browser" build:release
-
-# Build `@rolldown/pluginutils` located in `packages/pluginutils`.
-build-pluginutils:
-  pnpm run --filter "@rolldown/pluginutils" build
-
-# Build `@rolldown/test-dev-server` located in `packages/test-dev-server`.
-build-test-dev-server:
-  pnpm run --filter @rolldown/test-dev-server build
-
-# --- `bench` series commands aim to provide a easy way to run benchmarks.
-
-bench-rust:
-  cargo bench -p bench
-
-bench-node:
-  pnpm --filter bench run bench
-
-bench-node-par:
-  pnpm --filter bench exec node ./benches/par.js
-
-
-# --- Misc
-
-bump-packages *args:
-  node --import @oxc-node/core/register ./scripts/misc/bump-version.js {{ args }}
-
-check-setup-prerequisites:
-  node ./scripts/misc/setup-prerequisites/node.js
+# Build `@baicie/napi-browser` located in `packages/napi-browser` itself and its `.wasm` binding in release mode.
+build-browser-release:
+  pnpm run --filter "@baicie/napi-browser" build:release
 
 # Trigger pnpm install. This is used the ensure up-to-date dependencies before running any commands.
 pnpm-install:
