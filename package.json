@@ -16,7 +16,7 @@
     "format-rs": "cargo fmt",
     "format-check": "prettier --check --cache .",
     "test": "vitest",
-    "test-unit": "vitest --project unit*",
+    "test-unit": "vitest --project unit --project unit-jsdom",
     "test-e2e": "vitest --project e2e",
     "test-napi": "vitest --project napi",
     "test-coverage": "vitest run --project unit* --coverage",
