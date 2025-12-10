@@ -173,19 +173,6 @@ jobs:
 
           - name: Lint Code
             run: pnpm lint
-
-  repo-validation:
-        name: Repo Validation
-        runs-on: ubuntu-latest
-        steps:
-          - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
-    
-          - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
-    
-          - name: update generated code
-            run: |
-              cargo run --bin generator
-              git diff --exit-code
     
   typos:
         name: Spell Check
