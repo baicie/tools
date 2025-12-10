@@ -1,6 +1,8 @@
 set windows-shell := ["powershell"]
 set shell := ["bash", "-cu"]
 
+alias dt := t-run
+
 _default:
   just --list -u
 
@@ -81,3 +83,11 @@ pnpm-install:
 # Run the `rolldown` cli using node.
 run *args:
   pnpm rolldown {{ args }}
+
+[unix]
+t-run *args:
+  NEEDS_EXTENDED=false cargo run-fixture {{ args }}
+
+[windows]
+t-run *args:
+  $env:NEEDS_EXTENDED="false"; cargo run-fixture {{ args }}
