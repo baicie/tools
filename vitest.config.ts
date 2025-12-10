@@ -55,7 +55,7 @@ export default defineConfig({
         test: {
           name: 'napi',
           exclude: [...configDefaults.exclude, '**/e2e/**'],
-          include: ['packages/napi/__test__/*.spec.ts'],
+          include: ['packages/napi/tests/*.spec.ts'],
         },
       },
     ],

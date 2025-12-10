@@ -53,7 +53,7 @@ jobs:
           package-manager-cache: false
 
       - name: Napi Test For Node20
-        run: pnpm run --filter @baicie/napi test
+        run: pnpm run test-napi
 
       - name: Setup Node22 For Testing
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
@@ -62,7 +62,7 @@ jobs:
           package-manager-cache: false
 
       - name: Napi Test For Node22
-        run: pnpm run --filter @baicie/napi test
+        run: pnpm run test-napi
 
       - name: Setup Node24 For Testing
         uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
@@ -71,4 +71,4 @@ jobs:
           package-manager-cache: false
 
       - name: Napi Test For Node24
-        run: pnpm run --filter @baicie/napi test
+        run: pnpm run test-napi
