@@ -6,6 +6,7 @@ import { dts } from 'rolldown-plugin-dts'
 
 import { build } from 'rolldown'
 import type { BuildOptions, Plugin } from 'rolldown'
+import { CopyAddonPlugin } from './copy-addon-plugin'
 
 const __dirname = nodePath.join(fileURLToPath(import.meta.url), '..')
 
@@ -124,6 +125,11 @@ function withShared({
     ...options,
     plugins: [
       buildMeta.desireWasmFiles && resolveWasiBinding(isBrowserBuild),
+      CopyAddonPlugin({
+        isCI: buildMeta.isCI,
+        isReleasingPkgInCI: buildMeta.isReleasingPkgInCI,
+        desireWasmFiles: buildMeta.desireWasmFiles,
+      }),
       isBrowserBuild && removeBuiltModules(),
       options.plugins,
     ],
