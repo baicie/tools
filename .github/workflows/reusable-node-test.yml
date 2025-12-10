@@ -35,6 +35,7 @@ jobs:
       - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
 
       - name: Build Native Napi
+        shell: bash
         run: just build-napi
 
       - name: Check no diff

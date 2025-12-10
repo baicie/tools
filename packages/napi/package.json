@@ -30,7 +30,7 @@
     "# Scrips for node #": "_",
     "build-node": "oxnode -C dev ./build.ts",
     "build-js-glue": "pnpm run --sequential '/^build-(node)$/'",
-    "build-native:debug": "pnpm run build-binding && pnpm run build-js-glue",
+    "build-native:debug": "pnpm run --sequential '/^build-(binding|js-glue)$/'",
     "build-native:release": "pnpm run --sequential '/^build-(binding:release|js-glue)$/'",
     "build-native:profile": "pnpm run build-binding:profile && pnpm run build-js-glue",
     "build-native:memory-profile": "pnpm run build-binding:profile --features default_global_allocator && pnpm run build-js-glue",

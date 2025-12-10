@@ -12,11 +12,7 @@ setup:
   # Node.js related setup
   corepack enable
   pnpm install
-  just setup-submodule
   @echo "✅✅✅ Setup complete!"
-
-setup-submodule:
-  git submodule update --init
 
 # Run Rust tests.
 test-rust: pnpm-install
