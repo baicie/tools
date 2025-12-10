@@ -29,7 +29,8 @@
     "postinstall": "pnpm stub && simple-git-hooks",
     "release": "tsx scripts/release.ts",
     "ci-publish": "tsx scripts/publish.ts",
-    "ci-docs": "pnpm docs-build"
+    "ci-docs": "pnpm docs-build",
+    "ci:build-release-binding": "pnpm --filter rolldown run build-binding:release"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged && pnpm type-check",
