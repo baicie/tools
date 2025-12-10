@@ -10,7 +10,6 @@ import type { BuildOptions, Plugin } from 'rolldown'
 const __dirname = nodePath.join(fileURLToPath(import.meta.url), '..')
 
 const buildMeta = (function makeBuildMeta() {
-  // Refer to `@rolldown/browser` package.
   // In `@rolldown/browser`, there will be two builds:
   // - ESM for Node (used in StackBlitz / WebContainers)
   // - ESM for browser bundlers (used in Vite and running in the browser)

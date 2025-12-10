@@ -3,3 +3,7 @@ packages:
   - playground/*
   - internal/*
   - docs
+
+catalog:
+  '@napi-rs/cli': '^3.5.0'
+  '@napi-rs/wasm-runtime': '^1.1.0'

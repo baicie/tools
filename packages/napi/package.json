@@ -1,5 +1,5 @@
 {
-  "name": "@baicie/binding",
+  "name": "@baicie/napi",
   "version": "0.1.0",
   "type": "module",
   "keywords": [],
@@ -35,10 +35,12 @@
     "build-native:release": "pnpm run --sequential '/^build-(binding:release|js-glue)$/'",
     "build-native:profile": "pnpm run build-binding:profile && pnpm run build-js-glue",
     "build-native:memory-profile": "pnpm run build-binding:profile --features default_global_allocator && pnpm run build-js-glue",
-    "build-wasi:debug": "TARGET='rolldown-wasi' pnpm run --sequential '/^build-(binding|binding:wasi|node)$/'",
-    "build-wasi:release": "TARGET='rolldown-wasi' pnpm run --sequential '/^build-(binding|binding:wasi:release|node)$/'",
+    "build-wasi:debug": "TARGET='napi-wasi' pnpm run --sequential '/^build-(binding|binding:wasi|node)$/'",
+    "build-wasi:release": "TARGET='publish-to-npm-wasi' pnpm run --sequential '/^build-(binding|binding:wasi:release|node)$/'",
     "build-browser-pkg:debug": "TARGET='browser' pnpm run --sequential '/^build-(binding|binding:wasi|node)$/'",
     "build-browser-pkg:release": "TARGET='browser' pnpm run --sequential '/^build-(binding|binding:wasi:release|node)$/'",
+    "# Scrips for testing #": "_",
+    "test": "vitest",
     "# Scrips for docs #": "_",
     "prepublishOnly": "napi pre-publish -t npm --no-gh-release"
   },
@@ -55,7 +57,7 @@
   },
   "napi": {
     "binaryName": "baicie-binding",
-    "packageName": "@baicie/binding",
+    "packageName": "@baicie/napi",
     "targets": [
       "x86_64-apple-darwin",
       "x86_64-pc-windows-msvc",

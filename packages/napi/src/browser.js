@@ -1,1 +1,1 @@
-export * from '@baicie/binding-wasm32-wasi'
+export * from '@baicie/napi-wasm32-wasi'

@@ -1,4 +1,4 @@
-name: 'public'
+name: Publish to NPM
 
 on:
   push:
@@ -13,85 +13,68 @@ on:
       - 'scripts@*'
       - 'napi@*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-napi:
-    name: Build napi packages
-    uses: ./.github/workflows/build-napi.yml
+    name: Build bindings and node packages
+    uses: ./.github/workflows/reusable-release-build.yml
 
   publish-napi:
-    needs: build-napi
-    if: github.repository == 'baicie/tools'
-    name: Publish npm Packages
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.1.0
-
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.node-version'
-          cache: 'pnpm'
-
-      - name: Download Binding Artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          path: packages/rolldown/artifacts
-
-      - name: Create rolldown/npm dirs
-        run: pnpm --filter rolldown exec napi create-npm-dirs
-
-      - name: Move Binding Artifacts
-        run: pnpm --filter rolldown artifacts
-
-      - name: List Rolldown Bindings
-        run: ls -R ./packages/rolldown/npm
-        shell: bash
-
-      - name: Download Node Artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          path: packages/rolldown/dist
-          name: node-artifact
-
-      - name: Download `@rolldown/browser` Artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          path: packages/browser/dist
-          name: browser-artifact
-
-      - name: Download `@rolldown/debug` Artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          path: packages/debug/dist
-          name: debug-artifact
-
-      - name: Download Pluginutils Artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          path: packages/pluginutils/dist
-          name: pluginutils-artifact
-
-      - name: Copy Licenses
-        run: |
-          find ./packages/ -type d -maxdepth 1 -exec cp LICENSE {} \;
-          find ./packages/ -type d -maxdepth 1 -exec cp THIRD-PARTY-LICENSE {} \;
-
-      - name: Publish(Dry Run)
-        run: |
-          pnpm publish -r --tag latest --dry-run --no-git-checks
-
-      - name: Publish
-        run: |
-          npm install -g npm
-          pnpm publish -r --tag latest --no-git-checks
-
+      needs: build-napi
+      if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi')
+      name: Publish npm Packages
+      runs-on: ubuntu-latest
+      permissions:
+        id-token: write # for `npm publish --provenance`
+      steps:
+        - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+  
+        - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+  
+        - name: Git Reset Hard
+          run: git reset --hard # fix pnpm install add new line for package.json
+  
+        - name: Download Binding Artifacts
+          uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+          with:
+            path: packages/napi/artifacts
+  
+        - name: Create @baicie/napi/npm dirs
+          run: pnpm --filter @baicie/napi exec napi create-npm-dirs
+  
+        - name: Move Binding Artifacts
+          run: pnpm --filter @baicie/napi artifacts
+  
+        - name: List Napi Bindings
+          run: ls -R ./packages/napi/npm
+          shell: bash
+  
+        - name: Download Node Artifacts
+          uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+          with:
+            path: packages/napi/dist
+            name: node-artifact
+  
+        - name: Download `@baicie/napi-browser` Artifacts
+          uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+          with:
+            path: packages/napi-browser/dist
+            name: browser-artifact
+  
+        - name: Publish(Dry Run)
+          run: |
+            pnpm publish -r --tag latest --dry-run --no-git-checks
+  
+        - name: Publish
+          run: |
+            npm install -g npm
+            pnpm publish -r --tag latest --no-git-checks
+  
   publish:
-    if: github.repository == 'baicie/tools'
+    if: github.repository == 'baicie/tools' && !startsWith(github.ref_name,'napi')
     runs-on: ubuntu-latest
     permissions:
       contents: read

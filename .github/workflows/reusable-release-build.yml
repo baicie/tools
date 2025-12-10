@@ -1,42 +1,15 @@
-name: 'napi'
+name: Release Build
+
+permissions: {}
 
 on:
   workflow_call:
     inputs:
-      version:
+      version: 
         type: string
         default: 'noop'
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.1.0
-
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.node-version'
-          cache: 'pnpm'
-
-      - name: Install
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - name: Install deps
-        run: pnpm install
-
-      - name: Cargo fmt
-        run: cargo fmt -- --check
-
-      - name: Clippy
-        run: cargo clippy
-
   build-binding:
     strategy:
       fail-fast: false
@@ -89,29 +62,23 @@ jobs:
           - os: ubuntu-latest
             target: wasm32-wasip1-threads
             build: |
-              pnpm --filter rolldown build-binding:wasi:release
+              pnpm --filter @baicie/napi build-binding:wasi:release
 
     name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.1.0
-
-      - name: Setup node
-        uses: actions/setup-node@v6
+      - name: Setup Rust
+        uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
         with:
-          node-version-file: '.node-version'
-          cache: 'pnpm'
+          cache-key: release-${{ matrix.target }}
+          save-cache: ${{ github.ref_name == 'main' }}
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: ${{ matrix.target }}
+      - name: Rustup Adds Target
+        run: rustup target add ${{ matrix.target }}
 
-      - uses: mlugg/setup-zig@v2
+      - uses: mlugg/setup-zig@fa65c4058643678a4e4a9a60513944a7d8d35440 # v2.1.0
         if: ${{ contains(matrix.target, 'musl') }}
         with:
           version: 0.14.1
@@ -120,16 +87,19 @@ jobs:
         if: ${{ contains(matrix.target, 'ohos') }}
         uses: Boshen/setup-ohos-sdk@edb865a89a712f1f15dbad932dfa9cfce849d95c # v1.0.0
 
-      - name: Install cargo-zigbuild
-        uses: taiki-e/install-action@v2
+      - uses: taiki-e/install-action@50708e9ba8d7b6587a2cb575ddaa9a62e927bc06 # v2.62.63
         if: ${{ contains(matrix.target, 'musl') }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           tool: cargo-zigbuild
 
-      - name: Install dependencies
-        run: pnpm install
+      # https://github.com/nodejs/node-gyp/issues/2869
+      - name: Setup python
+        run: pip install setuptools
+        if: ${{ matrix.os == 'macos-latest' }}
+
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
 
       - name: Build Binding
         run: ${{ matrix.build }}
@@ -137,8 +107,8 @@ jobs:
         env:
           TARGET_CC: clang # for mimalloc
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v5
+      - name: Upload Binding Artifact
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           if-no-files-found: error
           name: bindings-${{ matrix.target }}
@@ -150,19 +120,19 @@ jobs:
     name: Build FreeBSD
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
       - name: Build
         id: build
-        uses: cross-platform-actions/action@v0.30.0
+        uses: cross-platform-actions/action@46e8d7fb25520a8d6c64fd2b7a1192611da98eda # v0.30.0
         env:
           DEBUG: napi:*
           RUSTUP_IO_THREADS: 1
         with:
           operating_system: freebsd
-          version: '14.3'
+          version: '14.2'
           memory: 8G
           cpu_count: 3
-          environment_variables: DEBUG RUSTUP_IO_THREADS
+          environment_variables: 'DEBUG RUSTUP_IO_THREADS'
           shell: bash
           run: |
             sudo pkg install -y -f curl node libnghttp2 npm cmake
@@ -179,14 +149,13 @@ jobs:
             whoami
             env
             sudo corepack enable
-            sudo npm i -g corepack@latest 
+            sudo npm i -g corepack@latest # use a newer corepack due to https://github.com/nodejs/corepack/issues/612
             pnpm install --ignore-scripts
             pnpm ci:build-release-binding --target x86_64-unknown-freebsd
             rm -rf node_modules
             rm -rf target
-
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: bindings-x86_64-unknown-freebsd
           path: ./packages/napi/src/baicie-binding.*.node
@@ -194,71 +163,61 @@ jobs:
 
   build-node-packages:
     strategy:
-    fail-fast: false
+      fail-fast: false
     name: Build Node Package
     runs-on: ubuntu-latest
     env:
       RELEASING: 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.1.0
-
-      - name: Setup node
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: '.node-version'
-          cache: 'pnpm'
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
 
       - name: Build Node binding
-        run: pnpm --filter rolldown build-binding
+        run: pnpm --filter @baicie/napi build-binding
 
       - name: Build Node Packages
-        run: pnpm --filter rolldown build-node
+        run: pnpm --filter @baicie/napi build-node
 
       - name: Upload Node Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           if-no-files-found: error
           name: node-artifact
           path: |
             packages/napi/dist/**
 
-  build-rolldown-browser:
+  build-napi-browser:
     strategy:
       fail-fast: false
-    name: Build `@baicie/binding` browser Package
+    name: Build `@baicie/napi-browser` Package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.1.0
-
-      - name: Setup node
-        uses: actions/setup-node@v6
+      - name: Setup Rust
+        uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
         with:
-          node-version-file: '.node-version'
-          cache: 'pnpm'
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-          targets: wasm32-wasip1-threads
+          cache-key: release-wasm32-wasip1-threads
+          save-cache: ${{ github.ref_name == 'main' }}
 
       - name: Add WASI target
         run: rustup target add wasm32-wasip1-threads
 
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
       - name: Build Node binding
         # This binary is only used to build the node package itself. It's won't be published.
-        run: pnpm --filter rolldown build-binding
+        run: pnpm --filter @baicie/napi build-binding
 
-      # - name: Upload Wasm Artifact
-      #   uses: actions/upload-artifact@v5
-      #   with:
-      #     if-no-files-found: error
-      #     name: browser-artifact
-      #     path: |
-      #       packages/napi/dist/**
+      - name: Build `@baicie/napi-browser`
+        # Binaries are built in the previous steps. Unlike in local development, we only need to build the node package itself.
+        run: pnpm --filter "@baicie/napi-browser" build:release
+
+      - name: Upload `@baicie/napi-browser` Artifact
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          if-no-files-found: error
+          name: browser-artifact
+          path: |
+            packages/napi-browser/dist/**

@@ -1,0 +1,125 @@
+name: Other Test
+
+permissions: {}
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      changed:
+        required: true
+        type: boolean
+
+jobs:
+  build:
+    if: ${{ inputs.changed }}
+    name: Build
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.node-version'
+          cache: 'pnpm'
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install deps
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-dist
+          path: packages/*/dist/**
+
+  unit-test:
+    if: ${{ inputs.changed }}
+    name: Unit Test 
+    needs: build
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: true # Pull submodules for additional files
+          persist-credentials: false
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: build-dist
+          path: ./packages
+
+      - name: Debug paths
+        run: ls -R packages/cli
+
+      - name: Run unit tests
+        run: pnpm run test-unit
+
+  # e2e-test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+
+  #     - name: Setup cache for Chromium binary
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ~/.cache/puppeteer
+  #         key: chromium-${{ hashFiles('pnpm-lock.yaml') }}
+
+  #     - name: Install pnpm
+  #       uses: pnpm/action-setup@v4.1.0
+
+  #     - name: Install Node.js
+  #       uses: actions/setup-node@v6
+  #       with:
+  #         node-version-file: '.node-version'
+  #         cache: 'pnpm'
+
+  #     - run: pnpm install
+  #     # - run: node node_modules/puppeteer/install.mjs
+
+  #     - name: Run e2e tests
+  #       run: pnpm run test-e2e
+
+  lint-and-test-dts:
+    if: ${{ inputs.changed }}
+    name: Lint and Test DTS
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: true # Pull submodules for additional files
+          persist-credentials: false
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
+      - run: pnpm build
+
+      - name: Run eslint
+        run: pnpm run lint
+
+      - name: Run prettier
+        run: pnpm run format-check
+
+      - name: Run tsc
+        run: pnpm run check
+
+      - name: Run docs
+        run: pnpm run docs-build

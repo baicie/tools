@@ -1,43 +1,201 @@
-name: 'ci'
+name: CI
 
 on:
+  pull_request:
+    types: [opened, synchronize]
+  merge_group:
   push:
     branches:
-      - '**'
-    tags:
-      - '!**'
-  pull_request:
-    branches:
       - main
-      - minor
+      - 'renovate/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
-  test:
-    if: ${{ ! startsWith(github.event.head_commit.message, 'release:') && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository) }}
-    uses: ./.github/workflows/test.yml
+  changes: # https://github.com/dorny/paths-filter
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      rust-changes: ${{ (steps.filter.outputs.rust-changes == 'true') || (github.ref_name == 'main') }}
+      node-changes: ${{ (steps.filter.outputs.node-changes == 'true') || (github.ref_name == 'main') }}
+      other-changes: ${{ (steps.filter.outputs.other-changes == 'true') || (github.ref_name == 'main') }}
+    steps:
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
-  continuous-release:
-    if: github.repository == 'baicie/tools'
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            rust-changes: &rust-changes
+              - '.github/workflows/**'
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - '.gitattributes'
+              - 'justfile'
+            napi-changes:
+              - *rust-changes
+              - 'packages/napi/**'
+              - 'packages/napi-browser/**'
+              - 'scripts/**'
+              - 'package.json'
+              - 'justfile'
+            other-changes:
+              - 'packages/**'
+              - '!packages/napi/**'
+              - '!packages/napi-browser/**'
+              - 'scripts/**'
+              - 'package.json'
+              - 'justfile'
+      - name: Show outputs
+        run: |
+          echo "Rust changes: ${{ (steps.filter.outputs.rust-changes == 'true') || (github.ref_name == 'main') }}"
+          echo "Node changes: ${{ (steps.filter.outputs.node-changes == 'true') || (github.ref_name == 'main') }}"
+          echo "Other changes: ${{ (steps.filter.outputs.other-changes == 'true') || (github.ref_name == 'main') }}"
+
+  rust-validation:
+    name: Rust Validation
+    needs: changes
+    if: ${{ needs.changes.outputs.rust-changes == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Install Node.js
-        uses: actions/setup-node@v6
+      - name: Setup Rust
+        uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
         with:
-          node-version-file: '.node-version'
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'pnpm'
+          tools: just
+          cache-key: debug-build
+          components: clippy rustfmt
 
-      - name: Install deps
-        run: pnpm install
+      - run: just lint-rust
 
-      - name: Build
-        run: pnpm build
+  cargo-test:
+    needs: changes
+    strategy:
+      matrix:
+        target: [ubuntu-latest, macos-latest, windows-latest]
+    uses: ./.github/workflows/reusable-cargo-test.yml
+    with:
+      os: ${{ matrix.target }}
+      changed: ${{ needs.changes.outputs.rust-changes == 'true' }}
 
-      # - name: Release
-      #   run: pnpx pkg-pr-new publish --compact --pnpm './packages/*'
+  node-test:
+    needs: changes
+    strategy:
+      matrix:
+        target: [ubuntu-latest, macos-latest, windows-latest]
+    uses: ./.github/workflows/reusable-node-test.yml
+    with:
+      os: ${{ matrix.target }}
+      changed: ${{ needs.changes.outputs.node-changes == 'true' }}
+  
+  other-test:
+    needs: changes
+    strategy:
+      matrix:
+        target: [ubuntu-latest, macos-latest, windows-latest]
+    uses: ./.github/workflows/reusable-other-test.yml
+    with:
+      os: ${{ matrix.target }}
+      changed: ${{ needs.changes.outputs.other-changes == 'true' }}
+
+  build-napi-wasi:
+    needs: changes
+    uses: ./.github/workflows/reusable-wasi-build.yml
+    with:
+      changed: ${{ needs.changes.outputs.node-changes == 'true' }}
+
+  build-browser:
+        name: Build `@baicie/napi-browser`
+        needs: [changes]
+        if: ${{ needs.changes.outputs.node-changes == 'true' }}
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+            with:
+              submodules: true # Pull submodules for additional files
+              persist-credentials: false
+    
+          - name: Setup Rust
+            uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
+            with:
+              tools: just
+              cache-key: debug-build-wasi
+    
+          - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+    
+          - name: Add WASI target
+            run: rustup target add wasm32-wasip1-threads
+    
+          - name: Build `@baicie/napi-browser`
+            run: just build-browser
+    
+  wasi-test:
+        needs: [changes, build-napi-wasi]
+        if: |
+          always() &&
+          (needs.build-napi-wasi.result == 'success' || needs.build-napi-wasi.result == 'skipped')
+        strategy:
+          matrix:
+            target: [ubuntu-latest, macos-latest, windows-latest]
+        uses: ./.github/workflows/reusable-wasi-test.yml
+        with:
+          os: ${{ matrix.target }}
+          changed: ${{ needs.changes.outputs.node-changes == 'true' }}
+
+  node-validation:
+        name: Node Validation
+        needs: changes
+        if: ${{ needs.changes.outputs.node-changes == 'true' }}
+        runs-on: ubuntu-latest
+        steps:
+          - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+    
+          - name: Setup Rust
+            uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
+            with:
+              tools: just
+              cache-key: debug-build
+    
+          - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+    
+          - name: Build Native Napi
+            run: just build-napi
+
+          - name: Lint Code
+            run: pnpm lint
+
+  repo-validation:
+        name: Repo Validation
+        runs-on: ubuntu-latest
+        steps:
+          - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+    
+          - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+    
+          - name: Lint Filename
+            run: cargo ls-lint
+    
+          - name: update generated code
+            run: |
+              cargo run --bin generator
+              git diff --exit-code
+    
+  typos:
+        name: Spell Check
+        runs-on: ubuntu-latest
+        steps:
+          - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+          - uses: crate-ci/typos@2d0ce569feab1f8752f1dde43cc2f2aa53236e06 # v1.40.0
+            with:
+              files: .
+    

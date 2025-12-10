@@ -1,0 +1,42 @@
+name: WASI Test
+
+permissions: {}
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      changed:
+        required: true
+        type: boolean
+
+jobs:
+  run:
+    name: WASI Test
+    if: ${{ inputs.changed }}
+    runs-on: ${{ inputs.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: true # Pull submodules for additional files
+          persist-credentials: false
+
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
+      - name: Download Napi with WASI Binding
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: rolldown-wasi
+          path: ./packages
+
+      - name: Node Test
+        run: pnpm run --filter @baicie/napi-browser test
+        if: false
+        env:
+          NAPI_RS_FORCE_WASI: error
+          RD_LOG: trace

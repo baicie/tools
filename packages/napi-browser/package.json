@@ -1,0 +1,34 @@
+{
+  "name": "@baicie/napi-browser",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [],
+  "files": [
+    "dist",
+    "!*/.tsbuildinfo"
+  ],
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "browser": "./dist/index.browser.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "scripts": {
+    "build": "pnpm run build:debug",
+    "build:debug": "pnpm run --filter @baicie/napi build-browser-pkg:debug",
+    "build:release": "pnpm run --filter @baicie/napi build-browser-pkg:release",
+    "build-node": "TARGET='browser' pnpm run --filter @baicie/napi build-node",
+    "preinstall": "npx only-allow pnpm"
+  },
+  "dependencies": {
+    "@napi-rs/wasm-runtime": "catalog:"
+  }
+}

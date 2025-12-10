@@ -13,11 +13,9 @@
     }
   },
   "include": [
-    "packages/*/src",
-    "packages/*/__tests__",
-    "packages/*/__test__",
-    "packages/*/*.test.ts",
-    "packages/*/*.spec.ts",
+    "packages/**/tests",
+    "packages/**/*.test.ts",
+    "packages/**/*.spec.ts",
     "scripts/setup-vitest.ts"
   ],
   "exclude": [

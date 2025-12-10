@@ -1,0 +1,41 @@
+name: Rust Test
+
+permissions: {}
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      changed:
+        required: true
+        type: boolean
+
+jobs:
+  run:
+    if: ${{ inputs.changed }}
+    name: Cargo Test
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: true # Pull submodules for additional files
+          persist-credentials: false
+
+      - name: Setup Rust
+        uses: oxc-project/setup-rust@ecabb7322a2ba5aeedb3612d2a40b86a85cee235 # v1.0.11
+        with:
+          tools: just
+          cache-key: debug-build
+
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
+      - name: Build
+        run: cargo test --workspace --no-run
+
+      - name: Run Test
+        run: just test-rust
+        env:
+          # Reject updated snapshots https://insta.rs/docs/advanced/#controlling-snapshot-updating
+          INSTA_UPDATE: no

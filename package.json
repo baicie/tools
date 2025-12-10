@@ -7,7 +7,7 @@
   "scripts": {
     "build": "pnpm -r --stream --filter=./packages/* run build",
     "clean": "rimraf --glob packages/*/dist temp .eslintcache",
-    "check": "tsc --incremental --noEmit",
+    "type-check": "tsc --incremental --noEmit",
     "lint": "eslint --cache .",
     "lint-fix": "eslint --fix --cache .",
     "format": "run-p format-prettier format-rs format-toml",
@@ -32,7 +32,7 @@
     "ci-docs": "pnpm docs-build"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged && pnpm check",
+    "pre-commit": "pnpm lint-staged && pnpm type-check",
     "commit-msg": "node scripts/verify-commit.js"
   },
   "lint-staged": {
@@ -68,6 +68,7 @@
     "minimist": "^1.2.8",
     "npm-run-all2": "^8.0.4",
     "picocolors": "^1.1.1",
+    "playwright-chromium": "^1.57.0",
     "prettier": "^3.7.4",
     "prompts": "^2.4.2",
     "rolldown": "1.0.0-beta.53",
