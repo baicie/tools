@@ -58,6 +58,14 @@ export default defineConfig({
           include: ['packages/napi/tests/*.spec.ts'],
         },
       },
+      {
+        extends: true,
+        test: {
+          name: 'napi-wasi',
+          exclude: [...configDefaults.exclude, '**/e2e/**'],
+          include: ['packages/napi-browser/tests/*.spec.ts'],
+        },
+      },
     ],
   },
 })

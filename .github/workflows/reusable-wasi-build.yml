@@ -39,5 +39,5 @@ jobs:
         with:
           name: napi-wasi
           path: |
-            packages/napi/dist
+            packages/napi-browser/dist
           if-no-files-found: error

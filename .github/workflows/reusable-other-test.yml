@@ -51,7 +51,7 @@ jobs:
         run: pnpm run format-check
 
       - name: Run tsc
-        run: pnpm run check
+        run: pnpm run type-check
 
       - name: Run docs
         run: pnpm run docs-build

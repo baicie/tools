@@ -31,12 +31,8 @@ jobs:
       - name: Download Napi with WASI Binding
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
-          name: rolldown-wasi
-          path: ./packages
+          name: napi-wasi
+          path: ./packages/napi-browser/dist
 
-      - name: Node Test
-        run: pnpm run --filter @baicie/napi-browser test
-        if: false
-        env:
-          NAPI_RS_FORCE_WASI: error
-          RD_LOG: trace
+      # - name: WASI Test
+      #   run: pnpm run napi-test
