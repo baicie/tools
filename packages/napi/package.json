@@ -29,15 +29,16 @@
     "build-binding:wasi:release": "pnpm build-binding --profile release-wasi --target wasm32-wasip1-threads",
     "# Scrips for node #": "_",
     "build-node": "oxnode -C dev ./build.ts",
-    "build-js-glue": "run-s build-node",
-    "build-native:debug": "run-s build-binding build-js-glue",
-    "build-native:release": "run-s build-binding:release build-js-glue",
-    "build-native:profile": "run-s build-binding:profile build-js-glue",
-    "build-native:memory-profile": "run-s build-binding:profile --features default_global_allocator build-js-glue",
-    "build-wasi:debug": "TARGET='napi-wasi' run-s build-binding build-binding:wasi build-node",
-    "build-wasi:release": "TARGET='publish-to-npm-wasi' run-s build-binding build-binding:wasi:release build-node",
-    "build-browser-pkg:debug": "TARGET='browser' run-s build-binding build-binding:wasi build-node",
-    "build-browser-pkg:release": "TARGET='browser' run-s build-binding build-binding:wasi:release build-node",
+    "build-types-check": "tsc -p ./tsconfig.check.json",
+    "build-js-glue": "pnpm run --sequential '/^build-(node|types-check)$/'",
+    "build-native:debug": "pnpm run --sequential '/^build-(binding|js-glue)$/'",
+    "build-native:release": "pnpm run --sequential '/^build-(binding:release|js-glue)$/'",
+    "build-native:profile": "pnpm run build-binding:profile && pnpm run build-js-glue",
+    "build-native:memory-profile": "pnpm run build-binding:profile --features default_global_allocator && pnpm run build-js-glue",
+    "build-wasi:debug": "TARGET='napi-wasi' pnpm run --sequential '/^build-(binding|binding:wasi|node)$/'",
+    "build-wasi:release": "TARGET='napi-wasi' pnpm run --sequential '/^build-(binding|binding:wasi:release|node)$/'",
+    "build-browser-pkg:debug": "TARGET='browser' pnpm run --sequential '/^build-(binding|binding:wasi|node)$/'",
+    "build-browser-pkg:release": "TARGET='browser' pnpm run --sequential '/^build-(binding|binding:wasi:release|node)$/'",
     "# Scrips for docs #": "_",
     "prepublishOnly": "napi pre-publish -t npm --no-gh-release"
   },
@@ -46,6 +47,7 @@
   },
   "devDependencies": {
     "@napi-rs/cli": "^3.5.0",
+    "@napi-rs/wasm-runtime": "catalog:",
     "@oxc-node/cli": "^0.0.35"
   },
   "publishConfig": {
