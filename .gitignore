@@ -164,3 +164,4 @@ docs/.vitepress/cache
 /target
 Cargo.lock
 *.node
+*.wasm
