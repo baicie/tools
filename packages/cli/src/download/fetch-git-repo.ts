@@ -64,10 +64,10 @@ export async function fetchTemplate(
     await Promise.all(
       repos.map(file => {
         const destPath = path.join(templateRoot, file.name)
-        const soucePath = path.join(templateFolder, file.name)
+        const sourcePath = path.join(templateFolder, file.name)
 
         fs.mkdirSync(destPath, { recursive: true })
-        return fs.move(soucePath, destPath, { overwrite: true })
+        return fs.move(sourcePath, destPath, { overwrite: true })
       }),
     )
     // 清除缓存文件

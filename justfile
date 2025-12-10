@@ -1,8 +1,6 @@
 set windows-shell := ["powershell"]
 set shell := ["bash", "-cu"]
 
-alias dt := t-run
-
 _default:
   just --list -u
 

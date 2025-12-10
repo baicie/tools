@@ -7,7 +7,7 @@ import ora from 'ora'
 import type { IProjectConf } from '../steps'
 import { templateRoot } from '../util'
 import { createFiles } from './create-files'
-import packagesManagement from './commonds'
+import packagesManagement from './commands'
 
 export async function createApp(conf: IProjectConf): Promise<void> {
   // 目标文件夹 和源文件夹
