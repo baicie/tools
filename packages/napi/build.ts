@@ -58,9 +58,9 @@ const buildMeta = (function makeBuildMeta() {
 })()
 
 const bindingFile = nodePath.resolve('src/binding.cjs')
-const bindingFileWasi = nodePath.resolve('src/rolldown-binding.wasi.cjs')
+const bindingFileWasi = nodePath.resolve('src/baicie-binding.wasi.cjs')
 const bindingFileWasiBrowser = nodePath.resolve(
-  'src/rolldown-binding.wasi-browser.js',
+  'src/baicie-binding.wasi-browser.js',
 )
 
 const configs: BuildOptions[] = [
@@ -149,8 +149,6 @@ function withShared({
   }
 }
 
-// alias binding file to rolldown-binding.wasi.js and mark it as external
-// alias its dts file to rolldown-binding.d.ts without external
 function resolveWasiBinding(isBrowserBuild?: boolean): Plugin {
   return {
     name: 'resolve-wasi-binding',
