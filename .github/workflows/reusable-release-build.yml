@@ -8,6 +8,9 @@ on:
       version:
         type: string
         default: 'noop'
+      browser:
+        type: boolean
+        default: false
 
 jobs:
   build-binding:
@@ -190,6 +193,7 @@ jobs:
   build-napi-browser:
     strategy:
       fail-fast: false
+    if: ${{ inputs.browser == true }}
     name: Build `@baicie/napi-browser` Package
     runs-on: ubuntu-latest
     steps:

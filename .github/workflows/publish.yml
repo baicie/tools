@@ -12,6 +12,7 @@ on:
       - 'logger@*'
       - 'scripts@*'
       - 'napi@*'
+      - 'napi-browser@*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,13 +20,13 @@ concurrency:
 
 jobs:
   build-napi:
-    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi')
+    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi@')
     name: Build bindings and node packages
     uses: ./.github/workflows/reusable-release-build.yml
 
   publish-napi:
     needs: build-napi
-    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi')
+    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi@')
     name: Publish npm Packages
     runs-on: ubuntu-latest
     permissions:
@@ -59,6 +60,36 @@ jobs:
           path: packages/napi/dist
           name: node-artifact
 
+      - name: Publish(Dry Run)
+        working-directory: packages/napi
+        run: |
+          pnpm publish --tag latest --dry-run --no-git-checks
+
+      - name: Publish
+        working-directory: packages/napi
+        run: |
+          npm i -g npm
+          pnpm publish -r --tag latest --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+
+  build-napi-browser:
+    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi-browser@')
+    name: Build `@baicie/napi-browser`
+    uses: ./.github/workflows/reusable-release-build.yml
+    with:
+      browser: true
+
+  publish-napi-browser:
+    needs: build-napi-browser
+    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi-browser@')
+    name: Publish `@baicie/napi-browser`
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # for `npm publish --provenance`
+    steps:
+      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
+
       - name: Download `@baicie/napi-browser` Artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
@@ -66,10 +97,12 @@ jobs:
           name: browser-artifact
 
       - name: Publish(Dry Run)
+        working-directory: packages/napi-browser
         run: |
-          pnpm publish -r --tag latest --dry-run --no-git-checks
+          pnpm publish --tag latest --dry-run --no-git-checks
 
       - name: Publish
+        working-directory: packages/napi-browser
         run: |
           npm i -g npm
           pnpm publish -r --tag latest --no-git-checks
