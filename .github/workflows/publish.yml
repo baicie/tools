@@ -71,8 +71,10 @@ jobs:
 
       - name: Publish
         run: |
-          npm install -g npm
+          npm i -g npm
           pnpm publish -r --tag latest --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
   publish:
     if: github.repository == 'baicie/tools' && !startsWith(github.ref_name,'napi')
@@ -105,7 +107,7 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - name: Publish package
-        run: npm i -g npm@^11.5.2 && pnpm run ci-publish "$REF_NAME"
+        run: npm i -g npm && pnpm run ci-publish "$REF_NAME"
         env:
           REF_NAME: ${{ github.ref_name }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
