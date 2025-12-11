@@ -165,3 +165,4 @@ docs/.vitepress/cache
 Cargo.lock
 *.node
 *.wasm
+packages/napi/npm
