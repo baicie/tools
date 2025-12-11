@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   build-napi:
+    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi')
     name: Build bindings and node packages
     uses: ./.github/workflows/reusable-release-build.yml
 
