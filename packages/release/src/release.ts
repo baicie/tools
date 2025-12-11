@@ -107,11 +107,11 @@ export const release: typeof def = async ({
       if (!yes) return
     }
 
-    step('\nUpdating package version...')
+    step(`\nUpdating package version(${colors.yellow(selectedPkg)})...`)
     updateVersion(pkgPath, targetVersion)
     await generateChangelog(selectedPkg, targetVersion)
 
-    console.log()
+    console.log(`\nGenerated changelog for ${colors.yellow(selectedPkg)}`)
   }
 
   for (const selectedPkg of selectedPkgs) {
