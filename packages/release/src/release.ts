@@ -17,12 +17,14 @@ import { formatMessage } from 'publint/utils'
 
 export const release: typeof def = async ({
   packages,
+  linkedPackages,
   logChangelog,
   generateChangelog,
   toTag,
   getPkgDir,
 }) => {
   let targetVersion: string | undefined
+  let tag: string | undefined
 
   const selectedPkg: string =
     packages.length === 1
@@ -36,70 +38,94 @@ export const release: typeof def = async ({
           })
         ).pkg
 
+  const selectedPkgs: string[] = [selectedPkg]
+
   if (!selectedPkg) return
 
-  await logChangelog(selectedPkg)
-
-  const { pkg, pkgPath, pkgDir } = getPackageInfo(selectedPkg, getPkgDir)
-
-  const { messages } = await publint({ pkgDir })
-
-  if (messages.length) {
-    for (const message of messages) console.log(formatMessage(message, pkg))
-    const { yes }: { yes: boolean } = await prompts({
-      type: 'confirm',
-      name: 'yes',
-      message: `${messages.length} messages from publint. Continue anyway?`,
-    })
-    if (!yes) process.exit(1)
+  if (linkedPackages && linkedPackages[selectedPkg]) {
+    selectedPkgs.push(...linkedPackages[selectedPkg])
   }
 
-  if (!targetVersion) {
-    const { release }: { release: string } = await prompts({
-      type: 'select',
-      name: 'release',
-      message: 'Select release type',
-      choices: getVersionChoices(pkg.version),
-    })
+  async function releasePkg(selectedPkg: string) {
+    await logChangelog(selectedPkg)
 
-    if (release === 'custom') {
-      const res: { version: string } = await prompts({
-        type: 'text',
-        name: 'version',
-        message: 'Input custom version',
-        initial: pkg.version,
+    const { pkg, pkgPath, pkgDir } = getPackageInfo(selectedPkg, getPkgDir)
+
+    const { messages } = await publint({ pkgDir })
+
+    if (messages.length) {
+      for (const message of messages) console.log(formatMessage(message, pkg))
+      const { yes }: { yes: boolean } = await prompts({
+        type: 'confirm',
+        name: 'yes',
+        message: `${messages.length} messages from publint. Continue anyway?`,
       })
-      targetVersion = res.version
-    } else {
-      targetVersion = release
+      if (!yes) process.exit(1)
     }
+
+    if (!targetVersion) {
+      const { release }: { release: string } = await prompts({
+        type: 'select',
+        name: 'release',
+        message: 'Select release type',
+        choices: getVersionChoices(pkg.version),
+      })
+
+      if (release === 'custom') {
+        const res: { version: string } = await prompts({
+          type: 'text',
+          name: 'version',
+          message: 'Input custom version',
+          initial: pkg.version,
+        })
+        targetVersion = res.version
+      } else {
+        targetVersion = release
+      }
+    }
+
+    if (!semver.valid(targetVersion)) {
+      throw new Error(`invalid target version: ${targetVersion}`)
+    }
+
+    if (!tag) {
+      // use first selected package to generate tag
+      tag = toTag(selectedPkg, targetVersion)
+
+      if (targetVersion.includes('beta') && !args.tag) {
+        args.tag = 'beta'
+      }
+      if (targetVersion.includes('alpha') && !args.tag) {
+        args.tag = 'alpha'
+      }
+
+      const { yes }: { yes: boolean } = await prompts({
+        type: 'confirm',
+        name: 'yes',
+        message: `Releasing ${colors.yellow(tag)} Confirm?`,
+      })
+      if (!yes) return
+    }
+
+    step('\nUpdating package version...')
+    updateVersion(pkgPath, targetVersion)
+    await generateChangelog(selectedPkg, targetVersion)
+
+    console.log()
   }
 
-  if (!semver.valid(targetVersion)) {
-    throw new Error(`invalid target version: ${targetVersion}`)
+  for (const selectedPkg of selectedPkgs) {
+    await releasePkg(selectedPkg)
   }
 
-  const tag = toTag(selectedPkg, targetVersion)
-
-  if (targetVersion.includes('beta') && !args.tag) {
-    args.tag = 'beta'
-  }
-  if (targetVersion.includes('alpha') && !args.tag) {
-    args.tag = 'alpha'
+  if (tag) {
+    await gitDiff(tag)
   }
 
-  const { yes }: { yes: boolean } = await prompts({
-    type: 'confirm',
-    name: 'yes',
-    message: `Releasing ${colors.yellow(tag)} Confirm?`,
-  })
+  console.log()
+}
 
-  if (!yes) return
-
-  step('\nUpdating package version...')
-  updateVersion(pkgPath, targetVersion)
-  await generateChangelog(selectedPkg, targetVersion)
-
+async function gitDiff(tag: string) {
   const { stdout } = await run('git', ['diff'], {
     nodeOptions: { stdio: 'pipe' },
   })
@@ -127,6 +153,4 @@ Pushed, publishing should starts shortly on CI.`,
       ),
     )
   }
-
-  console.log()
 }

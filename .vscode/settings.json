@@ -17,7 +17,7 @@
   },
   "[typescript]": {
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "files.associations": {
     "*.snap": "markdown",
@@ -47,5 +47,6 @@
   "rust-analyzer.procMacro.ignored": {
     "napi-derive": ["napi"],
     "tracing": ["instrument"]
-  }
+  },
+  "editor.formatOnSave": true
 }

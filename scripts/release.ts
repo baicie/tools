@@ -12,8 +12,10 @@ release({
     'logger',
     'scripts',
     'napi',
-    'napi-browser',
   ],
+  linkedPackages: {
+    napi: ['napi-browser'],
+  },
   toTag: (pkg, version) => `${pkg}@${version}`,
   logChangelog: _pkg => {},
   generateChangelog: _pkg => {},
