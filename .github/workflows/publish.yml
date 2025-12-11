@@ -88,7 +88,7 @@ jobs:
         working-directory: packages/napi-browser
         run: |
           npm i -g npm
-          pnpm publish -r --tag latest --no-git-checks
+          pnpm publish --tag latest --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
