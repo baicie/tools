@@ -5,6 +5,7 @@ packages:
   - docs
 
 shellEmulator: true
+verifyDepsBeforeRun: install
 trustPolicy: no-downgrade
 
 catalog:
