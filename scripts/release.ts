@@ -12,6 +12,7 @@ release({
     'logger',
     'scripts',
     'napi',
+    'napi-browser',
   ],
   toTag: (pkg, version) => `${pkg}@${version}`,
   logChangelog: _pkg => {},
