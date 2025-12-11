@@ -221,10 +221,6 @@ importers:
       '@oxc-node/cli':
         specifier: ^0.0.35
         version: 0.0.35
-    optionalDependencies:
-      '@baicie/napi-android-arm64':
-        specifier: 0.1.0-beta.4
-        version: 0.1.0-beta.4
 
   packages/napi-browser:
     dependencies:
@@ -479,12 +475,6 @@ packages:
   '@babel/types@7.28.5':
     resolution: {integrity: sha512-qQ5m48eI/MFLQ5PxQj4PFaprjyCTLI37ElWMmNs0K8Lk3dVeOdNpB3ks8jc7yM5CDmVC73eMVk/trk3fgmrUpA==}
     engines: {node: '>=6.9.0'}
-
-  '@baicie/napi-android-arm64@0.1.0-beta.4':
-    resolution: {integrity: sha512-9FgDHXXZjRIALNoQOUo1Epl5+7rKpWNtSSP82fWlXk5/mZKBn4jtjiQWSQ1admbzpAo85VMtBCEBUW2U+RYrzA==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    cpu: [arm64]
-    os: [android]
 
   '@clack/core@0.5.0':
     resolution: {integrity: sha512-p3y0FIOwaYRUPRcMO7+dlmLh8PSRcrjuTndsiA0WAFbWES0mLZlrjVoBRZ9DzkPFJZG6KGkJmoEAY0ZcVWTkow==}
@@ -6999,9 +6989,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.28.5
-
-  '@baicie/napi-android-arm64@0.1.0-beta.4':
-    optional: true
 
   '@clack/core@0.5.0':
     dependencies:

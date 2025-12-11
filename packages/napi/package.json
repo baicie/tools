@@ -1,6 +1,6 @@
 {
   "name": "@baicie/napi",
-  "version": "0.1.0-beta.5",
+  "version": "0.1.0-beta.6",
   "type": "module",
   "keywords": [],
   "license": "MIT",
@@ -76,20 +76,5 @@
         "asyncInit": true
       }
     }
-  },
-  "optionalDependencies": {
-    "@baicie/napi-darwin-x64": "0.1.0-beta.4",
-    "@baicie/napi-win32-x64-msvc": "0.1.0-beta.4",
-    "@baicie/napi-linux-x64-gnu": "0.1.0-beta.4",
-    "@baicie/napi-linux-x64-musl": "0.1.0-beta.4",
-    "@baicie/napi-freebsd-x64": "0.1.0-beta.4",
-    "@baicie/napi-linux-arm-gnueabihf": "0.1.0-beta.4",
-    "@baicie/napi-linux-arm64-gnu": "0.1.0-beta.4",
-    "@baicie/napi-darwin-arm64": "0.1.0-beta.4",
-    "@baicie/napi-linux-arm64-musl": "0.1.0-beta.4",
-    "@baicie/napi-openharmony-arm64": "0.1.0-beta.4",
-    "@baicie/napi-win32-arm64-msvc": "0.1.0-beta.4",
-    "@baicie/napi-android-arm64": "0.1.0-beta.4",
-    "@baicie/napi-wasm32-wasi": "0.1.0-beta.4"
   }
 }
