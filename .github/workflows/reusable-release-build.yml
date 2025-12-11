@@ -8,16 +8,9 @@ on:
       version:
         type: string
         default: 'noop'
-      browser:
-        type: boolean
-        default: false
-      napi:
-        type: boolean
-        default: true
 
 jobs:
   build-binding:
-    if: ${{ inputs.napi == true }}
     strategy:
       fail-fast: false
       matrix:
@@ -124,7 +117,6 @@ jobs:
             packages/napi/src/baicie-binding.*.wasm
 
   build-freebsd:
-    if: ${{ inputs.napi == true }}
     name: Build FreeBSD
     runs-on: ubuntu-latest
     steps:
@@ -170,7 +162,6 @@ jobs:
           if-no-files-found: error
 
   build-node-packages:
-    if: ${{ inputs.napi == true }}
     strategy:
       fail-fast: false
     name: Build Node Package
@@ -199,7 +190,6 @@ jobs:
   build-napi-browser:
     strategy:
       fail-fast: false
-    if: ${{ inputs.browser == true }}
     name: Build `@baicie/napi-browser` Package
     runs-on: ubuntu-latest
     steps:

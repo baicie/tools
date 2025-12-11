@@ -60,8 +60,19 @@ jobs:
           path: packages/napi/dist
           name: node-artifact
 
+      - name: Download `@baicie/napi-browser` Artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          path: packages/napi-browser/dist
+          name: browser-artifact
+
       - name: Publish(Dry Run)
         working-directory: packages/napi
+        run: |
+          pnpm publish --tag latest --dry-run --no-git-checks
+
+      - name: Publish(Napi Browser Dry Run)
+        working-directory: packages/napi-browser
         run: |
           pnpm publish --tag latest --dry-run --no-git-checks
 
@@ -73,41 +84,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
 
-  build-napi-browser:
-    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi-browser@')
-    name: Build `@baicie/napi-browser`
-    uses: ./.github/workflows/reusable-release-build.yml
-    with:
-      browser: true
-      napi: false
-
-  publish-napi-browser:
-    needs: build-napi-browser
-    if: github.repository == 'baicie/tools' && startsWith(github.ref_name, 'napi-browser@')
-    name: Publish `@baicie/napi-browser`
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write # for `npm publish --provenance`
-    steps:
-      - uses: taiki-e/checkout-action@b13d20b7cda4e2f325ef19895128f7ff735c0b3d # v1.3.1
-
-      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
-
-      - name: Git Reset Hard
-        run: git reset --hard # fix pnpm install add new line for package.json
-
-      - name: Download `@baicie/napi-browser` Artifacts
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          path: packages/napi-browser/dist
-          name: browser-artifact
-
-      - name: Publish(Dry Run)
-        working-directory: packages/napi-browser
-        run: |
-          pnpm publish --tag latest --dry-run --no-git-checks
-
-      - name: Publish
+      - name: Publish(Napi Browser)
         working-directory: packages/napi-browser
         run: |
           npm i -g npm
