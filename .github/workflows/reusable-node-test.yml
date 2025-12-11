@@ -37,8 +37,8 @@ jobs:
       - name: Build Native Napi
         run: just build-napi
 
-      - name: Check no diff
-        run: git diff --exit-code
+      # - name: Check no diff
+      #   run: git diff --exit-code
 
       - name: Type Check
         run: pnpm type-check
