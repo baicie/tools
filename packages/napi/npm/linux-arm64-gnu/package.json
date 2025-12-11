@@ -1,0 +1,26 @@
+{
+  "name": "@baicie/napi-linux-arm64-gnu",
+  "version": "0.1.0-beta.3",
+  "cpu": [
+    "arm64"
+  ],
+  "main": "baicie-binding.linux-arm64-gnu.node",
+  "files": [
+    "baicie-binding.linux-arm64-gnu.node"
+  ],
+  "keywords": [],
+  "license": "MIT",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "os": [
+    "linux"
+  ],
+  "libc": [
+    "glibc"
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "@baicie/pkg",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "description": "A powerful toolkit for creating, formatting, validating and manipulating package.json files",
   "type": "module",
   "exports": {

@@ -5,8 +5,6 @@
   "keywords": [],
   "license": "MIT",
   "files": [
-    "bin",
-    "cli",
     "dist",
     "!dist/*.node"
   ],
