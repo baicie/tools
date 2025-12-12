@@ -28,25 +28,13 @@
     "**/CHANGELOG-*.md": true,
     "**/CHANGELOG.md": true,
     "**/generated/**": true,
-    "packages/rolldown/src/*{binding,worker}*.*{j,d.t}s": true
+    "packages/napi/src/*{binding,wasi}*.*{j,d.t}s": true
   },
   "git.ignoreLimitWarning": true,
-  "json.schemas": [
-    {
-      "fileMatch": ["_config.json"],
-      "url": "./crates/rolldown_testing/_config.schema.json"
-    }
-  ],
   "search.exclude": {
-    "rollup": true,
-    "test262": true,
     "temp": true,
     "tmp": true
   },
   "editor.wordWrap": "on",
-  "rust-analyzer.procMacro.ignored": {
-    "napi-derive": ["napi"],
-    "tracing": ["instrument"]
-  },
   "editor.formatOnSave": true
 }
