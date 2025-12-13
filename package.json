@@ -33,7 +33,7 @@
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged && pnpm type-check",
-    "commit-msg": "node scripts/verify-commit.js"
+    "commit-msg": "tsx scripts/verify-commit.ts"
   },
   "lint-staged": {
     "*.{js|ts|tsx|yml|yaml|md|json}": [
