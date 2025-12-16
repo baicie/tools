@@ -1,6 +1,6 @@
 {
   "name": "@baicie/logger",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "packageManager": "pnpm@10.25.0",
   "type": "module",
   "description": "通用日志工具模块，提供统一的日志记录功能，支持日志级别和配置",
