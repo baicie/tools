@@ -57,23 +57,19 @@ export interface Logger {
   /**
    * 调试日志
    */
-  debug: (codeOrMessage: LogCode | string, data?: unknown) => void
+  debug: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
   /**
    * 信息日志
    */
-  info: (codeOrMessage: LogCode | string, data?: unknown) => void
+  info: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
   /**
    * 警告日志
    */
-  warn: (codeOrMessage: LogCode | string, data?: unknown) => void
+  warn: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
   /**
    * 错误日志
    */
-  error: (codeOrMessage: LogCode | string, data?: unknown) => void
-  /**
-   * 兼容旧版代码索引日志（默认 info 级别）
-   */
-  log: (code: LogCode, force?: boolean) => void
+  error: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
   /**
    * 设置配置
    */
@@ -180,18 +176,14 @@ function formatMessage(
 function safeConsoleLog(
   level: LogLevel,
   message: string,
-  data?: unknown,
+  ...args: unknown[]
 ): void {
   const win = getWindow()
 
   if (!isBrowser() || !win) {
     // SSR 环境，使用 Node.js console
     const consoleMethod = console[level] || console.log
-    if (data !== undefined) {
-      consoleMethod(message, data)
-    } else {
-      consoleMethod(message)
-    }
+    consoleMethod(message, ...args)
     return
   }
 
@@ -200,11 +192,7 @@ function safeConsoleLog(
     const consoleObj = (win as any).console
     if (consoleObj) {
       const consoleMethod = consoleObj[level] || consoleObj.log
-      if (data !== undefined) {
-        consoleMethod(message, data)
-      } else {
-        consoleMethod(message)
-      }
+      consoleMethod(message, ...args)
     }
   } catch (_error) {
     // 忽略错误
@@ -220,45 +208,36 @@ function createLogger(config?: Partial<LoggerConfig>): Logger {
   }
 
   const logger: Logger = {
-    debug(codeOrMessage: LogCode | string, data?: unknown): void {
+    debug(codeOrMessage: LogCode | string, ...args: unknown[]): void {
       if (!shouldLog('debug')) {
         return
       }
       const message = formatMessage('debug', codeOrMessage)
-      safeConsoleLog('debug', message, data)
+      safeConsoleLog('debug', message, ...args)
     },
 
-    info(codeOrMessage: LogCode | string, data?: unknown): void {
+    info(codeOrMessage: LogCode | string, ...args: unknown[]): void {
       if (!shouldLog('info')) {
         return
       }
       const message = formatMessage('info', codeOrMessage)
-      safeConsoleLog('info', message, data)
+      safeConsoleLog('info', message, ...args)
     },
 
-    warn(codeOrMessage: LogCode | string, data?: unknown): void {
+    warn(codeOrMessage: LogCode | string, ...args: unknown[]): void {
       if (!shouldLog('warn')) {
         return
       }
       const message = formatMessage('warn', codeOrMessage)
-      safeConsoleLog('warn', message, data)
+      safeConsoleLog('warn', message, ...args)
     },
 
-    error(codeOrMessage: LogCode | string, data?: unknown): void {
+    error(codeOrMessage: LogCode | string, ...args: unknown[]): void {
       if (!shouldLog('error')) {
         return
       }
       const message = formatMessage('error', codeOrMessage)
-      safeConsoleLog('error', message, data)
-    },
-
-    log(code: LogCode, force?: boolean): void {
-      // 兼容旧版代码索引日志方式
-      if (!shouldLog('info', force)) {
-        return
-      }
-      const message = formatMessage('info', code)
-      safeConsoleLog('info', message)
+      safeConsoleLog('error', message, ...args)
     },
 
     setConfig(config: Partial<LoggerConfig>): void {
@@ -285,27 +264,20 @@ export function createLoggerInstance(config?: Partial<LoggerConfig>): Logger {
   return createLogger(config)
 }
 
-/**
- * 便捷方法：直接使用默认 logger
- */
-export function log(code: LogCode, force?: boolean): void {
-  logger.log(code, force)
+export function debug(message: string, ...args: unknown[]): void {
+  logger.debug(message, ...args)
 }
 
-export function debug(message: string, data?: unknown): void {
-  logger.debug(message, data)
+export function info(message: string, ...args: unknown[]): void {
+  logger.info(message, ...args)
 }
 
-export function info(message: string, data?: unknown): void {
-  logger.info(message, data)
+export function warn(message: string, ...args: unknown[]): void {
+  logger.warn(message, ...args)
 }
 
-export function warn(message: string, data?: unknown): void {
-  logger.warn(message, data)
-}
-
-export function error(message: string, data?: unknown): void {
-  logger.error(message, data)
+export function error(message: string, ...args: unknown[]): void {
+  logger.error(message, ...args)
 }
 
 /**
