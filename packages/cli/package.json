@@ -29,11 +29,11 @@
   },
   "dependencies": {
     "@baicie/pkg": "workspace:*",
-    "@inquirer/prompts": "^8.0.2",
+    "@inquirer/prompts": "^8.1.0",
     "adm-zip": "^0.5.16",
     "consola": "^3.4.2",
     "fast-glob": "^3.3.3",
-    "fs-extra": "^11.3.2",
+    "fs-extra": "^11.3.3",
     "git-clone": "^0.2.0",
     "ora": "^8.2.0",
     "picocolors": "^1.1.1",
@@ -46,7 +46,7 @@
     "@types/request": "^2.48.13",
     "cac": "^6.7.14",
     "rimraf": "^6.1.2",
-    "rolldown": "1.0.0-beta.53",
+    "rolldown": "1.0.0-beta.57",
     "typescript": "^5.9.3"
   }
 }

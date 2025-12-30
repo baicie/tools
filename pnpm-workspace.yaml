@@ -6,7 +6,6 @@ packages:
 
 shellEmulator: true
 verifyDepsBeforeRun: install
-trustPolicy: no-downgrade
 
 catalog:
   '@napi-rs/cli': ^3.5.0

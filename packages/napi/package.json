@@ -43,7 +43,7 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "devDependencies": {
-    "@napi-rs/cli": "^3.5.0",
+    "@napi-rs/cli": "^3.5.1",
     "@napi-rs/wasm-runtime": "catalog:",
     "@oxc-node/cli": "^0.0.35"
   },
