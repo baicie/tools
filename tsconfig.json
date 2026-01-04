@@ -23,6 +23,7 @@
     "**/temp",
     "**/node_modules",
     "**/tsconfig.tsbuildinfo",
-    "playground/vue"
+    "playground/vue",
+    "playground/napi-vue3"
   ]
 }
