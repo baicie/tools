@@ -1,5 +1,5 @@
 [workspace]
-members  = ["crates/baicie_binding"]
+members  = ["crates/baicie_binding", "crates/baicie_json_diff"]
 resolver = "3"
 
   [workspace.package]

@@ -39,7 +39,7 @@ if (__nodeFs.existsSync(__wasmDebugFilePath)) {
   __wasmFilePath = __wasmDebugFilePath
 } else if (!__nodeFs.existsSync(__wasmFilePath)) {
   try {
-    __wasmFilePath = __nodePath.resolve('@baicie/napi-wasm32-wasi')
+    __wasmFilePath = require.resolve('@baicie/napi-wasm32-wasi/baicie-binding.wasm32-wasi.wasm')
   } catch {
     throw new Error('Cannot find baicie-binding.wasm32-wasi.wasm file, and @baicie/napi-wasm32-wasi package is not installed.')
   }
@@ -108,4 +108,7 @@ const { instance: __napiInstance, module: __wasiModule, napiModule: __napiModule
   },
 })
 module.exports = __napiModule.exports
+module.exports.applyJsonDiff = __napiModule.exports.applyJsonDiff
+module.exports.getJsonDiffDetails = __napiModule.exports.getJsonDiffDetails
+module.exports.jsonDiff = __napiModule.exports.jsonDiff
 module.exports.plus100 = __napiModule.exports.plus100

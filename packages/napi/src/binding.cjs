@@ -536,13 +536,17 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
       wasiBindingError = err
     }
   }
-  if (!nativeBinding) {
+  if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
     try {
       wasiBinding = require('@baicie/napi-wasm32-wasi')
       nativeBinding = wasiBinding
     } catch (err) {
       if (process.env.NAPI_RS_FORCE_WASI) {
-        wasiBindingError.cause = err
+        if (!wasiBindingError) {
+          wasiBindingError = err
+        } else {
+          wasiBindingError.cause = err
+        }
         loadErrors.push(err)
       }
     }
@@ -572,4 +576,7 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
+module.exports.applyJsonDiff = nativeBinding.applyJsonDiff
+module.exports.getJsonDiffDetails = nativeBinding.getJsonDiffDetails
+module.exports.jsonDiff = nativeBinding.jsonDiff
 module.exports.plus100 = nativeBinding.plus100

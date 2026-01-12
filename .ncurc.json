@@ -2,5 +2,5 @@
   "upgrade": true,
   "deep": true,
   "reject": ["ora"],
-  "ignore": ["packages/cli/templates"]
+  "ignore": ["packages/cli/templates", ".pnpm-store", "packages/napi/npm/**"]
 }

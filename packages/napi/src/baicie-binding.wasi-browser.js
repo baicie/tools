@@ -63,4 +63,7 @@ const {
   },
 })
 export default __napiModule.exports
+export const applyJsonDiff = __napiModule.exports.applyJsonDiff
+export const getJsonDiffDetails = __napiModule.exports.getJsonDiffDetails
+export const jsonDiff = __napiModule.exports.jsonDiff
 export const plus100 = __napiModule.exports.plus100
