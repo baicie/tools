@@ -59,10 +59,38 @@ describe('native hijack', () => {
     })
 
     fakeStorage.setItem('token', '123')
+    fakeStorage.getItem('token')
     fakeStorage.removeItem('token')
 
     unsubscribe()
 
-    expect(logs).toEqual(['write:123', 'remove:'])
+    expect(logs).toEqual(['write:123', 'read:123', 'remove:'])
+  })
+
+  it('emits changes when cookie is accessed', () => {
+    // 跳过在非浏览器环境中的测试
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    startNativeHijack({
+      local: false,
+      session: false,
+      cookie: true,
+    })
+
+    var logs: string[] = []
+    var unsubscribe = subscribeStorageChanges(function (change) {
+      logs.push(change.type + ':' + (change.value || ''))
+    })
+
+    // 设置cookie
+    document.cookie = 'test=value'
+    // 读取cookie
+    var cookieValue = document.cookie
+
+    unsubscribe()
+
+    expect(logs).toEqual(['write:value', 'read:' + cookieValue])
   })
 })

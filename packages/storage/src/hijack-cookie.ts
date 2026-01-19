@@ -67,10 +67,19 @@ export function hijackCookie(
 
     // 创建新的 getter
     const newGetter = function (): string {
-      if (originalGetter) {
-        return originalGetter.call(documentRef)
-      }
-      return ''
+      const cookieString = originalGetter
+        ? originalGetter.call(documentRef)
+        : ''
+
+      // 触发读取监听事件
+      listener({
+        key: '', // cookie读取时key为空，因为是读取整个cookie字符串
+        value: cookieString,
+        type: 'read',
+        source: adapterId,
+      })
+
+      return cookieString
     }
 
     // 创建新的 setter

@@ -9,6 +9,7 @@ export function hijackWebStorage(
 
   const original = {
     setItem: proto.setItem,
+    getItem: proto.getItem,
     removeItem: proto.removeItem,
     clear: proto.clear,
   }
@@ -20,6 +21,23 @@ export function hijackWebStorage(
 
       if (thisArg === storage) {
         listener({ key, value, type: 'write', source: adapterId })
+      }
+      return res
+    },
+  })
+
+  proto.getItem = new Proxy(original.getItem, {
+    apply(target, thisArg, args: any[]) {
+      const [key] = args
+      const res = Reflect.apply(target, thisArg, args)
+
+      if (thisArg === storage) {
+        listener({
+          key,
+          value: res as string | null,
+          type: 'read',
+          source: adapterId,
+        })
       }
       return res
     },
@@ -53,6 +71,7 @@ export function hijackWebStorage(
   return {
     restore() {
       proto.setItem = original.setItem
+      proto.getItem = original.getItem
       proto.removeItem = original.removeItem
       proto.clear = original.clear
     },

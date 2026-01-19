@@ -1,4 +1,4 @@
-export type StorageChangeType = 'write' | 'remove' | 'clear'
+export type StorageChangeType = 'write' | 'remove' | 'clear' | 'read'
 
 export interface StorageChange {
   key: string
