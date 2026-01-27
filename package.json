@@ -48,10 +48,10 @@
     ]
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^6.7.3",
+    "@antfu/eslint-config": "^7.2.0",
     "@taplo/cli": "^0.7.0",
     "@types/minimist": "^1.2.5",
-    "@types/node": "^25.0.6",
+    "@types/node": "^25.0.10",
     "@types/prompts": "^2.4.9",
     "@types/resolve": "^1.20.6",
     "@vitest/eslint-plugin": "^1.6.6",
@@ -68,18 +68,18 @@
     "minimist": "^1.2.8",
     "npm-run-all2": "^8.0.4",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.57.0",
-    "prettier": "^3.7.4",
+    "playwright-chromium": "^1.58.0",
+    "prettier": "^3.8.1",
     "prompts": "^2.4.2",
-    "rolldown": "1.0.0-beta.59",
-    "rolldown-plugin-dts": "^0.20.0",
+    "rolldown": "1.0.0-rc.1",
+    "rolldown-plugin-dts": "^0.21.7",
     "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.19.0",
+    "tsdown": "^0.20.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.52.0",
+    "typescript-eslint": "^8.54.0",
     "unbuild": "^3.6.1",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@pnpm/find-workspace-packages": "^6.0.9",
@@ -87,5 +87,5 @@
     "consola": "^3.4.2",
     "rimraf": "^6.1.2"
   },
-  "packageManager": "pnpm@10.28.0"
+  "packageManager": "pnpm@10.28.2"
 }
