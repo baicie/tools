@@ -9,7 +9,7 @@
     "docs-serve": "vitepress serve"
   },
   "devDependencies": {
-    "vitepress": "^2.0.0-alpha.12",
+    "vitepress": "^1.6.4",
     "vitepress-plugin-group-icons": "^1.7.1",
     "vitepress-plugin-llms": "^1.10.0"
   }
