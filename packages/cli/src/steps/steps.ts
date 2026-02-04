@@ -1,5 +1,5 @@
 import fs from 'fs-extra'
-import { confirm, input, select } from '@inquirer/prompts'
+import { confirm, select, text } from '@clack/prompts'
 import chalk from 'picocolors'
 import {
   DEFAULT_TEMPLATE_SRC,
@@ -14,35 +14,53 @@ import type { IProjectConf } from './types'
 const defaultTargetDir = 'my-project'
 
 export async function askProjectName(): Promise<string> {
-  const projectName = await input({
+  const value = await text({
     message: '项目名称?',
-    default: defaultTargetDir,
-    validate: value => {
-      return isValidPackageName(value)
+    placeholder: defaultTargetDir,
+    validate: (value: string | undefined): string | Error | undefined => {
+      if (!value || value.trim() === '') {
+        return '请输入有效的项目名称'
+      }
+      if (!isValidPackageName(value)) {
+        return '请输入有效的项目名称'
+      }
+      return undefined
     },
   })
+
+  if (typeof value === 'symbol') {
+    return askProjectName()
+  }
+
+  const projectName = value
 
   // 存在且不为空
   if (fs.existsSync(projectName) && !isEmpty(projectName)) {
     const choices = [
       {
-        name: '覆写',
+        label: '覆写',
         value: 'overwrite',
       },
       {
-        name: '合并',
+        label: '合并',
         value: 'merge',
       },
       {
-        name: '取消',
+        label: '取消',
         value: 'cancel',
       },
     ]
-    const overwriteMode = await select({
+
+    const modeValue = await select({
       message: `当前目录${projectName}已经存在同名项目，是否覆写?`,
-      choices,
+      options: choices,
     })
-    switch (overwriteMode) {
+
+    if (typeof modeValue === 'symbol') {
+      return askProjectName()
+    }
+
+    switch (modeValue) {
       case 'overwrite':
         fs.removeSync(projectName)
         break
@@ -59,68 +77,101 @@ export async function askProjectName(): Promise<string> {
 }
 
 export async function askDescription(): Promise<string> {
-  // description
-  return await input({
+  const value = await text({
     message: '请输入项目介绍',
+    placeholder: '',
   })
+
+  if (typeof value === 'symbol') {
+    return askDescription()
+  }
+
+  return value
 }
 
 export async function askNpm(): Promise<IProjectConf['npm']> {
   const choices = [
     {
-      name: 'pnpm',
+      label: 'pnpm',
       value: 'pnpm',
     },
     {
-      name: 'yarn',
+      label: 'yarn',
       value: 'yarn',
     },
     {
-      name: 'npm',
+      label: 'npm',
       value: 'npm',
     },
     {
-      name: 'cnpm',
+      label: 'cnpm',
       value: 'cnpm',
     },
   ]
-  return (await select({
+
+  const value = await select({
     message: '请选择包管理工具',
-    choices,
-  })) as IProjectConf['npm']
+    options: choices,
+  })
+
+  if (typeof value === 'symbol') {
+    return askNpm()
+  }
+
+  return value as IProjectConf['npm']
 }
 
 export async function askSelfInputTemplateSource(): Promise<string> {
-  return input({
+  const value = await text({
     message: '请输入github地址',
+    placeholder: '',
   })
+
+  if (typeof value === 'symbol') {
+    return askSelfInputTemplateSource()
+  }
+
+  return value
 }
 
 export async function askGitInit(): Promise<boolean> {
-  return confirm({
+  const value = await confirm({
     message: '是否需要初始化 Git 仓库?',
-    default: false,
+    initialValue: false,
   })
+
+  if (typeof value === 'symbol') {
+    return askGitInit()
+  }
+
+  return value
 }
 
 export async function askGitRemote(): Promise<string> {
-  return input({
+  const value = await text({
     message: '请输入远程仓库地址 (例如: https://github.com/username/repo.git)',
-    validate: value => {
-      if (!value) return '请输入有效的仓库地址'
+    placeholder: '',
+    validate: (inputValue: string | undefined): string | Error | undefined => {
+      if (!inputValue) return '请输入有效的仓库地址'
       if (
         !(
-          value.endsWith('.git') ||
-          value.includes('github.com') ||
-          value.includes('gitlab') ||
-          value.includes('gitee.com')
+          inputValue.endsWith('.git') ||
+          inputValue.includes('github.com') ||
+          inputValue.includes('gitlab') ||
+          inputValue.includes('gitee.com')
         )
       ) {
         return '请输入有效的 Git 仓库地址'
       }
-      return true
+      return undefined
     },
   })
+
+  if (typeof value === 'symbol') {
+    return askGitRemote()
+  }
+
+  return value
 }
 
 export async function askTemplateSource(): Promise<
@@ -128,27 +179,33 @@ export async function askTemplateSource(): Promise<
 > {
   const choices = [
     {
-      name: 'Github（最新）',
+      label: 'Github（最新）',
       value: DEFAULT_TEMPLATE_SRC,
     },
     {
-      name: 'Gitee（最快）',
+      label: 'Gitee（最快）',
       value: DEFAULT_TEMPLATE_SRC_GITEE,
     },
     {
-      name: 'CLI 内置默认模板',
+      label: 'CLI 内置默认模板',
       value: 'default-template',
     },
     {
-      name: '自定义',
+      label: '自定义',
       value: 'self-input',
     },
   ]
 
-  return await select({
+  const value = await select({
     message: '请选择模板源',
-    choices,
+    options: choices,
   })
+
+  if (typeof value === 'symbol') {
+    return askTemplateSource()
+  }
+
+  return value
 }
 
 export async function askTemplate(
@@ -156,23 +213,36 @@ export async function askTemplate(
 ): Promise<'default' | string> {
   const choices = [
     {
-      name: '默认模板',
+      label: '默认模板',
       value: 'default',
     },
     ...list.map(item => ({
-      name: item.desc ? `${item.name}（${item.desc}）` : item.name,
+      label: item.desc ? `${item.name}（${item.desc}）` : item.name,
       value: item.name,
     })),
   ]
-  return await select({
+
+  const value = await select({
     message: '请选择模板',
-    choices,
+    options: choices,
   })
+
+  if (typeof value === 'symbol') {
+    return askTemplate(list)
+  }
+
+  return value
 }
 
 export async function askAutoInstall(): Promise<boolean> {
-  return confirm({
+  const value = await confirm({
     message: '是否需要自动安装依赖?',
-    default: false,
+    initialValue: false,
   })
+
+  if (typeof value === 'symbol') {
+    return askAutoInstall()
+  }
+
+  return value
 }
