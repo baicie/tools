@@ -1,0 +1,297 @@
+@import "tailwindcss";
+
+@theme {
+  /* ========== 亮色主题 (Light Theme) ========== */
+  --color-theme-light-bg-primary: #667eea;
+  --color-theme-light-bg-secondary: #764ba2;
+  --color-theme-light-bg-canvas: #f5f7fa;
+  --color-theme-light-bg-surface: #ffffff;
+  --color-theme-light-bg-muted: #e8ecf1;
+
+  --color-theme-light-text-primary: #1a202c;
+  --color-theme-light-text-secondary: #4a5568;
+  --color-theme-light-text-muted: #718096;
+  --color-theme-light-text-inverse: #ffffff;
+
+  --color-theme-light-border: #e2e8f0;
+  --color-theme-light-border-strong: #cbd5e0;
+
+  /* 差异颜色 - 亮色 */
+  --color-theme-light-diff-added-bg: #d4edda;
+  --color-theme-light-diff-added-text: #155724;
+  --color-theme-light-diff-added-border: #c3e6cb;
+
+  --color-theme-light-diff-removed-bg: #f8d7da;
+  --color-theme-light-diff-removed-text: #721c24;
+  --color-theme-light-diff-removed-border: #f5c6cb;
+
+  --color-theme-light-diff-modified-bg: #fff3cd;
+  --color-theme-light-diff-modified-text: #856404;
+  --color-theme-light-diff-modified-border: #ffeeba;
+
+  /* Token 颜色 - 亮色 */
+  --color-theme-light-token-key: #0b4ddb;
+  --color-theme-light-token-value: #24292f;
+  --color-theme-light-token-punctuation: #6f42c1;
+
+  /* 面板头部颜色 - 亮色 */
+  --color-theme-light-panel-old-bg: #fff9e6;
+  --color-theme-light-panel-new-bg: #e6f4ea;
+
+  /* 按钮颜色 - 亮色 */
+  --color-theme-light-btn-primary: #667eea;
+  --color-theme-light-btn-hover: #5a6fd6;
+  --color-theme-light-btn-active: #4a5fc4;
+
+  /* 阴影颜色 - 亮色 */
+  --color-theme-light-shadow-sm: rgba(0, 0, 0, 0.05);
+  --color-theme-light-shadow-md: rgba(0, 0, 0, 0.08);
+  --color-theme-light-shadow-lg: rgba(0, 0, 0, 0.12);
+
+  /* ========== 暗色主题 (Dark Theme) ========== */
+  --color-theme-dark-bg-primary: #4c51bf;
+  --color-theme-dark-bg-secondary: #553c9a;
+  --color-theme-dark-bg-canvas: #0d1117;
+  --color-theme-dark-bg-surface: #161b22;
+  --color-theme-dark-bg-muted: #21262d;
+
+  --color-theme-dark-text-primary: #e6edf3;
+  --color-theme-dark-text-secondary: #b1bac4;
+  --color-theme-dark-text-muted: #8b949e;
+  --color-theme-dark-text-inverse: #ffffff;
+
+  --color-theme-dark-border: #30363d;
+  --color-theme-dark-border-strong: #484f58;
+
+  /* 差异颜色 - 暗色 */
+  --color-theme-dark-diff-added-bg: #1f3a2f;
+  --color-theme-dark-diff-added-text: #56d364;
+  --color-theme-dark-diff-added-border: #2ea043;
+
+  --color-theme-dark-diff-removed-bg: #3d1f20;
+  --color-theme-dark-diff-removed-text: #f85149;
+  --color-theme-dark-diff-removed-border: #da3633;
+
+  --color-theme-dark-diff-modified-bg: #3d3400;
+  --color-theme-dark-diff-modified-text: #d29922;
+  --color-theme-dark-diff-modified-border: #bb8009;
+
+  /* Token 颜色 - 暗色 */
+  --color-theme-dark-token-key: #79c0ff;
+  --color-theme-dark-token-value: #e1e4e8;
+  --color-theme-dark-token-punctuation: #d2a8ff;
+
+  /* 面板头部颜色 - 暗色 */
+  --color-theme-dark-panel-old-bg: #3d3400;
+  --color-theme-dark-panel-new-bg: #1f3a2f;
+
+  /* 按钮颜色 - 暗色 */
+  --color-theme-dark-btn-primary: #58a6ff;
+  --color-theme-dark-btn-hover: #79b8ff;
+  --color-theme-dark-btn-active: #388bfd;
+
+  /* 阴影颜色 - 暗色 */
+  --color-theme-dark-shadow-sm: rgba(0, 0, 0, 0.3);
+  --color-theme-dark-shadow-md: rgba(0, 0, 0, 0.4);
+  --color-theme-dark-shadow-lg: rgba(0, 0, 0, 0.5);
+}
+
+/* ========== 默认使用亮色主题 ========== */
+:root {
+  --theme-bg-primary: var(--color-theme-light-bg-primary);
+  --theme-bg-secondary: var(--color-theme-light-bg-secondary);
+  --theme-bg-canvas: var(--color-theme-light-bg-canvas);
+  --theme-bg-surface: var(--color-theme-light-bg-surface);
+  --theme-bg-muted: var(--color-theme-light-bg-muted);
+
+  --theme-text-primary: var(--color-theme-light-text-primary);
+  --theme-text-secondary: var(--color-theme-light-text-secondary);
+  --theme-text-muted: var(--color-theme-light-text-muted);
+  --theme-text-inverse: var(--color-theme-light-text-inverse);
+
+  --theme-border: var(--color-theme-light-border);
+  --theme-border-strong: var(--color-theme-light-border-strong);
+
+  --theme-diff-added-bg: var(--color-theme-light-diff-added-bg);
+  --theme-diff-added-text: var(--color-theme-light-diff-added-text);
+  --theme-diff-added-border: var(--color-theme-light-diff-added-border);
+
+  --theme-diff-removed-bg: var(--color-theme-light-diff-removed-bg);
+  --theme-diff-removed-text: var(--color-theme-light-diff-removed-text);
+  --theme-diff-removed-border: var(--color-theme-light-diff-removed-border);
+
+  --theme-diff-modified-bg: var(--color-theme-light-diff-modified-bg);
+  --theme-diff-modified-text: var(--color-theme-light-diff-modified-text);
+  --theme-diff-modified-border: var(--color-theme-light-diff-modified-border);
+
+  --theme-token-key: var(--color-theme-light-token-key);
+  --theme-token-value: var(--color-theme-light-token-value);
+  --theme-token-punctuation: var(--color-theme-light-token-punctuation);
+
+  --theme-panel-old-bg: var(--color-theme-light-panel-old-bg);
+  --theme-panel-new-bg: var(--color-theme-light-panel-new-bg);
+
+  --theme-btn-primary: var(--color-theme-light-btn-primary);
+  --theme-btn-hover: var(--color-theme-light-btn-hover);
+  --theme-btn-active: var(--color-theme-light-btn-active);
+
+  --theme-shadow-sm: var(--color-theme-light-shadow-sm);
+  --theme-shadow-md: var(--color-theme-light-shadow-md);
+  --theme-shadow-lg: var(--color-theme-light-shadow-lg);
+}
+
+/* ========== 暗色主题 ========== */
+[data-theme="dark"] {
+  --theme-bg-primary: var(--color-theme-dark-bg-primary);
+  --theme-bg-secondary: var(--color-theme-dark-bg-secondary);
+  --theme-bg-canvas: var(--color-theme-dark-bg-canvas);
+  --theme-bg-surface: var(--color-theme-dark-bg-surface);
+  --theme-bg-muted: var(--color-theme-dark-bg-muted);
+
+  --theme-text-primary: var(--color-theme-dark-text-primary);
+  --theme-text-secondary: var(--color-theme-dark-text-secondary);
+  --theme-text-muted: var(--color-theme-dark-text-muted);
+  --theme-text-inverse: var(--color-theme-dark-text-inverse);
+
+  --theme-border: var(--color-theme-dark-border);
+  --theme-border-strong: var(--color-theme-dark-border-strong);
+
+  --theme-diff-added-bg: var(--color-theme-dark-diff-added-bg);
+  --theme-diff-added-text: var(--color-theme-dark-diff-added-text);
+  --theme-diff-added-border: var(--color-theme-dark-diff-added-border);
+
+  --theme-diff-removed-bg: var(--color-theme-dark-diff-removed-bg);
+  --theme-diff-removed-text: var(--color-theme-dark-diff-removed-text);
+  --theme-diff-removed-border: var(--color-theme-dark-diff-removed-border);
+
+  --theme-diff-modified-bg: var(--color-theme-dark-diff-modified-bg);
+  --theme-diff-modified-text: var(--color-theme-dark-diff-modified-text);
+  --theme-diff-modified-border: var(--color-theme-dark-diff-modified-border);
+
+  --theme-token-key: var(--color-theme-dark-token-key);
+  --theme-token-value: var(--color-theme-dark-token-value);
+  --theme-token-punctuation: var(--color-theme-dark-token-punctuation);
+
+  --theme-panel-old-bg: var(--color-theme-dark-panel-old-bg);
+  --theme-panel-new-bg: var(--color-theme-dark-panel-new-bg);
+
+  --theme-btn-primary: var(--color-theme-dark-btn-primary);
+  --theme-btn-hover: var(--color-theme-dark-btn-hover);
+  --theme-btn-active: var(--color-theme-dark-btn-active);
+
+  --theme-shadow-sm: var(--color-theme-dark-shadow-sm);
+  --theme-shadow-md: var(--color-theme-dark-shadow-md);
+  --theme-shadow-lg: var(--color-theme-dark-shadow-lg);
+}
+
+/* ========== 全局样式 ========== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--theme-bg-canvas);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* ========== 滚动栏样式 ========== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--theme-bg-muted);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border-strong);
+  border-radius: 5px;
+  border: 2px solid var(--theme-bg-muted);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-text-muted);
+}
+
+/* ========== 选中文本样式 ========== */
+::selection {
+  background: var(--theme-btn-primary);
+  color: var(--theme-text-inverse);
+}
+
+/* ========== 输入框占位符 ========== */
+input::placeholder,
+textarea::placeholder {
+  color: var(--theme-text-muted);
+}
+
+/* ========== 焦点样式 ========== */
+*:focus-visible {
+  outline: 2px solid var(--theme-btn-primary);
+  outline-offset: 2px;
+}
+
+/* ========== 卡片/面板基础样式 ========== */
+.card {
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--theme-shadow-sm);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px var(--theme-shadow-md);
+}
+
+/* ========== 输入框样式 ========== */
+input,
+textarea {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--theme-btn-primary) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+/* ========== 淡入动画 ========== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* ========== 脉冲动画 ========== */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
