@@ -1,35 +1,34 @@
 import fs from 'fs-extra'
 import { confirm, select, text } from '@clack/prompts'
-import chalk from 'picocolors'
 import {
   DEFAULT_TEMPLATE_SRC,
   DEFAULT_TEMPLATE_SRC_GITEE,
   isEmpty,
   isValidPackageName,
 } from '../util'
+import { CancelError } from '../util/cancel'
+import { t } from '../util/i18n'
 
 import type { ITemplates } from '../download'
 import type { IProjectConf } from './types'
 
-const defaultTargetDir = 'my-project'
-
 export async function askProjectName(): Promise<string> {
   const value = await text({
-    message: '项目名称?',
-    placeholder: defaultTargetDir,
+    message: t('command.create.projectName'),
+    placeholder: t('command.create.placeholder'),
     validate: (value: string | undefined): string | Error | undefined => {
       if (!value || value.trim() === '') {
-        return '请输入有效的项目名称'
+        return t('command.create.invalidName')
       }
       if (!isValidPackageName(value)) {
-        return '请输入有效的项目名称'
+        return t('command.create.invalidName')
       }
       return undefined
     },
   })
 
   if (typeof value === 'symbol') {
-    return askProjectName()
+    throw new CancelError(t('errors.cancel'))
   }
 
   const projectName = value
@@ -38,26 +37,26 @@ export async function askProjectName(): Promise<string> {
   if (fs.existsSync(projectName) && !isEmpty(projectName)) {
     const choices = [
       {
-        label: '覆写',
+        label: t('action.overwrite'),
         value: 'overwrite',
       },
       {
-        label: '合并',
+        label: t('action.merge'),
         value: 'merge',
       },
       {
-        label: '取消',
+        label: t('action.cancel'),
         value: 'cancel',
       },
     ]
 
     const modeValue = await select({
-      message: `当前目录${projectName}已经存在同名项目，是否覆写?`,
+      message: t('exists.message', { dir: projectName }),
       options: choices,
     })
 
     if (typeof modeValue === 'symbol') {
-      return askProjectName()
+      throw new CancelError(t('errors.cancel'))
     }
 
     switch (modeValue) {
@@ -67,7 +66,7 @@ export async function askProjectName(): Promise<string> {
       case 'merge':
         break
       case 'cancel':
-        throw new Error(chalk.red('取消创建'))
+        throw new CancelError(t('errors.cancel'))
       default:
         break
     }
@@ -78,12 +77,12 @@ export async function askProjectName(): Promise<string> {
 
 export async function askDescription(): Promise<string> {
   const value = await text({
-    message: '请输入项目介绍',
+    message: t('command.create.description'),
     placeholder: '',
   })
 
   if (typeof value === 'symbol') {
-    return askDescription()
+    throw new CancelError(t('errors.cancelDescription'))
   }
 
   return value
@@ -110,12 +109,12 @@ export async function askNpm(): Promise<IProjectConf['npm']> {
   ]
 
   const value = await select({
-    message: '请选择包管理工具',
+    message: t('command.create.packageManager'),
     options: choices,
   })
 
   if (typeof value === 'symbol') {
-    return askNpm()
+    throw new CancelError(t('errors.cancelNpm'))
   }
 
   return value as IProjectConf['npm']
@@ -123,12 +122,12 @@ export async function askNpm(): Promise<IProjectConf['npm']> {
 
 export async function askSelfInputTemplateSource(): Promise<string> {
   const value = await text({
-    message: '请输入github地址',
+    message: t('info.fetchingTemplate'),
     placeholder: '',
   })
 
   if (typeof value === 'symbol') {
-    return askSelfInputTemplateSource()
+    throw new CancelError(t('errors.cancelGitInput'))
   }
 
   return value
@@ -136,12 +135,12 @@ export async function askSelfInputTemplateSource(): Promise<string> {
 
 export async function askGitInit(): Promise<boolean> {
   const value = await confirm({
-    message: '是否需要初始化 Git 仓库?',
+    message: t('command.create.gitInit'),
     initialValue: false,
   })
 
   if (typeof value === 'symbol') {
-    return askGitInit()
+    throw new CancelError(t('errors.cancelGitInit'))
   }
 
   return value
@@ -149,10 +148,10 @@ export async function askGitInit(): Promise<boolean> {
 
 export async function askGitRemote(): Promise<string> {
   const value = await text({
-    message: '请输入远程仓库地址 (例如: https://github.com/username/repo.git)',
+    message: t('command.create.remoteRepo'),
     placeholder: '',
     validate: (inputValue: string | undefined): string | Error | undefined => {
-      if (!inputValue) return '请输入有效的仓库地址'
+      if (!inputValue) return t('errors.invalidRepo')
       if (
         !(
           inputValue.endsWith('.git') ||
@@ -161,14 +160,14 @@ export async function askGitRemote(): Promise<string> {
           inputValue.includes('gitee.com')
         )
       ) {
-        return '请输入有效的 Git 仓库地址'
+        return t('errors.invalidGitRepo')
       }
       return undefined
     },
   })
 
   if (typeof value === 'symbol') {
-    return askGitRemote()
+    throw new CancelError(t('errors.cancelGitRemote'))
   }
 
   return value
@@ -179,30 +178,30 @@ export async function askTemplateSource(): Promise<
 > {
   const choices = [
     {
-      label: 'Github（最新）',
+      label: t('templateSource.githubLatest'),
       value: DEFAULT_TEMPLATE_SRC,
     },
     {
-      label: 'Gitee（最快）',
+      label: t('templateSource.giteeFastest'),
       value: DEFAULT_TEMPLATE_SRC_GITEE,
     },
     {
-      label: 'CLI 内置默认模板',
+      label: t('templateSource.builtin'),
       value: 'default-template',
     },
     {
-      label: '自定义',
+      label: t('templateSource.custom'),
       value: 'self-input',
     },
   ]
 
   const value = await select({
-    message: '请选择模板源',
+    message: t('command.create.templateSource'),
     options: choices,
   })
 
   if (typeof value === 'symbol') {
-    return askTemplateSource()
+    throw new CancelError(t('errors.cancelTemplateSource'))
   }
 
   return value
@@ -213,7 +212,7 @@ export async function askTemplate(
 ): Promise<'default' | string> {
   const choices = [
     {
-      label: '默认模板',
+      label: t('action.defaultTemplate'),
       value: 'default',
     },
     ...list.map(item => ({
@@ -223,12 +222,12 @@ export async function askTemplate(
   ]
 
   const value = await select({
-    message: '请选择模板',
+    message: t('command.create.template'),
     options: choices,
   })
 
   if (typeof value === 'symbol') {
-    return askTemplate(list)
+    throw new CancelError(t('errors.cancelTemplate'))
   }
 
   return value
@@ -236,12 +235,12 @@ export async function askTemplate(
 
 export async function askAutoInstall(): Promise<boolean> {
   const value = await confirm({
-    message: '是否需要自动安装依赖?',
+    message: t('command.create.autoInstall'),
     initialValue: false,
   })
 
   if (typeof value === 'symbol') {
-    return askAutoInstall()
+    throw new CancelError(t('errors.cancelAutoInstall'))
   }
 
   return value

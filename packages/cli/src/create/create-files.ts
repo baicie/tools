@@ -4,6 +4,7 @@ import fs from 'fs-extra'
 import chalk from 'picocolors'
 import type { IProjectConf } from '../steps'
 import { TEMPLATE_CREATOR, excludeFiles } from '../util'
+import { t } from '../util/i18n'
 
 export async function createFiles(conf: IProjectConf): Promise<string[]> {
   const excludes = [
@@ -34,7 +35,7 @@ export async function createFiles(conf: IProjectConf): Promise<string[]> {
 
     await fs.copy(sourcePath, targetPath, { overwrite: true })
 
-    return `${chalk.green(`创建文件: ${targetPath}`)}`
+    return `${chalk.green(t('info.creatingFile', { targetPath }))}`
   })
 
   const res = await Promise.all(files)

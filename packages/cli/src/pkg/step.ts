@@ -1,26 +1,28 @@
 import { select, text } from '@clack/prompts'
 import { isValidPackageName } from '../util'
+import { CancelError } from '../util/cancel'
+import { t } from '../util/i18n'
 
 /**
  * 询问包名
  */
 export async function askPackageName(defaultName?: string): Promise<string> {
   const value = await text({
-    message: '包名 (package name)?',
+    message: t('command.pkg.packageName'),
     placeholder: defaultName || '',
     validate: (value: string | undefined): string | Error | undefined => {
       if (!value || value.trim() === '') {
-        return '包名不能为空'
+        return t('command.pkg.packageNameRequired')
       }
       if (!isValidPackageName(value)) {
-        return '请输入有效的包名（只能包含小写字母、数字、连字符、下划线和点，可以包含 @scope/）'
+        return t('command.pkg.packageNameInvalid')
       }
       return undefined
     },
   })
 
   if (typeof value === 'symbol') {
-    return askPackageName(defaultName)
+    throw new CancelError(t('errors.cancel'))
   }
 
   return value
@@ -33,22 +35,22 @@ export async function askPackageVersion(
   defaultVersion?: string,
 ): Promise<string> {
   const value = await text({
-    message: '版本号 (version)?',
+    message: t('command.pkg.version'),
     placeholder: defaultVersion || '0.1.0',
     validate: (value: string | undefined): string | Error | undefined => {
       if (!value || value.trim() === '') {
-        return '版本号不能为空'
+        return t('command.pkg.versionRequired')
       }
       // 简单的版本号验证（semver 格式）
       if (!/^\d+\.\d+\.\d+/.test(value)) {
-        return '请输入有效的版本号（格式: x.y.z，例如 0.1.0）'
+        return t('command.pkg.versionInvalid')
       }
       return undefined
     },
   })
 
   if (typeof value === 'symbol') {
-    return askPackageVersion(defaultVersion)
+    throw new CancelError(t('errors.cancel'))
   }
 
   return value
@@ -59,12 +61,12 @@ export async function askPackageVersion(
  */
 export async function askPackageDescription(): Promise<string> {
   const value = await text({
-    message: '包描述 (description)?',
+    message: t('command.pkg.description'),
     placeholder: '',
   })
 
   if (typeof value === 'symbol') {
-    return askPackageDescription()
+    throw new CancelError(t('errors.cancel'))
   }
 
   return value
@@ -78,23 +80,23 @@ export async function askPackagePreset(
 ): Promise<'basic' | 'library'> {
   const choices = [
     {
-      label: '基础项目 (basic)',
+      label: t('command.pkg.presetBasic'),
       value: 'basic' as const,
     },
     {
-      label: '库项目 (library)',
+      label: t('command.pkg.presetLibrary'),
       value: 'library' as const,
     },
   ]
 
   const value = await select({
-    message: '请选择预设类型 (preset)?',
+    message: t('command.pkg.preset'),
     options: choices,
     initialValue: defaultPreset || 'basic',
   })
 
   if (typeof value === 'symbol') {
-    return askPackagePreset(defaultPreset)
+    throw new CancelError(t('errors.cancel'))
   }
 
   return value

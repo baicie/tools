@@ -7,6 +7,7 @@ import chalk from 'picocolors'
 import AdmZip from 'adm-zip'
 import gitClone from 'git-clone'
 import { consola } from 'consola'
+import { t } from '../util/i18n'
 
 export interface FileStat {
   name: string
@@ -19,7 +20,7 @@ export async function download(
   url: string,
   tempPath: string,
 ): Promise<FileStat[]> {
-  const spinner = ora(`正在从 ${url} 拉取远程模板...`).start()
+  const spinner = ora(t('info.downloadingTemplate', { url })).start()
   const zipPath = path.join(tempPath, 'temp.zip')
 
   return new Promise<FileStat[]>(resolve => {
@@ -30,7 +31,7 @@ export async function download(
         if (error) {
           consola.log(error)
           spinner.color = 'red'
-          spinner.fail(chalk.red('拉取远程模板仓库失败！'))
+          spinner.fail(t('info.downloadFailed'))
           await fs.remove(tempPath)
           return resolve([])
         }
@@ -47,9 +48,9 @@ export async function download(
           // 过滤文件
           resolve(defaultFile(tempPath, spinner))
         })
-        .on('error', async err => {
+        .on('error', async _err => {
           spinner.color = 'red'
-          spinner.fail(chalk.red(`拉取远程模板仓库失败！\n${err}`))
+          spinner.fail(t('info.downloadFailed'))
           await fs.remove(tempPath)
           return resolve([])
         })
@@ -83,14 +84,14 @@ function defaultFile(folder: string, spinner: Ora) {
     spinner.color = 'red'
     spinner.fail(
       chalk.red(
-        `拉取远程模板仓库失败！\n${new Error('远程模板源组织格式错误')}`,
+        `${t('info.downloadFailed')}\n${new Error(t('info.invalidTemplateFormat'))}`,
       ),
     )
-    throw new Error('拉取远程模板仓库失败！')
+    throw new Error(t('info.downloadFailed'))
   }
 
   spinner.color = 'green'
-  spinner.succeed(`${chalk.green('拉取远程模板仓库成功！')}`)
+  spinner.succeed(t('success.downloadSuccess'))
 
   return files
 }

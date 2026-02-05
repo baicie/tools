@@ -24,6 +24,7 @@
     "**/node_modules",
     "**/tsconfig.tsbuildinfo",
     "playground/vue",
-    "playground/napi-vue3"
+    "playground/napi-vue3",
+    "playground/json-diff"
   ]
 }
