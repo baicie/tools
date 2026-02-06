@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import {
   Decoration,
+  type DecorationSet,
   EditorView,
   ViewPlugin,
   type ViewUpdate,
   keymap,
 } from '@codemirror/view'
-import { EditorState } from '@codemirror/state'
+import { EditorState, RangeSetBuilder } from '@codemirror/state'
 import { json, jsonParseLinter } from '@codemirror/lang-json'
 import { lintGutter, linter } from '@codemirror/lint'
 import { defaultKeymap } from '@codemirror/commands'
@@ -43,7 +44,7 @@ export default function JsonCodeMirror({
   onScrollChange,
   onHorizontalScrollChange,
 }: JsonCodeMirrorProps) {
-  const viewRef = useRef<EditorView>()
+  const viewRef = useRef<EditorView | undefined>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // 主题配置
@@ -92,26 +93,22 @@ export default function JsonCodeMirror({
     () =>
       ViewPlugin.fromClass(
         class {
-          decorations: Array<Decoration>
+          decorations: DecorationSet
 
           constructor(view: EditorView) {
             this.decorations = this.getDecorations(view)
           }
 
           update(update: ViewUpdate) {
-            if (
-              update.docChanged ||
-              update.viewportChanged ||
-              update.view.updatedDecorations
-            ) {
+            if (update.docChanged || update.viewportChanged) {
               this.decorations = this.getDecorations(update.view)
             }
           }
 
-          getDecorations(view: EditorView) {
-            if (!diffLines) return []
+          getDecorations(view: EditorView): DecorationSet {
+            if (!diffLines) return Decoration.none
 
-            const builder: Array<Decoration> = []
+            const builder = new RangeSetBuilder<Decoration>()
             const totalLines = view.state.doc.lines
 
             diffLines.forEach(item => {
@@ -125,17 +122,33 @@ export default function JsonCodeMirror({
                 if (lineInfo) {
                   switch (item.type) {
                     case 'added':
-                      builder.push(addedLineDecoration.range(lineInfo.from))
+                      builder.add(
+                        lineInfo.from,
+                        lineInfo.from,
+                        addedLineDecoration,
+                      )
                       break
                     case 'removed':
-                      builder.push(removedLineDecoration.range(lineInfo.from))
+                      builder.add(
+                        lineInfo.from,
+                        lineInfo.from,
+                        removedLineDecoration,
+                      )
                       break
                     case 'modified':
-                      builder.push(modifiedLineDecoration.range(lineInfo.from))
+                      builder.add(
+                        lineInfo.from,
+                        lineInfo.from,
+                        modifiedLineDecoration,
+                      )
                       break
                     case 'unchanged':
                       // 无差异的行也添加透明装饰器，保持视觉一致性
-                      builder.push(unchangedLineDecoration.range(lineInfo.from))
+                      builder.add(
+                        lineInfo.from,
+                        lineInfo.from,
+                        unchangedLineDecoration,
+                      )
                       break
                   }
                 }
@@ -144,7 +157,7 @@ export default function JsonCodeMirror({
               }
             })
 
-            return Decoration.set(builder.sort((a, b) => a.from - b.from))
+            return builder.finish()
           }
         },
         {
