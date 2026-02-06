@@ -35,7 +35,7 @@
     "fast-glob": "^3.3.3",
     "fs-extra": "^11.3.3",
     "git-clone": "^0.2.0",
-    "i18next": "^25.8.3",
+    "i18next": "^25.8.4",
     "ora": "^8.2.0",
     "os-locale": "^8.0.0",
     "picocolors": "^1.1.1",

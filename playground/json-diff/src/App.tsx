@@ -171,68 +171,6 @@ function getLineTokens(line: string): Array<{ type: string; value: string }> {
   return tokens
 }
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-}
-
-function renderLine(
-  tokens: Array<{ type: string; value: string }>,
-  highlightKeys: Set<string>,
-  highlightColor: string,
-): string {
-  return tokens
-    .map(token => {
-      const escaped = escapeHtml(token.value)
-
-      // 高亮 key
-      if (token.type === 'key') {
-        const keyName = token.value.replace(/"/g, '')
-        if (highlightKeys.has(keyName)) {
-          return `<span class="diff-key" style="background-color: ${highlightColor}; border-radius: 3px; padding: 0 2px;">${escaped}</span>`
-        }
-        return `<span class="token-key">${escaped}</span>`
-      }
-
-      // 高亮值（如果是 highlight key 的值）
-      if (
-        token.type === 'string' ||
-        token.type === 'number' ||
-        token.type === 'boolean' ||
-        token.type === 'null'
-      ) {
-        const prevToken = tokens[tokens.indexOf(token) - 1]
-        if (
-          prevToken &&
-          prevToken.type === 'key' &&
-          highlightKeys.has(prevToken.value.replace(/"/g, ''))
-        ) {
-          return `<span class="diff-value" style="background-color: ${highlightColor}; border-radius: 3px; padding: 0 2px;">${escaped}</span>`
-        }
-      }
-
-      switch (token.type) {
-        case 'string':
-          return `<span class="token-string">${escaped}</span>`
-        case 'number':
-          return `<span class="token-number">${escaped}</span>`
-        case 'boolean':
-          return `<span class="token-boolean">${escaped}</span>`
-        case 'null':
-          return `<span class="token-null">${escaped}</span>`
-        case 'punctuation':
-          return `<span class="token-punctuation">${escaped}</span>`
-        default:
-          return escaped
-      }
-    })
-    .join('')
-}
-
 export default function App() {
   const [theme, setThemeState] = useState<Theme>('light')
 
@@ -296,7 +234,6 @@ export default function App() {
         JSON.parse(trimmedOld)
         JSON.parse(trimmedNew)
         const items = diffJson(trimmedOld, trimmedNew)
-        console.log('items', items)
         setDiffItems(items)
         setErrorMessage('')
       } catch (e) {
@@ -375,14 +312,10 @@ export default function App() {
 
       // 提取当前行的 key（如果有）
       let key = null
-      let parentPath = ''
       const keyMatch = trimmed.match(/^"([^"]+)"\s*:/)
       if (keyMatch) {
         key = keyMatch[1]
       }
-
-      // 构建路径前缀（基于缩进层级）
-      const pathPrefix = (parts: string[]) => parts.join('.')
 
       return {
         idx,
@@ -398,14 +331,6 @@ export default function App() {
       }
     })
 
-    // 构建层级映射：indentLevel -> 行索引
-    const levelToLineIdx: Map<number, number> = new Map()
-    lineInfos.forEach((info, idx) => {
-      if (info.key !== null || info.isObjectStart || info.isArrayStart) {
-        levelToLineIdx.set(info.indentLevel, idx)
-      }
-    })
-
     diffItems.forEach((item: DiffItem) => {
       // 解析 path，只保留 key 部分（排除数组索引）
       const parts: string[] = item.path
@@ -413,8 +338,6 @@ export default function App() {
         .filter((p: string) => p && !/^\d+$/.test(p))
       if (parts.length === 0) return
 
-      // 尝试精确匹配路径
-      const targetPath = parts.join('.')
       const lastKey = parts[parts.length - 1]
 
       // 方法1：精确匹配行内容中的路径
@@ -508,14 +431,10 @@ export default function App() {
 
       // 提取当前行的 key（如果有）
       let key = null
-      let parentPath = ''
       const keyMatch = trimmed.match(/^"([^"]+)"\s*:/)
       if (keyMatch) {
         key = keyMatch[1]
       }
-
-      // 构建路径前缀（基于缩进层级）
-      const pathPrefix = (parts: string[]) => parts.join('.')
 
       return {
         idx,
@@ -531,14 +450,6 @@ export default function App() {
       }
     })
 
-    // 构建层级映射：indentLevel -> 行索引
-    const levelToLineIdx: Map<number, number> = new Map()
-    lineInfos.forEach((info, idx) => {
-      if (info.key !== null || info.isObjectStart || info.isArrayStart) {
-        levelToLineIdx.set(info.indentLevel, idx)
-      }
-    })
-
     diffItems.forEach((item: DiffItem) => {
       // 解析 path，只保留 key 部分（排除数组索引）
       const parts: string[] = item.path
@@ -546,8 +457,6 @@ export default function App() {
         .filter((p: string) => p && !/^\d+$/.test(p))
       if (parts.length === 0) return
 
-      // 尝试精确匹配路径
-      const targetPath = parts.join('.')
       const lastKey = parts[parts.length - 1]
 
       // 方法1：精确匹配行内容中的路径
@@ -699,10 +608,6 @@ export default function App() {
       type,
     }))
   }, [lineTypes])
-
-  // 解析 token 缓存
-  const oldTokens = useMemo(() => oldLines.map(getLineTokens), [oldLines])
-  const newTokens = useMemo(() => newLines.map(getLineTokens), [newLines])
 
   const isOldJsonValid = useMemo(() => {
     try {
@@ -1118,11 +1023,7 @@ export default function App() {
                       : 'var(--theme-text-muted)',
                 }}
               >
-                <path
-                  fillRule="evenodd"
-                  d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-3.791l-.168-.527-.877.439a1 1 0 00-.554 1.83l.622.933a1 1 0 01.286 1.052l-1.178 4.686a3.99 3.99 0 01-3.691 3.1H8a1 1 0 01-1-1v-2.924a3.99 3.99 5-2.0 01.07L4.5 12.5l-.422-.211A1 1 0 003 13.05a1 1 0 00-.5 1.79l.8 1.511a1 1 0 01.285 1.05l-1.178 4.686a3.99 3.99 0 01-3.691 3.1H2a1 1 0 01-1-1V5a1 1 0 011-1h7.5z"
-                  clipRule="evenodd"
-                />
+                <path d="M10 4a6 6 0 110 12 6 6 0 010-12z" />
               </svg>
               <Switch checked={theme === 'dark'} onChange={toggleTheme} />
               <svg
@@ -1188,23 +1089,19 @@ export default function App() {
                 scrollSync
                 syncedScroll={rightScroll}
                 syncedHorizontalScroll={rightHorizontalScroll}
-                onScrollChange={(scrollTop, scrollHeight) => {
+                onScrollChange={percentage => {
                   if (!isSyncingLeft.current) {
                     isSyncingLeft.current = true
-                    // 转换为百分比
-                    const maxScroll = scrollHeight - scrollHeight * 0 || 1
-                    const percentage =
-                      maxScroll > 0 ? (scrollTop / maxScroll) * 100 : 0
                     setLeftScroll(percentage)
                     setTimeout(() => {
                       isSyncingLeft.current = false
                     }, 50)
                   }
                 }}
-                onHorizontalScrollChange={(scrollLeft, scrollWidth) => {
+                onHorizontalScrollChange={scrollLeftPercent => {
                   if (!isSyncingLeftHorizontal.current) {
                     isSyncingLeftHorizontal.current = true
-                    setLeftHorizontalScroll(scrollLeft)
+                    setLeftHorizontalScroll(scrollLeftPercent)
                     setTimeout(() => {
                       isSyncingLeftHorizontal.current = false
                     }, 50)
@@ -1257,23 +1154,19 @@ export default function App() {
                 scrollSync
                 syncedScroll={leftScroll}
                 syncedHorizontalScroll={leftHorizontalScroll}
-                onScrollChange={(scrollTop, scrollHeight) => {
+                onScrollChange={percentage => {
                   if (!isSyncingRight.current) {
                     isSyncingRight.current = true
-                    // 转换为百分比
-                    const maxScroll = scrollHeight - scrollHeight * 0 || 1
-                    const percentage =
-                      maxScroll > 0 ? (scrollTop / maxScroll) * 100 : 0
                     setRightScroll(percentage)
                     setTimeout(() => {
                       isSyncingRight.current = false
                     }, 50)
                   }
                 }}
-                onHorizontalScrollChange={(scrollLeft, scrollWidth) => {
+                onHorizontalScrollChange={scrollLeftPercent => {
                   if (!isSyncingRightHorizontal.current) {
                     isSyncingRightHorizontal.current = true
-                    setRightHorizontalScroll(scrollLeft)
+                    setRightHorizontalScroll(scrollLeftPercent)
                     setTimeout(() => {
                       isSyncingRightHorizontal.current = false
                     }, 50)

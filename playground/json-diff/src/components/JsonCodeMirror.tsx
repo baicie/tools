@@ -26,9 +26,9 @@ interface JsonCodeMirrorProps {
   height?: string
   scrollSync?: boolean
   syncedScroll?: number // 垂直百分比值 0-100
-  syncedHorizontalScroll?: number // 横向像素值
-  onScrollChange?: (scrollTop: number, scrollHeight: number) => void
-  onHorizontalScrollChange?: (scrollLeft: number, scrollWidth: number) => void
+  syncedHorizontalScroll?: number // 横向百分比值 0-100
+  onScrollChange?: (scrollPercent: number) => void
+  onHorizontalScrollChange?: (scrollLeftPercent: number) => void
 }
 
 export default function JsonCodeMirror({
@@ -157,12 +157,21 @@ export default function JsonCodeMirror({
   // 滚动处理
   const handleScroll = useCallback(
     (event: Event) => {
-      const target = event.target as HTMLElement
+      const el =
+        (event.currentTarget as HTMLElement) ||
+        (viewRef.current &&
+          (viewRef.current.dom.querySelector('.cm-scroller') as HTMLElement)) ||
+        (viewRef.current && (viewRef.current.scrollDOM as HTMLElement))
+      if (!el) return
       if (onScrollChange) {
-        onScrollChange(target.scrollTop, target.scrollHeight)
+        const maxScroll = el.scrollHeight - el.clientHeight
+        const percentage = maxScroll > 0 ? (el.scrollTop / maxScroll) * 100 : 0
+        onScrollChange(percentage)
       }
       if (onHorizontalScrollChange) {
-        onHorizontalScrollChange(target.scrollLeft, target.scrollWidth)
+        const maxH = el.scrollWidth - el.clientWidth
+        const hperc = maxH > 0 ? (el.scrollLeft / maxH) * 100 : 0
+        onHorizontalScrollChange(hperc)
       }
     },
     [onScrollChange, onHorizontalScrollChange],
@@ -172,14 +181,13 @@ export default function JsonCodeMirror({
   useEffect(() => {
     if (!scrollSync || syncedScroll === undefined || !viewRef.current) return
 
-    let animationFrameId: number
+    let animationFrameId = 0
 
     const syncScroll = () => {
       const view = viewRef.current
       if (!view) return
 
-      const scroller =
-        view.scrollDOM || view.dom.querySelector('.cm-scroller') || view.dom
+      const scroller = view.scrollDOM
 
       if (scroller && scroller instanceof HTMLElement) {
         const scrollHeight = scroller.scrollHeight - scroller.clientHeight
@@ -198,7 +206,7 @@ export default function JsonCodeMirror({
     animationFrameId = requestAnimationFrame(syncScroll)
 
     return () => {
-      if (animationFrameId) {
+      if (animationFrameId !== 0) {
         cancelAnimationFrame(animationFrameId)
       }
     }
@@ -209,20 +217,21 @@ export default function JsonCodeMirror({
     if (!scrollSync || syncedHorizontalScroll === undefined || !viewRef.current)
       return
 
-    let animationFrameId: number
+    let animationFrameId = 0
 
     const syncHorizontalScroll = () => {
       const view = viewRef.current
       if (!view) return
 
-      const scroller =
-        view.scrollDOM || view.dom.querySelector('.cm-scroller') || view.dom
+      const scroller = view.scrollDOM
 
       if (scroller && scroller instanceof HTMLElement) {
+        const maxH = scroller.scrollWidth - scroller.clientWidth
+        if (maxH <= 0) return
+        const targetLeft = (syncedHorizontalScroll / 100) * maxH
         const currentScroll = scroller.scrollLeft
-
-        if (Math.abs(currentScroll - syncedHorizontalScroll) > 2) {
-          scroller.scrollLeft = syncedHorizontalScroll
+        if (Math.abs(currentScroll - targetLeft) > 2) {
+          scroller.scrollLeft = targetLeft
         }
       }
     }
@@ -230,7 +239,7 @@ export default function JsonCodeMirror({
     animationFrameId = requestAnimationFrame(syncHorizontalScroll)
 
     return () => {
-      if (animationFrameId) {
+      if (animationFrameId !== 0) {
         cancelAnimationFrame(animationFrameId)
       }
     }
@@ -246,6 +255,22 @@ export default function JsonCodeMirror({
       EditorView.editable.of(!isReadOnly),
       EditorState.readOnly.of(isReadOnly),
       syntaxHighlighting(defaultHighlightStyle),
+      EditorView.domEventHandlers({
+        scroll: (event, view) => {
+          const el = view.scrollDOM
+          if (onScrollChange) {
+            const maxScroll = el.scrollHeight - el.clientHeight
+            const percentage =
+              maxScroll > 0 ? (el.scrollTop / maxScroll) * 100 : 0
+            onScrollChange(percentage)
+          }
+          if (onHorizontalScrollChange) {
+            const maxH = el.scrollWidth - el.clientWidth
+            const hperc = maxH > 0 ? (el.scrollLeft / maxH) * 100 : 0
+            onHorizontalScrollChange(hperc)
+          }
+        },
+      }),
       EditorView.theme({
         '&': {
           height,
@@ -295,30 +320,9 @@ export default function JsonCodeMirror({
   )
 
   // 初始化或更新编辑器
-  const handleCreate = useCallback(
-    (editor: EditorView) => {
-      viewRef.current = editor
-
-      // 监听滚动事件
-      const scroller = editor.scrollDOM
-      if (scroller) {
-        scroller.addEventListener('scroll', handleScroll)
-      }
-    },
-    [handleScroll],
-  )
-
-  // 清理
-  useEffect(() => {
-    return () => {
-      if (viewRef.current) {
-        const scroller = viewRef.current.scrollDOM
-        if (scroller) {
-          scroller.removeEventListener('scroll', handleScroll)
-        }
-      }
-    }
-  }, [handleScroll])
+  const handleCreate = useCallback((editor: EditorView) => {
+    viewRef.current = editor
+  }, [])
 
   // 主题扩展
   const extensionTheme = useMemo(
@@ -372,7 +376,7 @@ export default function JsonCodeMirror({
             highlightActiveLine: false,
             highlightActiveLineGutter: false,
           }}
-          onCreate={handleCreate}
+          onCreateEditor={handleCreate}
           style={{
             height: '100%',
             width: '100%',

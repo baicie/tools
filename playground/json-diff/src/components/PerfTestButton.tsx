@@ -19,7 +19,7 @@ export default function PerfTestButton({ onComplete }: PerfTestButtonProps) {
 
   // 生成指定大小的随机 JSON
   const generateRandomJson = (sizeKB: number): string => {
-    const data: Record<string, unknown> = {
+    const data: Record<string, any> = {
       metadata: {
         version: '1.0.0',
         timestamp: Date.now(),
