@@ -576,7 +576,4 @@ if (!nativeBinding) {
 }
 
 module.exports = nativeBinding
-module.exports.applyJsonDiff = nativeBinding.applyJsonDiff
-module.exports.getJsonDiffDetails = nativeBinding.getJsonDiffDetails
-module.exports.jsonDiff = nativeBinding.jsonDiff
-module.exports.plus100 = nativeBinding.plus100
+module.exports.diffJson = nativeBinding.diffJson

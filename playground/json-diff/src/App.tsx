@@ -1,17 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import Button from './components/button'
 import Switch from './components/switch'
-import JsonEditor from './components/JsonEditor'
-import { getJsonDiffDetails } from '@baicie/napi-browser'
+import JsonCodeMirror from './components/JsonCodeMirror'
+import { diffJson } from '@baicie/napi-browser'
+import type { DiffItem } from '@baicie/napi-browser'
+import { isDev } from './hooks/is-dev'
+
+// 开发模式下使用动态导入
+const PerfTestButton = isDev()
+  ? lazy(() => import('./components/PerfTestButton'))
+  : null
 
 type Theme = 'light' | 'dark'
-
-interface DiffItem {
-  path: string
-  operation: 'add' | 'remove' | 'replace'
-  oldValue?: unknown
-  newValue?: unknown
-}
 
 function initTheme(): Theme {
   const saved =
@@ -256,7 +256,16 @@ export default function App() {
   const [diffItems, setDiffItems] = useState<DiffItem[]>([])
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [viewMode, setViewMode] = useState<'edit' | 'diff'>('diff')
+  const [leftScroll, setLeftScroll] = useState<number>(0)
+  const [rightScroll, setRightScroll] = useState<number>(0)
+  const [leftHorizontalScroll, setLeftHorizontalScroll] = useState<number>(0)
+  const [rightHorizontalScroll, setRightHorizontalScroll] = useState<number>(0)
+
+  // 滚动同步（避免循环触发）
+  const isSyncingLeft = useRef(false)
+  const isSyncingRight = useRef(false)
+  const isSyncingLeftHorizontal = useRef(false)
+  const isSyncingRightHorizontal = useRef(false)
 
   useEffect(() => {
     const t = initTheme()
@@ -286,8 +295,8 @@ export default function App() {
         setIsLoading(true)
         JSON.parse(trimmedOld)
         JSON.parse(trimmedNew)
-        const details = getJsonDiffDetails(trimmedOld, trimmedNew)
-        const items = JSON.parse(details) as DiffItem[]
+        const items = diffJson(trimmedOld, trimmedNew)
+        console.log('items', items)
         setDiffItems(items)
         setErrorMessage('')
       } catch (e) {
@@ -350,72 +359,271 @@ export default function App() {
 
   const maxLines = Math.max(oldLines.length, newLines.length)
 
-  // 根据 diffItems 生成每行的高亮 key
+  // 根据 diffItems 生成每行的高亮 key - 使用缩进层级和路径前缀匹配
   const oldHighlights = useMemo(() => {
     const highlights: Array<Set<string>> = Array.from(
       { length: maxLines },
       () => new Set<string>(),
     )
 
-    diffItems.forEach(item => {
-      const parts = item.path.split('.').filter(p => p && !/^\d+$/.test(p))
+    // 预处理：计算每一行的缩进层级和路径前缀
+    const lineInfos = oldLines.map((line, idx) => {
+      const trimmed = line.trim()
+      const indentMatch = line.match(/^(\s*)/)
+      const indent = indentMatch ? indentMatch[1].length : 0
+      const indentLevel = Math.floor(indent / 2)
+
+      // 提取当前行的 key（如果有）
+      let key = null
+      let parentPath = ''
+      const keyMatch = trimmed.match(/^"([^"]+)"\s*:/)
+      if (keyMatch) {
+        key = keyMatch[1]
+      }
+
+      // 构建路径前缀（基于缩进层级）
+      const pathPrefix = (parts: string[]) => parts.join('.')
+
+      return {
+        idx,
+        line,
+        trimmed,
+        indent,
+        indentLevel,
+        key,
+        isObjectStart: trimmed === '{',
+        isObjectEnd: trimmed === '}',
+        isArrayStart: trimmed === '[',
+        isArrayEnd: trimmed === ']',
+      }
+    })
+
+    // 构建层级映射：indentLevel -> 行索引
+    const levelToLineIdx: Map<number, number> = new Map()
+    lineInfos.forEach((info, idx) => {
+      if (info.key !== null || info.isObjectStart || info.isArrayStart) {
+        levelToLineIdx.set(info.indentLevel, idx)
+      }
+    })
+
+    diffItems.forEach((item: DiffItem) => {
+      // 解析 path，只保留 key 部分（排除数组索引）
+      const parts: string[] = item.path
+        .split('.')
+        .filter((p: string) => p && !/^\d+$/.test(p))
+      if (parts.length === 0) return
+
+      // 尝试精确匹配路径
+      const targetPath = parts.join('.')
       const lastKey = parts[parts.length - 1]
 
-      // 在旧 JSON 中查找
-      for (let i = 0; i < oldLines.length; i++) {
-        if (oldLines[i].includes(`"${lastKey}"`)) {
-          highlights[i].add(lastKey)
-          // 也高亮父级
-          if (parts.length > 1) {
-            for (let j = i - 1; j >= 0; j--) {
-              const parentMatch = oldLines[j].match(/"([^"]+)"\s*:/)
-              if (parentMatch && parts.includes(parentMatch[1])) {
-                highlights[j].add(parentMatch[1])
-              } else {
+      // 方法1：精确匹配行内容中的路径
+      let found = false
+      for (let i = 0; i < lineInfos.length; i++) {
+        const info = lineInfos[i]
+        if (!info.trimmed) continue
+
+        // 构建当前行的完整 key
+        const lineKeyMatch = info.trimmed.match(/^"([^"]+)"\s*:/)
+        if (lineKeyMatch) {
+          const lineKey = lineKeyMatch[1]
+
+          // 检查是否是我们要找的 key
+          if (lineKey === lastKey) {
+            // 验证父级路径是否匹配
+            if (parts.length === 1) {
+              // 顶层 key，直接高亮
+              highlights[i].add(lastKey)
+              found = true
+              break
+            } else {
+              // 需要验证父级路径
+              let parentPath = ''
+              for (let j = 0; j < parts.length - 1; j++) {
+                parentPath += (j > 0 ? '.' : '') + parts[j]
+              }
+
+              // 向前查找父级
+              let parentFound = false
+              for (let j = i - 1; j >= 0; j--) {
+                const parentInfo = lineInfos[j]
+                if (parentInfo.key && parts.includes(parentInfo.key)) {
+                  parentFound = true
+                  break
+                }
+                if (parentInfo.indentLevel < info.indentLevel - 1) {
+                  break
+                }
+              }
+
+              if (parentFound) {
+                highlights[i].add(lastKey)
+                found = true
                 break
               }
             }
           }
-          break
+        }
+      }
+
+      // 方法2：如果精确匹配失败，使用基于缩进的回退策略
+      if (!found && parts.length > 0) {
+        const targetIndentLevel = parts.length - 1
+
+        // 找到该缩进层级最近的前一行
+        let nearestLineIdx = -1
+        for (let i = lineInfos.length - 1; i >= 0; i--) {
+          if (
+            lineInfos[i].indentLevel <= targetIndentLevel &&
+            (lineInfos[i].key !== null || lineInfos[i].isObjectStart)
+          ) {
+            nearestLineIdx = i
+            break
+          }
+        }
+
+        if (nearestLineIdx !== -1) {
+          // 高亮这一行作为父级
+          highlights[nearestLineIdx].add(lastKey)
         }
       }
     })
 
     return highlights
-  }, [diffItems, oldLines])
+  }, [diffItems, oldLines, maxLines])
 
+  // 根据 diffItems 生成每行的高亮 key - 使用缩进层级和路径前缀匹配
   const newHighlights = useMemo(() => {
     const highlights: Array<Set<string>> = Array.from(
       { length: maxLines },
       () => new Set<string>(),
     )
 
-    diffItems.forEach(item => {
-      const parts = item.path.split('.').filter(p => p && !/^\d+$/.test(p))
+    // 预处理：计算每一行的缩进层级和路径前缀
+    const lineInfos = newLines.map((line, idx) => {
+      const trimmed = line.trim()
+      const indentMatch = line.match(/^(\s*)/)
+      const indent = indentMatch ? indentMatch[1].length : 0
+      const indentLevel = Math.floor(indent / 2)
+
+      // 提取当前行的 key（如果有）
+      let key = null
+      let parentPath = ''
+      const keyMatch = trimmed.match(/^"([^"]+)"\s*:/)
+      if (keyMatch) {
+        key = keyMatch[1]
+      }
+
+      // 构建路径前缀（基于缩进层级）
+      const pathPrefix = (parts: string[]) => parts.join('.')
+
+      return {
+        idx,
+        line,
+        trimmed,
+        indent,
+        indentLevel,
+        key,
+        isObjectStart: trimmed === '{',
+        isObjectEnd: trimmed === '}',
+        isArrayStart: trimmed === '[',
+        isArrayEnd: trimmed === ']',
+      }
+    })
+
+    // 构建层级映射：indentLevel -> 行索引
+    const levelToLineIdx: Map<number, number> = new Map()
+    lineInfos.forEach((info, idx) => {
+      if (info.key !== null || info.isObjectStart || info.isArrayStart) {
+        levelToLineIdx.set(info.indentLevel, idx)
+      }
+    })
+
+    diffItems.forEach((item: DiffItem) => {
+      // 解析 path，只保留 key 部分（排除数组索引）
+      const parts: string[] = item.path
+        .split('.')
+        .filter((p: string) => p && !/^\d+$/.test(p))
+      if (parts.length === 0) return
+
+      // 尝试精确匹配路径
+      const targetPath = parts.join('.')
       const lastKey = parts[parts.length - 1]
 
-      // 在新 JSON 中查找
-      for (let i = 0; i < newLines.length; i++) {
-        if (newLines[i].includes(`"${lastKey}"`)) {
-          highlights[i].add(lastKey)
-          // 也高亮父级
-          if (parts.length > 1) {
-            for (let j = i - 1; j >= 0; j--) {
-              const parentMatch = newLines[j].match(/"([^"]+)"\s*:/)
-              if (parentMatch && parts.includes(parentMatch[1])) {
-                highlights[j].add(parentMatch[1])
-              } else {
+      // 方法1：精确匹配行内容中的路径
+      let found = false
+      for (let i = 0; i < lineInfos.length; i++) {
+        const info = lineInfos[i]
+        if (!info.trimmed) continue
+
+        // 构建当前行的完整 key
+        const lineKeyMatch = info.trimmed.match(/^"([^"]+)"\s*:/)
+        if (lineKeyMatch) {
+          const lineKey = lineKeyMatch[1]
+
+          // 检查是否是我们要找的 key
+          if (lineKey === lastKey) {
+            // 验证父级路径是否匹配
+            if (parts.length === 1) {
+              // 顶层 key，直接高亮
+              highlights[i].add(lastKey)
+              found = true
+              break
+            } else {
+              // 需要验证父级路径
+              let parentPath = ''
+              for (let j = 0; j < parts.length - 1; j++) {
+                parentPath += (j > 0 ? '.' : '') + parts[j]
+              }
+
+              // 向前查找父级
+              let parentFound = false
+              for (let j = i - 1; j >= 0; j--) {
+                const parentInfo = lineInfos[j]
+                if (parentInfo.key && parts.includes(parentInfo.key)) {
+                  parentFound = true
+                  break
+                }
+                if (parentInfo.indentLevel < info.indentLevel - 1) {
+                  break
+                }
+              }
+
+              if (parentFound) {
+                highlights[i].add(lastKey)
+                found = true
                 break
               }
             }
           }
-          break
+        }
+      }
+
+      // 方法2：如果精确匹配失败，使用基于缩进的回退策略
+      if (!found && parts.length > 0) {
+        const targetIndentLevel = parts.length - 1
+
+        // 找到该缩进层级最近的前一行
+        let nearestLineIdx = -1
+        for (let i = lineInfos.length - 1; i >= 0; i--) {
+          if (
+            lineInfos[i].indentLevel <= targetIndentLevel &&
+            (lineInfos[i].key !== null || lineInfos[i].isObjectStart)
+          ) {
+            nearestLineIdx = i
+            break
+          }
+        }
+
+        if (nearestLineIdx !== -1) {
+          // 高亮这一行作为父级
+          highlights[nearestLineIdx].add(lastKey)
         }
       }
     })
 
     return highlights
-  }, [diffItems, newLines])
+  }, [diffItems, newLines, maxLines])
 
   // 确定行的类型
   const lineTypes = useMemo(() => {
@@ -431,7 +639,19 @@ export default function App() {
       if (!oldTrimmed && !newTrimmed) {
         types.push('unchanged')
       } else if (!oldTrimmed && newTrimmed) {
-        types.push('added')
+        // 检查是否有关联的 diff（新行有高亮 key，且旧行在同一索引位置也有高亮 key）
+        // 说明这行内容从其他地方移过来的，或者是在原位置修改的
+        const hasNewDiff = newHighlights[i].size > 0
+        const oldHighlightAtIndex =
+          i < oldHighlights.length && oldHighlights[i].size > 0
+        if (hasNewDiff && oldHighlightAtIndex) {
+          types.push('modified')
+        } else if (hasNewDiff && i < oldLines.length && oldTrimmed) {
+          // 旧行有内容但没有高亮，新行有高亮，说明值被修改了
+          types.push('modified')
+        } else {
+          types.push('added')
+        }
       } else if (oldTrimmed && !newTrimmed) {
         types.push('removed')
       } else {
@@ -465,6 +685,21 @@ export default function App() {
     return types
   }, [oldLines, newLines, oldHighlights, newHighlights])
 
+  // 转换为 DiffLine 格式（用于 DiffCodeMirror）
+  const oldDiffLines = useMemo(() => {
+    return lineTypes.map((type, idx) => ({
+      lineNumber: idx + 1,
+      type,
+    }))
+  }, [lineTypes])
+
+  const newDiffLines = useMemo(() => {
+    return lineTypes.map((type, idx) => ({
+      lineNumber: idx + 1,
+      type,
+    }))
+  }, [lineTypes])
+
   // 解析 token 缓存
   const oldTokens = useMemo(() => oldLines.map(getLineTokens), [oldLines])
   const newTokens = useMemo(() => newLines.map(getLineTokens), [newLines])
@@ -496,6 +731,8 @@ export default function App() {
           flex-direction: column;
           overflow: hidden;
           background-color: var(--theme-bg-canvas);
+          width: 100vw;
+          max-width: 100%;
         }
 
         /* 头部 */
@@ -519,6 +756,11 @@ export default function App() {
           display: flex;
           align-items: center;
           gap: 12px;
+        }
+
+        .perf-test-container {
+          display: flex;
+          align-items: center;
         }
 
         .logo {
@@ -629,6 +871,7 @@ export default function App() {
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          min-width: 0;
         }
 
         .column-header {
@@ -769,16 +1012,22 @@ export default function App() {
               </svg>
             </div>
             <h1 className="title">JSON Diff</h1>
+            {/* 开发模式下的性能测试按钮 */}
+            {PerfTestButton && (
+              <div className="perf-test-container">
+                <Suspense fallback={null}>
+                  <PerfTestButton
+                    onComplete={(oldJson, newJson) => {
+                      setOldJson(formatJsonText(oldJson))
+                      setNewJson(formatJsonText(newJson))
+                    }}
+                  />
+                </Suspense>
+              </div>
+            )}
           </div>
 
           <div className="header-center">
-            <Button
-              onClick={() => setViewMode(viewMode === 'edit' ? 'diff' : 'edit')}
-              variant={viewMode === 'edit' ? 'primary' : 'secondary'}
-              className="btn-small"
-            >
-              {viewMode === 'edit' ? '查看对比' : '编辑 JSON'}
-            </Button>
             {oldJson === DEV_SAMPLE_OLD_JSON &&
               newJson === DEV_SAMPLE_NEW_JSON &&
               diffItems.length > 0 && (
@@ -796,11 +1045,18 @@ export default function App() {
                     r="10"
                     stroke="currentColor"
                     strokeWidth="3"
-                    opacity="0.25"
+                    strokeLinecap="round"
+                    strokeDasharray="60"
+                    strokeDashoffset="20"
+                    opacity="0.3"
                   />
                   <path
                     fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    d="M4 12a8 8 0 018-8"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     opacity="0.75"
                   />
                 </svg>
@@ -888,205 +1144,145 @@ export default function App() {
 
       {/* 主内容区 */}
       <div className="main">
-        {viewMode === 'edit' ? (
-          // 编辑模式
-          <div className="diff-container">
-            {/* 左侧 - 旧 JSON */}
-            <div className="diff-column">
-              <div
-                className="column-header"
-                style={{ backgroundColor: 'var(--theme-panel-old-bg)' }}
-              >
-                <span className="column-title">原始 JSON</span>
-                <div className="column-actions">
-                  <Button
-                    onClick={() => setOldJson(formatJsonText(oldJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    格式化
-                  </Button>
-                  <Button
-                    onClick={() => copyText(oldJson)}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    复制
-                  </Button>
-                  <Button
-                    onClick={() => setOldJson(compressJsonText(oldJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    压缩
-                  </Button>
-                </div>
-              </div>
-              <div className="column-content" style={{ overflow: 'hidden' }}>
-                <JsonEditor
-                  value={oldJson}
-                  onChange={setOldJson}
-                  theme={theme}
-                />
+        <div className="diff-container">
+          {/* 左侧 - 旧 JSON */}
+          <div className="diff-column">
+            <div
+              className="column-header"
+              style={{
+                backgroundColor: 'var(--theme-panel-old-bg)',
+                borderBottomColor: 'var(--theme-border)',
+              }}
+            >
+              <span className="column-title">原始 JSON</span>
+              <div className="column-actions">
+                <Button
+                  onClick={() => setOldJson(formatJsonText(oldJson))}
+                  variant="secondary"
+                  className="btn-small"
+                >
+                  格式化
+                </Button>
+                <Button
+                  onClick={() => copyText(oldJson)}
+                  variant="secondary"
+                  className="btn-small"
+                >
+                  复制
+                </Button>
+                <Button
+                  onClick={() => setOldJson(compressJsonText(oldJson))}
+                  variant="secondary"
+                  className="btn-small"
+                >
+                  压缩
+                </Button>
               </div>
             </div>
-
-            {/* 右侧 - 新 JSON */}
-            <div className="diff-column">
-              <div
-                className="column-header"
-                style={{ backgroundColor: 'var(--theme-panel-new-bg)' }}
-              >
-                <span className="column-title">新 JSON</span>
-                <div className="column-actions">
-                  <Button
-                    onClick={() => setNewJson(formatJsonText(newJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    格式化
-                  </Button>
-                  <Button
-                    onClick={() => copyText(newJson)}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    复制
-                  </Button>
-                  <Button
-                    onClick={() => setNewJson(compressJsonText(newJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    压缩
-                  </Button>
-                </div>
-              </div>
-              <div className="column-content" style={{ overflow: 'hidden' }}>
-                <JsonEditor
-                  value={newJson}
-                  onChange={setNewJson}
-                  theme={theme}
-                />
-              </div>
+            <div className="column-content" style={{ overflow: 'hidden' }}>
+              <JsonCodeMirror
+                value={oldJson}
+                onChange={setOldJson}
+                diffLines={oldDiffLines}
+                theme={theme}
+                scrollSync
+                syncedScroll={rightScroll}
+                syncedHorizontalScroll={rightHorizontalScroll}
+                onScrollChange={(scrollTop, scrollHeight) => {
+                  if (!isSyncingLeft.current) {
+                    isSyncingLeft.current = true
+                    // 转换为百分比
+                    const maxScroll = scrollHeight - scrollHeight * 0 || 1
+                    const percentage =
+                      maxScroll > 0 ? (scrollTop / maxScroll) * 100 : 0
+                    setLeftScroll(percentage)
+                    setTimeout(() => {
+                      isSyncingLeft.current = false
+                    }, 50)
+                  }
+                }}
+                onHorizontalScrollChange={(scrollLeft, scrollWidth) => {
+                  if (!isSyncingLeftHorizontal.current) {
+                    isSyncingLeftHorizontal.current = true
+                    setLeftHorizontalScroll(scrollLeft)
+                    setTimeout(() => {
+                      isSyncingLeftHorizontal.current = false
+                    }, 50)
+                  }
+                }}
+              />
             </div>
           </div>
-        ) : (
-          // 对比模式
-          <div className="diff-container">
-            {/* 左侧 - 旧 JSON */}
-            <div className="diff-column">
-              <div
-                className="column-header"
-                style={{
-                  backgroundColor: 'var(--theme-panel-old-bg)',
-                  borderBottomColor: 'var(--theme-border)',
-                }}
-              >
-                <span className="column-title">原始 JSON</span>
-                <div className="column-actions">
-                  <Button
-                    onClick={() => setOldJson(formatJsonText(oldJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    格式化
-                  </Button>
-                  <Button
-                    onClick={() => copyText(oldJson)}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    复制
-                  </Button>
-                  <Button
-                    onClick={() => setOldJson(compressJsonText(oldJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    压缩
-                  </Button>
-                </div>
-              </div>
-              <div className="column-content">
-                {oldLines.map((line, idx) => (
-                  <div
-                    key={idx}
-                    className={`diff-line diff-${lineTypes[idx] || 'unchanged'}`}
-                  >
-                    <div className="line-number">{idx + 1}</div>
-                    <div
-                      className="line-content"
-                      dangerouslySetInnerHTML={{
-                        __html: renderLine(
-                          oldTokens[idx],
-                          oldHighlights[idx],
-                          'rgba(187, 128, 9, 0.25)',
-                        ),
-                      }}
-                    />
-                  </div>
-                ))}
+
+          {/* 右侧 - 新 JSON */}
+          <div className="diff-column">
+            <div
+              className="column-header"
+              style={{
+                backgroundColor: 'var(--theme-panel-new-bg)',
+                borderBottomColor: 'var(--theme-border)',
+              }}
+            >
+              <span className="column-title">新 JSON</span>
+              <div className="column-actions">
+                <Button
+                  onClick={() => setNewJson(formatJsonText(newJson))}
+                  variant="secondary"
+                  className="btn-small"
+                >
+                  格式化
+                </Button>
+                <Button
+                  onClick={() => copyText(newJson)}
+                  variant="secondary"
+                  className="btn-small"
+                >
+                  复制
+                </Button>
+                <Button
+                  onClick={() => setNewJson(compressJsonText(newJson))}
+                  variant="secondary"
+                  className="btn-small"
+                >
+                  压缩
+                </Button>
               </div>
             </div>
-
-            {/* 右侧 - 新 JSON */}
-            <div className="diff-column">
-              <div
-                className="column-header"
-                style={{
-                  backgroundColor: 'var(--theme-panel-new-bg)',
-                  borderBottomColor: 'var(--theme-border)',
+            <div className="column-content" style={{ overflow: 'hidden' }}>
+              <JsonCodeMirror
+                value={newJson}
+                onChange={setNewJson}
+                diffLines={newDiffLines}
+                theme={theme}
+                scrollSync
+                syncedScroll={leftScroll}
+                syncedHorizontalScroll={leftHorizontalScroll}
+                onScrollChange={(scrollTop, scrollHeight) => {
+                  if (!isSyncingRight.current) {
+                    isSyncingRight.current = true
+                    // 转换为百分比
+                    const maxScroll = scrollHeight - scrollHeight * 0 || 1
+                    const percentage =
+                      maxScroll > 0 ? (scrollTop / maxScroll) * 100 : 0
+                    setRightScroll(percentage)
+                    setTimeout(() => {
+                      isSyncingRight.current = false
+                    }, 50)
+                  }
                 }}
-              >
-                <span className="column-title">新 JSON</span>
-                <div className="column-actions">
-                  <Button
-                    onClick={() => setNewJson(formatJsonText(newJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    格式化
-                  </Button>
-                  <Button
-                    onClick={() => copyText(newJson)}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    复制
-                  </Button>
-                  <Button
-                    onClick={() => setNewJson(compressJsonText(newJson))}
-                    variant="secondary"
-                    className="btn-small"
-                  >
-                    压缩
-                  </Button>
-                </div>
-              </div>
-              <div className="column-content">
-                {newLines.map((line, idx) => (
-                  <div
-                    key={idx}
-                    className={`diff-line diff-${lineTypes[idx] || 'unchanged'}`}
-                  >
-                    <div className="line-number">{idx + 1}</div>
-                    <div
-                      className="line-content"
-                      dangerouslySetInnerHTML={{
-                        __html: renderLine(
-                          newTokens[idx],
-                          newHighlights[idx],
-                          'rgba(16, 185, 129, 0.2)',
-                        ),
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
+                onHorizontalScrollChange={(scrollLeft, scrollWidth) => {
+                  if (!isSyncingRightHorizontal.current) {
+                    isSyncingRightHorizontal.current = true
+                    setRightHorizontalScroll(scrollLeft)
+                    setTimeout(() => {
+                      isSyncingRightHorizontal.current = false
+                    }, 50)
+                  }
+                }}
+              />
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

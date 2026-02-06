@@ -391,7 +391,6 @@ refactor(parser): simplify AST node creation
 - 启用严格模式
 - 启用 `isolatedDeclarations` 用于声明文件生成
 - 启用 `composite` 模式支持项目引用
-- 启用装饰器支持（`experimentalDecorators` 和 `emitDecoratorMetadata`）
 
 ## 特别说明
 

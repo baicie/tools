@@ -17,7 +17,6 @@
     "noEmit": false,
     "emitDeclarationOnly": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "experimentalDecorators": true
+    "verbatimModuleSyntax": true
   }
 }

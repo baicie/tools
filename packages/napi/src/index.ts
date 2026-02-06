@@ -1,8 +1,3 @@
-import {
-  applyJsonDiff,
-  getJsonDiffDetails,
-  jsonDiff,
-  plus100,
-} from './binding.cjs'
+import { type DiffItem, diffJson } from './binding.cjs'
 
-export { plus100, jsonDiff, applyJsonDiff, getJsonDiffDetails }
+export { diffJson, type DiffItem }

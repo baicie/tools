@@ -10,6 +10,25 @@ pub enum JsonDiffError {
   InvalidType,
 }
 
+/// JSON diff 操作类型枚举
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DiffOperationType {
+  Add,
+  Remove,
+  Replace,
+}
+
+impl DiffOperationType {
+  /// 获取操作类型的字符串表示
+  pub fn as_str(self) -> &'static str {
+    match self {
+      DiffOperationType::Add => "add",
+      DiffOperationType::Remove => "remove",
+      DiffOperationType::Replace => "replace",
+    }
+  }
+}
+
 /// JSON diff操作类型
 #[derive(Debug, Clone, PartialEq)]
 pub enum DiffOperation {
@@ -21,7 +40,7 @@ pub enum DiffOperation {
 /// 差异项的详细信息
 #[derive(Debug, Clone)]
 pub struct DiffItem {
-  pub operation: String, // "add", "remove", "replace"
+  pub operation: DiffOperationType,
   pub path: String,
   pub old_value: Option<Value>,
   pub new_value: Option<Value>,
@@ -119,26 +138,30 @@ impl JsonDiff {
 
   /// 获取详细的差异项列表
   pub fn get_diff_items(&self) -> Vec<DiffItem> {
-    self.operations.iter().map(|op| match op {
-      DiffOperation::Add { path, value } => DiffItem {
-        operation: "add".to_string(),
-        path: path.clone(),
-        old_value: None,
-        new_value: Some(value.clone()),
-      },
-      DiffOperation::Remove { path, old_value } => DiffItem {
-        operation: "remove".to_string(),
-        path: path.clone(),
-        old_value: Some(old_value.clone()),
-        new_value: None,
-      },
-      DiffOperation::Replace { path, old_value, new_value } => DiffItem {
-        operation: "replace".to_string(),
-        path: path.clone(),
-        old_value: Some(old_value.clone()),
-        new_value: Some(new_value.clone()),
-      },
-    }).collect()
+    self
+      .operations
+      .iter()
+      .map(|op| match op {
+        DiffOperation::Add { path, value } => DiffItem {
+          operation: DiffOperationType::Add,
+          path: path.clone(),
+          old_value: None,
+          new_value: Some(value.clone()),
+        },
+        DiffOperation::Remove { path, old_value } => DiffItem {
+          operation: DiffOperationType::Remove,
+          path: path.clone(),
+          old_value: Some(old_value.clone()),
+          new_value: None,
+        },
+        DiffOperation::Replace { path, old_value, new_value } => DiffItem {
+          operation: DiffOperationType::Replace,
+          path: path.clone(),
+          old_value: Some(old_value.clone()),
+          new_value: Some(new_value.clone()),
+        },
+      })
+      .collect()
   }
 
   /// 应用diff到原始JSON值

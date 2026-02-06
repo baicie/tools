@@ -326,9 +326,15 @@ importers:
       '@baicie/napi-browser':
         specifier: workspace:*
         version: link:../../packages/napi-browser
+      '@codemirror/commands':
+        specifier: ^6.10.1
+        version: 6.10.1
       '@codemirror/lang-json':
         specifier: ^6.0.2
         version: 6.0.2
+      '@codemirror/language':
+        specifier: ^6.12.1
+        version: 6.12.1
       '@codemirror/lint':
         specifier: ^6.9.3
         version: 6.9.3

@@ -29,10 +29,6 @@
     "isolatedModules": true,
     "skipLibCheck": true,
 
-    /* 装饰器支持 */
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-
     /* 类字段 */
     "useDefineForClassFields": false,
 

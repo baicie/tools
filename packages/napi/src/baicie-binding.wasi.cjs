@@ -108,7 +108,4 @@ const { instance: __napiInstance, module: __wasiModule, napiModule: __napiModule
   },
 })
 module.exports = __napiModule.exports
-module.exports.applyJsonDiff = __napiModule.exports.applyJsonDiff
-module.exports.getJsonDiffDetails = __napiModule.exports.getJsonDiffDetails
-module.exports.jsonDiff = __napiModule.exports.jsonDiff
-module.exports.plus100 = __napiModule.exports.plus100
+module.exports.diffJson = __napiModule.exports.diffJson
