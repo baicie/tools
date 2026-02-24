@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: false
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
         run: |
           # 获取变更的文件
           CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'playground/*/')
-          
+
           # 提取项目名称（去重）
           declare -A seen
           PROJECTS=()
@@ -46,12 +46,12 @@ jobs:
               fi
             fi
           done
-          
+
           # 如果没有变更，默认部署所有项目
           if [ ${#PROJECTS[@]} -eq 0 ]; then
             PROJECTS=("json-diff" "napi-vue3" "scripts" "storage" "vue")
           fi
-          
+
           # 转换为 JSON 数组
           PROJECTS_JSON=$(printf '%s\n' "${PROJECTS[@]}" | jq -R . | jq -s .)
           echo "projects_json=$PROJECTS_JSON" >> $GITHUB_OUTPUT
@@ -113,7 +113,7 @@ jobs:
       - name: Create combined artifact
         run: |
           mkdir -p combined/dist
-          
+
           # 复制所有项目的构建产物到对应的子目录
           for dir in artifacts/*/; do
             project_name=$(basename "$dir")
