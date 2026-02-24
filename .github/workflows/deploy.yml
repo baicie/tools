@@ -17,53 +17,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  detect-changes:
-    name: Detect Changed Projects
-    runs-on: ubuntu-latest
-    outputs:
-      projects_json: ${{ steps.detect.outputs.projects_json }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed playground projects
-        id: detect
-        run: |
-          # 获取变更的文件
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'playground/*/')
-
-          # 提取项目名称（去重）
-          declare -A seen
-          PROJECTS=()
-          for file in $CHANGED_FILES; do
-            if [[ $file =~ playground/([^/]+)/ ]]; then
-              project="${BASH_REMATCH[1]}"
-              if [[ -z "${seen[$project]}" ]]; then
-                seen[$project]=1
-                PROJECTS+=("$project")
-              fi
-            fi
-          done
-
-          # 如果没有变更，默认部署所有项目
-          if [ ${#PROJECTS[@]} -eq 0 ]; then
-            PROJECTS=("json-diff" "napi-vue3" "scripts" "storage" "vue")
-          fi
-
-          # 转换为 JSON 数组
-          PROJECTS_JSON=$(jq -n --argjson projects "$(printf '%s\n' "${PROJECTS[@]}" | jq -R .)" '$projects')
-          echo "projects_json=$PROJECTS_JSON" >> $GITHUB_OUTPUT
-
   deploy:
-    name: Deploy Playground
-    needs: detect-changes
+    name: Deploy All Playgrounds
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ fromJson(needs.detect-changes.outputs.projects_json) }}
+        project: [json-diff, napi-vue3, scripts, storage, vue]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
