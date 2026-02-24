@@ -53,9 +53,8 @@ jobs:
           fi
 
           # 转换为 JSON 数组
-          PROJECTS_JSON=$(printf '%s\n' "${PROJECTS[@]}" | jq -R . | jq -s .)
+          PROJECTS_JSON=$(jq -n --argjson projects "$(printf '%s\n' "${PROJECTS[@]}" | jq -R .)" '$projects')
           echo "projects_json=$PROJECTS_JSON" >> $GITHUB_OUTPUT
-          echo "Projects to deploy: $PROJECTS_JSON"
 
   deploy:
     name: Deploy Playground
