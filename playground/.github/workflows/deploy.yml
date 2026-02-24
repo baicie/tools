@@ -1,0 +1,131 @@
+name: Deploy Playgrounds to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'playground/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  detect-changes:
+    name: Detect Changed Projects
+    runs-on: ubuntu-latest
+    outputs:
+      projects_json: ${{ steps.detect.outputs.projects_json }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed playground projects
+        id: detect
+        run: |
+          # 获取变更的文件
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'playground/*/')
+          
+          # 提取项目名称（去重）
+          declare -A seen
+          PROJECTS=()
+          for file in $CHANGED_FILES; do
+            if [[ $file =~ playground/([^/]+)/ ]]; then
+              project="${BASH_REMATCH[1]}"
+              if [[ -z "${seen[$project]}" ]]; then
+                seen[$project]=1
+                PROJECTS+=("$project")
+              fi
+            fi
+          done
+          
+          # 如果没有变更，默认部署所有项目
+          if [ ${#PROJECTS[@]} -eq 0 ]; then
+            PROJECTS=("json-diff" "napi-vue3" "scripts" "storage" "vue")
+          fi
+          
+          # 转换为 JSON 数组
+          PROJECTS_JSON=$(printf '%s\n' "${PROJECTS[@]}" | jq -R . | jq -s .)
+          echo "projects_json=$PROJECTS_JSON" >> $GITHUB_OUTPUT
+          echo "Projects to deploy: $PROJECTS_JSON"
+
+  deploy:
+    name: Deploy Playground
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJson(needs.detect-changes.outputs.projects_json) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        working-directory: playground/${{ matrix.project }}
+        run: pnpm install
+
+      - name: Build
+        working-directory: playground/${{ matrix.project }}
+        run: pnpm build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: playground/${{ matrix.project }}/dist
+          name: ${{ matrix.project }}-artifact
+
+  combine:
+    name: Combine & Deploy
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Create combined artifact
+        run: |
+          mkdir -p combined/dist
+          
+          # 复制所有项目的构建产物到对应的子目录
+          for dir in artifacts/*/; do
+            project_name=$(basename "$dir")
+            mkdir -p "combined/dist/$project_name"
+            cp -r "$dir"/* "combined/dist/$project_name/" 2>/dev/null || true
+          done
+
+      - name: Upload combined artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: combined/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

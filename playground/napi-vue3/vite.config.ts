@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/napi-vue3/',
   plugins: [vue()],
   optimizeDeps: {
     exclude: ['@baicie/napi-browser'],
