@@ -13,12 +13,14 @@ import type { ITemplates } from '../download'
 import type { IProjectConf } from './types'
 
 export async function askProjectName(): Promise<string> {
+  const defaultProjectName = 'my-project'
   const value = await text({
     message: t('command.create.projectName'),
     placeholder: t('command.create.placeholder'),
+    defaultValue: defaultProjectName,
     validate: (value: string | undefined): string | Error | undefined => {
       if (!value || value.trim() === '') {
-        return t('command.create.invalidName')
+        value = defaultProjectName
       }
       if (!isValidPackageName(value)) {
         return t('command.create.invalidName')

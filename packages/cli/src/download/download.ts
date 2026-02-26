@@ -20,7 +20,7 @@ export async function download(
   url: string,
   tempPath: string,
 ): Promise<FileStat[]> {
-  const spinner = ora(t('info.downloadingTemplate', { url })).start()
+  const spinner = ora(t('info.downloadingTemplate', { url: url })).start()
   const zipPath = path.join(tempPath, 'temp.zip')
 
   return new Promise<FileStat[]>(resolve => {
