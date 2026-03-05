@@ -28,7 +28,7 @@
   "packageManager": "pnpm@10.30.3",
   "dependencies": {
     "conventional-changelog": "^7.2.0",
-    "conventional-changelog-conventionalcommits": "^9.2.0",
+    "conventional-changelog-conventionalcommits": "^9.3.0",
     "mri": "^1.2.0",
     "picocolors": "^1.1.1",
     "prompts": "^2.4.2",
