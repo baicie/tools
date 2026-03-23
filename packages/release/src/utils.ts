@@ -190,17 +190,15 @@ export async function getActiveVersion(
     const { stdout } = await run(
       'npm',
       ['info', npmName, 'version', '--json'],
-      { nodeOptions: { stdio: 'pipe' } },
+      { throwOnError: false, nodeOptions: { stdio: 'pipe' } },
     )
-    return JSON.parse(stdout)
-  } catch (e: any) {
-    // Not published yet
-    if (e.stdout) {
-      const stdout = JSON.parse(e.stdout)
-      if (stdout.error.code === 'E404') {
-        return
-      }
-    }
-    throw e
+    if (!stdout) return
+    const parsed = JSON.parse(stdout)
+    // E404 response has error structure
+    if (parsed.error) return
+    return parsed
+  } catch {
+    // Package not published yet
+    return
   }
 }
