@@ -1,6 +1,6 @@
 {
   "name": "@baicie/prettier-config",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "exports": {
     ".": "./index.js",
@@ -15,5 +15,9 @@
     "format",
     "vue"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }
