@@ -13,6 +13,9 @@ on:
       - 'scripts@*'
       - 'napi@*'
       - 'napi-browser@*'
+      - 'eslint-config@*'
+      - 'prettier-config@*'
+      - 'tsconfig@*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

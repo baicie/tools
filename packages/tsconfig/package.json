@@ -1,0 +1,25 @@
+{
+  "name": "@baicie/tsconfig",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./base.json": "./base.json",
+    "./react.json": "./react.json",
+    "./node.json": "./node.json",
+    "./library.json": "./library.json",
+    "./strict.json": "./strict.json",
+    "./nestjs.json": "./nestjs.json",
+    "./vue.json": "./vue.json"
+  },
+  "peerDependencies": {
+    "typescript": ">= 5.0.0"
+  },
+  "keywords": [
+    "typescript",
+    "tsconfig",
+    "config",
+    "nestjs",
+    "vue"
+  ],
+  "license": "MIT"
+}

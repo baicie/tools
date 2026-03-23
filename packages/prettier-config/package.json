@@ -1,0 +1,19 @@
+{
+  "name": "@baicie/prettier-config",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./vue": "./vue.js"
+  },
+  "peerDependencies": {
+    "prettier": ">= 3.0.0"
+  },
+  "keywords": [
+    "prettier",
+    "config",
+    "format",
+    "vue"
+  ],
+  "license": "MIT"
+}

@@ -12,11 +12,19 @@ release({
     'logger',
     'scripts',
     'napi',
+    'eslint-config',
+    'prettier-config',
+    'tsconfig',
   ],
   linkedPackages: {
     napi: ['napi-browser'],
   },
   toTag: (pkg, version) => `${pkg}@${version}`,
-  logChangelog: _pkg => {},
-  generateChangelog: _pkg => {},
+  logChangelog: _pkg => {
+    void _pkg
+  },
+  generateChangelog: (_pkg, _version) => {
+    void _pkg
+    void _version
+  },
 })
