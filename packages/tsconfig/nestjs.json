@@ -10,7 +10,6 @@
     "strictPropertyInitialization": false,
     "types": ["node", "jest"],
     "moduleResolution": "Bundler",
-    "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"]
     }
