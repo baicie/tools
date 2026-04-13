@@ -3,9 +3,12 @@ import semver from 'semver'
 import colors from 'picocolors'
 import {
   args,
+  backupVersion,
+  clearBackups,
   getPackageInfo,
   getVersionChoices,
   isDryRun,
+  rollbackVersion,
   run,
   runIfNotDry,
   step,
@@ -50,6 +53,8 @@ export const release: typeof def = async ({
     await logChangelog(selectedPkg)
 
     const { pkg, pkgPath, pkgDir } = getPackageInfo(selectedPkg, getPkgDir)
+
+    const originalVersion = pkg.version
 
     const { messages } = await publint({ pkgDir })
 
@@ -109,17 +114,27 @@ export const release: typeof def = async ({
 
     step(`\nUpdating package version(${colors.yellow(selectedPkg)})...`)
     updateVersion(pkgPath, targetVersion)
+    backupVersion(pkgPath, originalVersion, targetVersion)
     await generateChangelog(selectedPkg, targetVersion)
 
     console.log(`\nGenerated changelog for ${colors.yellow(selectedPkg)}`)
   }
 
-  for (const selectedPkg of selectedPkgs) {
-    await releasePkg(selectedPkg)
-  }
+  try {
+    for (const selectedPkg of selectedPkgs) {
+      await releasePkg(selectedPkg)
+    }
 
-  if (tag) {
-    await gitDiff(tag)
+    if (tag) {
+      await gitDiff(tag)
+    }
+  } catch (error) {
+    console.error(colors.red(`\nRelease failed: ${(error as Error).message}`))
+    console.log(colors.yellow('\nRolling back version changes...'))
+    rollbackVersion()
+    throw error
+  } finally {
+    clearBackups()
   }
 
   console.log()

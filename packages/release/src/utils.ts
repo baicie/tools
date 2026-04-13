@@ -162,6 +162,40 @@ export function updateVersion(pkgPath: string, version: string): void {
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
 }
 
+export interface VersionBackup {
+  pkgPath: string
+  originalVersion: string
+  updatedVersion: string
+}
+
+export const versionBackups: VersionBackup[] = []
+
+export function backupVersion(
+  pkgPath: string,
+  originalVersion: string,
+  updatedVersion: string,
+): void {
+  versionBackups.push({ pkgPath, originalVersion, updatedVersion })
+}
+
+export function clearBackups(): void {
+  versionBackups.length = 0
+}
+
+export function rollbackVersion(): void {
+  for (const backup of versionBackups) {
+    const pkg = JSON.parse(readFileSync(backup.pkgPath, 'utf-8'))
+    pkg.version = backup.originalVersion
+    writeFileSync(backup.pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+    console.log(
+      colors.yellow(
+        `Rolled back ${backup.pkgPath} to version ${backup.originalVersion}`,
+      ),
+    )
+  }
+  clearBackups()
+}
+
 export async function publishPackage(
   pkgDir: string,
   tag?: string,
