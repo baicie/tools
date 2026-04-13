@@ -11,6 +11,8 @@ export default [
   ...base,
 
   {
+    name: 'baicie/node',
+
     languageOptions: {
       globals: {
         // Node.js globals

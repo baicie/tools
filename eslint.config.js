@@ -67,6 +67,14 @@ export default defineConfig(
     },
   },
 
+  {
+    name: 'vue',
+    files: ['packages/vue/src/**'],
+    rules: {
+      'no-restricted-globals': ['error', ...NodeGlobals],
+    },
+  },
+
   // playground packages
   {
     name: 'playground',

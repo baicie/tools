@@ -17,7 +17,6 @@ i18next.init({
   lng: getSystemLocale(),
   fallbackLng: 'en-US',
   debug: false,
-  showSupportNotice: false,
   interpolation: {
     escapeValue: false,
   },

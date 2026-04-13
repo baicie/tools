@@ -4,17 +4,26 @@
  * This is the foundational ESLint configuration that all other configs extend from.
  * Provides TypeScript support, import ordering, and common linting rules.
  */
+import { FlatCompat } from '@eslint/eslintrc'
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import importPlugin from 'eslint-plugin-import-x'
 import unusedImports from 'eslint-plugin-unused-imports'
 import perfectionist from 'eslint-plugin-perfectionist'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+})
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
-  js.configs.recommended,
-  ...tseslint.configs.recommended,
-  ...tseslint.configs.stylistic,
+  ...compat.config(js.configs.recommended),
+  ...compat.config(...tseslint.configs.recommended),
+  ...compat.config(...tseslint.configs.stylistic),
 
   {
     plugins: {

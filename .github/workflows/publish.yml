@@ -7,7 +7,6 @@ on:
       - 'pkg@*'
       - 'release@*'
       - 'cli@*'
-      - 'polyfill@*'
       - 'storage@*'
       - 'logger@*'
       - 'scripts@*'

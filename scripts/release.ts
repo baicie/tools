@@ -7,7 +7,6 @@ release({
     'release',
     'tools',
     'pkg',
-    'polyfill',
     'storage',
     'logger',
     'scripts',
