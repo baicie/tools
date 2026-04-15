@@ -1,6 +1,6 @@
 {
   "name": "@baicie/clean",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Clean node_modules and target directories in workspace",
   "type": "module",
   "bin": {
@@ -34,8 +34,9 @@
   },
   "dependencies": {
     "picocolors": "^1.1.1",
-    "fs-extra": "^11.3.0",
-    "cac": "^7.0.0"
+    "fs-extra": "^11.3.4",
+    "cac": "^7.0.0",
+    "tinyexec": "^1.1.1"
   },
   "devDependencies": {
     "@arnaud-barre/tnode": "^0.25.0",

@@ -1,31 +1,10 @@
 import path from 'node:path'
 import fs from 'fs-extra'
 import colors from 'picocolors'
+import { exec } from 'tinyexec'
 import type { CleanOptions, CleanResult, TargetInfo } from './types'
 
 const DEFAULT_TARGETS = ['node_modules', 'target'] as const
-
-export function getDirSize(dirPath: string): number {
-  let totalSize = 0
-  try {
-    const stats = fs.statSync(dirPath)
-    if (!stats.isDirectory()) return 0
-
-    const files = fs.readdirSync(dirPath)
-    for (const file of files) {
-      const filePath = path.join(dirPath, file)
-      const fileStat = fs.statSync(filePath)
-      if (fileStat.isDirectory()) {
-        totalSize += getDirSize(filePath)
-      } else {
-        totalSize += fileStat.size
-      }
-    }
-  } catch {
-    // Ignore errors when reading directory
-  }
-  return totalSize
-}
 
 export function formatSize(bytes: number): string {
   if (bytes === 0) return '0 B'
@@ -34,9 +13,22 @@ export function formatSize(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`
 }
 
+async function getDirSize(dirPath: string): Promise<number> {
+  try {
+    const { stdout } = await exec('du', ['-sk', dirPath], {
+      nodeOptions: { stdio: 'pipe' },
+    })
+    const kb = parseInt(stdout.trim().split('\t')[0], 10) || 0
+    return kb * 1024
+  } catch {
+    return 0
+  }
+}
+
 export async function scanForTargets(
   root: string,
   targets: ReadonlyArray<'node_modules' | 'target'>,
+  verbose: boolean = false,
 ): Promise<TargetInfo[]> {
   const results: TargetInfo[] = []
   const visitedDirs = new Set<string>()
@@ -45,18 +37,22 @@ export async function scanForTargets(
     if (visitedDirs.has(dir)) return
     visitedDirs.add(dir)
 
+    if (verbose) {
+      console.info(colors.dim(`Scanning: ${dir}`))
+    }
+
     try {
-      const entries = fs.readdirSync(dir, { withFileTypes: true })
+      const entries = await fs.readdir(dir, { withFileTypes: true })
 
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name)
 
         if (entry.isDirectory()) {
           if (targets.includes(entry.name as 'node_modules' | 'target')) {
-            const stats = fs.lstatSync(fullPath)
+            const stats = await fs.lstat(fullPath)
             results.push({
               path: fullPath,
-              size: getDirSize(fullPath),
+              size: 0,
               isSymlink: stats.isSymbolicLink(),
             })
           } else if (!entry.name.startsWith('.')) {
@@ -70,6 +66,14 @@ export async function scanForTargets(
   }
 
   await scanDir(root)
+
+  if (results.length > 0) {
+    const sizePromises = results.map(async info => {
+      info.size = await getDirSize(info.path)
+    })
+    await Promise.all(sizePromises)
+  }
+
   return results
 }
 
@@ -87,7 +91,7 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
     removed: [],
   }
 
-  const targetsInfo = await scanForTargets(root, targets)
+  const targetsInfo = await scanForTargets(root, targets, verbose)
 
   if (targetsInfo.length === 0) {
     console.info(colors.green('No target directories found.'))
@@ -127,7 +131,7 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
     }
 
     try {
-      fs.removeSync(info.path)
+      await fs.remove(info.path)
 
       result.count++
       result.spaceSaved += info.size
