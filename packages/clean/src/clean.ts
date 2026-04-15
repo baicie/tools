@@ -125,13 +125,15 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
     return result
   }
 
-  for (const info of targetsInfo) {
+  const deletePromises = targetsInfo.map(async info => {
     if (verbose) {
       console.info(colors.dim(`Removing: ${info.path}`))
     }
 
     try {
-      await fs.remove(info.path)
+      await exec('rm', ['-rf', info.path], {
+        throwOnError: false,
+      })
 
       result.count++
       result.spaceSaved += info.size
@@ -149,7 +151,9 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
         ),
       )
     }
-  }
+  })
+
+  await Promise.all(deletePromises)
 
   console.info(
     colors.green(
