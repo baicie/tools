@@ -24,8 +24,8 @@ export declare function release(options: {
   repo: string
   packages: string[]
   linkedPackages?: Record<string, string[]>
-  logChangelog: (pkg: string) => void | Promise<void>
-  generateChangelog: (pkg: string, version: string) => void | Promise<void>
+  logChangelog?: (pkg: string) => void | Promise<void>
+  generateChangelog?: (pkg: string, version: string) => void | Promise<void>
   toTag: (pkg: string, version: string) => string
   getPkgDir?: (pkg: string) => string
 }): Promise<void>

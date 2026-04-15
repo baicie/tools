@@ -5,8 +5,10 @@ import {
   args,
   backupVersion,
   clearBackups,
+  deleteTag,
   getPackageInfo,
   getVersionChoices,
+  hasTag,
   isDryRun,
   rollbackVersion,
   run,
@@ -50,7 +52,9 @@ export const release: typeof def = async ({
   }
 
   async function releasePkg(selectedPkg: string) {
-    await logChangelog(selectedPkg)
+    if (logChangelog) {
+      await logChangelog(selectedPkg)
+    }
 
     const { pkg, pkgPath, pkgDir } = getPackageInfo(selectedPkg, getPkgDir)
 
@@ -115,7 +119,9 @@ export const release: typeof def = async ({
     step(`\nUpdating package version(${colors.yellow(selectedPkg)})...`)
     updateVersion(pkgPath, targetVersion)
     backupVersion(pkgPath, originalVersion, targetVersion)
-    await generateChangelog(selectedPkg, targetVersion)
+    if (generateChangelog) {
+      await generateChangelog(selectedPkg, targetVersion)
+    }
 
     console.log(`\nGenerated changelog for ${colors.yellow(selectedPkg)}`)
   }
@@ -148,11 +154,16 @@ async function gitDiff(tag: string) {
     step('\nCommitting changes...')
     await runIfNotDry('git', ['add', '-A'])
     await runIfNotDry('git', ['commit', '-m', `release: ${tag}`])
-    await runIfNotDry('git', ['tag', '-a', '-m', tag, tag])
   } else {
     console.log('No changes to commit.')
-    return
   }
+
+  step('\nTagging...')
+  if (await hasTag(tag)) {
+    console.log(colors.yellow(`Tag ${tag} already exists, deleting...`))
+    await deleteTag(tag)
+  }
+  await runIfNotDry('git', ['tag', '-a', '-m', tag, tag])
 
   step('\nPushing to GitHub...')
   await runIfNotDry('git', ['push', 'origin', `refs/tags/${tag}`])

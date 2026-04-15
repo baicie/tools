@@ -77,26 +77,26 @@ const testCases = [
   {
     name: '基础属性修改',
     old: '{"name": "Alice", "age": 25}',
-    new: '{"name": "Alice", "age": 26}'
+    new: '{"name": "Alice", "age": 26}',
   },
   {
     name: '添加新属性',
     old: '{"name": "Bob"}',
-    new: '{"name": "Bob", "age": 30, "city": "New York"}'
+    new: '{"name": "Bob", "age": 30, "city": "New York"}',
   },
   {
     name: '删除属性',
     old: '{"name": "Charlie", "age": 35, "city": "London"}',
-    new: '{"name": "Charlie"}'
+    new: '{"name": "Charlie"}',
   },
   {
     name: '嵌套对象',
     old: '{"user": {"name": "David", "profile": {"age": 28}}}',
-    new: '{"user": {"name": "David", "profile": {"age": 29, "city": "Tokyo"}}}'
-  }
+    new: '{"user": {"name": "David", "profile": {"age": 29, "city": "Tokyo"}}}',
+  },
 ]
 
-const loadTestCase = (testCase: typeof testCases[0]) => {
+const loadTestCase = (testCase: (typeof testCases)[0]) => {
   oldJson.value = testCase.old
   newJson.value = testCase.new
   diffResult.value = ''
@@ -120,9 +120,7 @@ const loadTestCase = (testCase: typeof testCases[0]) => {
           <button @click="handlePlusClick" class="test-button">
             plus100(100)
           </button>
-          <div v-if="plusResult" class="result">
-            结果: {{ plusResult }}
-          </div>
+          <div v-if="plusResult" class="result">结果: {{ plusResult }}</div>
         </div>
       </section>
 
@@ -180,15 +178,10 @@ const loadTestCase = (testCase: typeof testCases[0]) => {
         </div>
 
         <!-- 错误信息 -->
-        <div v-if="errorMessage" class="error">
-          ❌ {{ errorMessage }}
-        </div>
+        <div v-if="errorMessage" class="error">❌ {{ errorMessage }}</div>
 
         <!-- JSON差异可视化 -->
-        <JsonDiffVisualizer
-          :original-json="oldJson"
-          :new-json="newJson"
-        />
+        <JsonDiffVisualizer :original-json="oldJson" :new-json="newJson" />
 
         <!-- 原始结果显示（隐藏） -->
         <div v-if="false && diffResult" class="results">
@@ -211,7 +204,8 @@ const loadTestCase = (testCase: typeof testCases[0]) => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 header {

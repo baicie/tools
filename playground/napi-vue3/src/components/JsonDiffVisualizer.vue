@@ -1,27 +1,31 @@
 <template>
   <div class="json-diff-visualizer">
-  <div class="diff-header">
-    <h3>JSON 差异可视化</h3>
-    <div class="header-actions">
-      <div class="legend">
-        <div class="legend-item">
-          <span class="color-box added"></span>
-          新增
+    <div class="diff-header">
+      <h3>JSON 差异可视化</h3>
+      <div class="header-actions">
+        <div class="legend">
+          <div class="legend-item">
+            <span class="color-box added"></span>
+            新增
+          </div>
+          <div class="legend-item">
+            <span class="color-box removed"></span>
+            删除
+          </div>
+          <div class="legend-item">
+            <span class="color-box modified"></span>
+            修改
+          </div>
         </div>
-        <div class="legend-item">
-          <span class="color-box removed"></span>
-          删除
-        </div>
-        <div class="legend-item">
-          <span class="color-box modified"></span>
-          修改
-        </div>
+        <button
+          @click="copyDiffResult"
+          class="copy-btn"
+          :disabled="diffItems.length === 0"
+        >
+          📋 复制差异
+        </button>
       </div>
-      <button @click="copyDiffResult" class="copy-btn" :disabled="diffItems.length === 0">
-        📋 复制差异
-      </button>
     </div>
-  </div>
 
     <div class="json-container">
       <div class="json-panel">
@@ -47,9 +51,7 @@
       <div class="json-panel">
         <h4>差异操作</h4>
         <div class="diff-content">
-          <div v-if="isLoading" class="loading">
-            🔄 正在计算差异...
-          </div>
+          <div v-if="isLoading" class="loading">🔄 正在计算差异...</div>
           <div v-else-if="diffItems.length > 0">
             <div
               v-for="(item, index) in diffItems"
@@ -57,9 +59,13 @@
               :class="['diff-item', item.operation]"
             >
               <div class="diff-header">
-                <span class="operation-icon">{{ getOperationIcon(item.operation) }}</span>
+                <span class="operation-icon">{{
+                  getOperationIcon(item.operation)
+                }}</span>
                 <span class="path">{{ item.path }}</span>
-                <span class="operation-label">{{ getOperationLabel(item.operation) }}</span>
+                <span class="operation-label">{{
+                  getOperationLabel(item.operation)
+                }}</span>
               </div>
 
               <div class="diff-values">
@@ -74,9 +80,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="no-differences">
-            两个JSON完全相同，没有差异
-          </div>
+          <div v-else class="no-differences">两个JSON完全相同，没有差异</div>
         </div>
       </div>
     </div>
@@ -139,19 +143,27 @@ const copyDiffResult = async () => {
 
 const getOperationIcon = (operation: string) => {
   switch (operation) {
-    case 'add': return '+'
-    case 'remove': return '-'
-    case 'replace': return '~'
-    default: return '?'
+    case 'add':
+      return '+'
+    case 'remove':
+      return '-'
+    case 'replace':
+      return '~'
+    default:
+      return '?'
   }
 }
 
 const getOperationLabel = (operation: string) => {
   switch (operation) {
-    case 'add': return '新增'
-    case 'remove': return '删除'
-    case 'replace': return '修改'
-    default: return operation
+    case 'add':
+      return '新增'
+    case 'remove':
+      return '删除'
+    case 'replace':
+      return '修改'
+    default:
+      return operation
   }
 }
 
@@ -346,7 +358,7 @@ loadDiffDetails()
 
 .diff-item:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .diff-item .diff-header {
@@ -431,7 +443,7 @@ loadDiffDetails()
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 13px;
   color: #2c3e50;
-  background: rgba(255,255,255,0.7);
+  background: rgba(255, 255, 255, 0.7);
   padding: 4px 8px;
   border-radius: 3px;
   word-break: break-all;

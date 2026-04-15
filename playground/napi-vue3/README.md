@@ -29,24 +29,30 @@ npm run preview
 ## 测试页面功能
 
 ### 1. Plus 100 测试
+
 点击按钮测试基本的Rust函数调用，返回输入值加100的结果。
 
 ### 2. JSON Diff 测试
 
 #### 手动输入测试
+
 - 在"原始 JSON"和"新 JSON"文本框中输入JSON数据
 - 点击"计算差异"按钮查看差异操作
 - 点击"应用差异"按钮将差异应用到原始JSON
 
 #### 预设测试用例
+
 提供了4个预设测试用例：
+
 - **基础属性修改**: 简单值修改
 - **添加新属性**: 添加新字段
 - **删除属性**: 删除现有字段
 - **嵌套对象**: 复杂嵌套结构
 
 ### 3. 差异操作类型
+
 系统支持三种差异操作：
+
 - `add`: 添加新属性
 - `remove`: 删除现有属性
 - `replace`: 替换属性值
@@ -61,12 +67,15 @@ npm run preview
 ## API 接口
 
 ### jsonDiff(oldJson: string, newJson: string): string
+
 计算两个JSON字符串的差异，返回差异操作的JSON字符串。
 
 ### applyJsonDiff(jsonStr: string, diffOperations: string): string
+
 将差异操作应用到JSON字符串，返回应用后的JSON字符串。
 
 ### plus100(input: number): number
+
 简单的数学运算，返回输入值加100的结果。
 
 ## 项目结构

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   /* ========== 亮色主题 (Light Theme) ========== */
@@ -141,7 +141,7 @@
 }
 
 /* ========== 暗色主题 ========== */
-[data-theme="dark"] {
+[data-theme='dark'] {
   --theme-bg-primary: var(--color-theme-dark-bg-primary);
   --theme-bg-secondary: var(--color-theme-dark-bg-secondary);
   --theme-bg-canvas: var(--color-theme-dark-bg-canvas);
@@ -192,10 +192,14 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
   background: var(--theme-bg-canvas);
   min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 #app {
@@ -247,7 +251,9 @@ textarea::placeholder {
   border: 1px solid var(--theme-border);
   border-radius: 12px;
   box-shadow: 0 2px 8px var(--theme-shadow-sm);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .card:hover {
@@ -257,7 +263,9 @@ textarea::placeholder {
 /* ========== 输入框样式 ========== */
 input,
 textarea {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 input:focus,
@@ -284,7 +292,8 @@ textarea:focus {
 
 /* ========== 脉冲动画 ========== */
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

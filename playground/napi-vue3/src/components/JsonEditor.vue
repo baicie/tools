@@ -53,9 +53,12 @@ const textareaRef = ref<HTMLTextAreaElement>()
 const highlightRef = ref<HTMLPreElement>()
 
 // 同步外部值到内部
-watch(() => props.modelValue, (newVal) => {
-  internalValue.value = newVal
-})
+watch(
+  () => props.modelValue,
+  newVal => {
+    internalValue.value = newVal
+  },
+)
 
 // 获取路径对应的差异类型
 const getPathDiffType = (path: string): string => {
@@ -88,7 +91,11 @@ const highlightedContent = computed(() => {
 })
 
 // 递归高亮JSON
-const highlightJson = (value: any, path: string = '', indent: number = 0): string => {
+const highlightJson = (
+  value: any,
+  path: string = '',
+  indent: number = 0,
+): string => {
   const indentStr = '  '.repeat(indent)
 
   if (value === null) {
@@ -161,9 +168,9 @@ const escapeHtml = (text: string): string => {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#039;'
+    "'": '&#039;',
   }
-  return text.replace(/[&<>"']/g, (m) => map[m] || m)
+  return text.replace(/[&<>"']/g, m => map[m] || m)
 }
 
 // 处理输入

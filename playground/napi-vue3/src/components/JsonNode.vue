@@ -11,9 +11,7 @@
     </button>
 
     <!-- 键名 -->
-    <span v-if="key !== null" class="key">
-      "{{ key }}":
-    </span>
+    <span v-if="key !== null" class="key"> "{{ key }}": </span>
 
     <!-- 值 -->
     <span v-if="!isExpandable" :class="['value', valueClass]">
@@ -24,17 +22,17 @@
     <span v-else-if="isExpandable" class="bracket">
       {{ isArray ? '[' : '{' }}
       <span v-if="!expanded" class="collapsed">
-        {{ isArray ? `... ${data.length} items` : `... ${Object.keys(data).length} items` }}
+        {{
+          isArray
+            ? `... ${data.length} items`
+            : `... ${Object.keys(data).length} items`
+        }}
       </span>
     </span>
 
     <!-- 对象/数组内容 -->
     <div v-if="isExpandable && expanded" class="children">
-      <div
-        v-for="(item, index) in items"
-        :key="index"
-        class="child-item"
-      >
+      <div v-for="(item, index) in items" :key="index" class="child-item">
         <JsonNode
           :data="item.value"
           :key="item.key"
@@ -77,13 +75,15 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  key: null
+  key: null,
 })
 
 const expanded = ref((props.level as number) < 2) // 默认展开前两级
 
 const isArray = computed(() => Array.isArray(props.data))
-const isObject = computed(() => typeof props.data === 'object' && props.data !== null && !isArray.value)
+const isObject = computed(
+  () => typeof props.data === 'object' && props.data !== null && !isArray.value,
+)
 const isExpandable = computed(() => isArray.value || isObject.value)
 
 const items = computed(() => {
@@ -91,13 +91,13 @@ const items = computed(() => {
     return props.data.map((item: any, index: number) => ({
       key: null,
       value: item,
-      fullPath: props.path ? `${props.path}.${index}` : `${index}`
+      fullPath: props.path ? `${props.path}.${index}` : `${index}`,
     }))
   } else if (isObject.value) {
     return Object.entries(props.data).map(([key, value]) => ({
       key,
       value,
-      fullPath: props.path ? `${props.path}.${key}` : key
+      fullPath: props.path ? `${props.path}.${key}` : key,
     }))
   }
   return []
@@ -130,7 +130,11 @@ const formatValue = (value: any) => {
   if (typeof value === 'string') {
     return `"${value}"`
   }
-  if (typeof value === 'boolean' || typeof value === 'number' || value === null) {
+  if (
+    typeof value === 'boolean' ||
+    typeof value === 'number' ||
+    value === null
+  ) {
     return String(value)
   }
   return ''
@@ -164,7 +168,9 @@ const showComma = computed(() => {
   width: 16px;
   text-align: center;
   line-height: 1;
-  transition: transform 0.2s ease, color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
 }
 
 .expand-btn:hover {

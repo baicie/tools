@@ -1,8 +1,6 @@
 <template>
   <div class="json-viewer">
-    <div v-if="data === null" class="error">
-      无效的JSON格式
-    </div>
+    <div v-if="data === null" class="error">无效的JSON格式</div>
     <div v-else>
       <JsonNode
         :data="data"

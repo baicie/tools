@@ -15,6 +15,7 @@ on:
       - 'eslint-config@*'
       - 'prettier-config@*'
       - 'tsconfig@*'
+      - 'clean@*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

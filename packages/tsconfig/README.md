@@ -71,6 +71,7 @@ For NestJS backend projects:
 ```
 
 **Features**:
+
 - Decorator support (`experimentalDecorators`, `emitDecoratorMetadata`)
 - Path alias support (`@/*`)
 - Jest types included
@@ -86,6 +87,7 @@ For Vue.js frontend projects:
 ```
 
 **Features**:
+
 - Vue JSX support
 - Path aliases (`@/*`, `@components/*`, `@views/*`, etc.)
 - Vite client types
@@ -94,13 +96,13 @@ For Vue.js frontend projects:
 
 ### Base Configuration
 
-| Option | Value | Description |
-|--------|-------|-------------|
-| target | `ES2022` | Compilation target |
-| module | `ESNext` | Module system |
-| strict | `true` | Enable strict mode |
-| moduleResolution | `Bundler` | Module resolution strategy |
-| skipLibCheck | `true` | Skip type checking of declaration files |
+| Option           | Value     | Description                             |
+| ---------------- | --------- | --------------------------------------- |
+| target           | `ES2022`  | Compilation target                      |
+| module           | `ESNext`  | Module system                           |
+| strict           | `true`    | Enable strict mode                      |
+| moduleResolution | `Bundler` | Module resolution strategy              |
+| skipLibCheck     | `true`    | Skip type checking of declaration files |
 
 ### Available Presets
 
