@@ -250,5 +250,9 @@ export async function hasTag(tag: string): Promise<boolean> {
 }
 
 export async function deleteTag(tag: string): Promise<void> {
-  await runIfNotDry('git', ['tag', '-d', tag])
+  try {
+    await runIfNotDry('git', ['tag', '-d', tag])
+  } catch {
+    // Tag may not exist, ignore error
+  }
 }
