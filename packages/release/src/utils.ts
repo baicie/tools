@@ -238,15 +238,11 @@ export async function getActiveVersion(
 }
 
 export async function hasTag(tag: string): Promise<boolean> {
-  try {
-    await run('git', ['rev-parse', `refs/tags/${tag}`], {
-      throwOnError: false,
-      nodeOptions: { stdio: 'pipe' },
-    })
-    return true
-  } catch {
-    return false
-  }
+  const { exitCode } = await run('git', ['rev-parse', `refs/tags/${tag}`], {
+    throwOnError: false,
+    nodeOptions: { stdio: 'pipe' },
+  })
+  return exitCode === 0
 }
 
 export async function deleteTag(tag: string): Promise<void> {
