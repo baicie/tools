@@ -13,6 +13,13 @@ export function formatSize(bytes: number): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`
 }
 
+export function getSizeColor(bytes: number): (text: string) => string {
+  if (bytes >= 1024 * 1024 * 1024) return colors.red // GB+
+  if (bytes >= 1024 * 1024) return colors.yellow // MB+
+  if (bytes >= 1024) return colors.dim // KB+
+  return colors.gray // B only
+}
+
 async function getDirSize(dirPath: string): Promise<number> {
   try {
     const { stdout } = await exec('du', ['-sk', dirPath], {
@@ -98,20 +105,21 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
     return result
   }
 
+  targetsInfo.sort((a, b) => b.size - a.size)
+
   console.info(
     colors.cyan(`\nFound ${targetsInfo.length} target directory(ies):\n`),
   )
   for (const info of targetsInfo) {
     const sizeStr = formatSize(info.size)
+    const colorSizeStr = getSizeColor(info.size)(sizeStr)
     const symlinkStr = info.isSymlink ? colors.yellow(' [symlink]') : ''
-    console.info(
-      `  ${colors.dim(info.path)}  ${colors.yellow(sizeStr)}${symlinkStr}`,
-    )
+    console.info(`  ${colors.dim(info.path)}  ${colorSizeStr}${symlinkStr}`)
   }
   console.info()
 
   const totalSize = targetsInfo.reduce((sum, info) => sum + info.size, 0)
-  console.info(`Total size: ${colors.yellow(formatSize(totalSize))}`)
+  console.info(`Total size: ${getSizeColor(totalSize)(formatSize(totalSize))}`)
   console.info()
 
   if (dry) {
@@ -125,10 +133,8 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
     return result
   }
 
-  const deletePromises = targetsInfo.map(async info => {
-    if (verbose) {
-      console.info(colors.dim(`Removing: ${info.path}`))
-    }
+  for (const info of targetsInfo) {
+    console.info(colors.cyan(`Removing: ${info.path} ...`))
 
     try {
       await exec('rm', ['-rf', info.path], {
@@ -139,25 +145,23 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
       result.spaceSaved += info.size
       result.removed.push(info.path)
 
-      if (verbose) {
-        console.info(
-          colors.green(`  Removed: ${info.path} (${formatSize(info.size)})`),
-        )
-      }
+      console.info(
+        colors.green(
+          `  ✓ Removed: ${info.path} (${getSizeColor(info.size)(formatSize(info.size))})`,
+        ),
+      )
     } catch (error) {
       console.error(
         colors.red(
-          `  Failed to remove ${info.path}: ${(error as Error).message}`,
+          `  ✗ Failed to remove ${info.path}: ${(error as Error).message}`,
         ),
       )
     }
-  })
-
-  await Promise.all(deletePromises)
+  }
 
   console.info(
     colors.green(
-      `\nCleaned ${result.count} directory(ies), recovered ${formatSize(result.spaceSaved)}.`,
+      `\nCleaned ${result.count} directory(ies), recovered ${getSizeColor(result.spaceSaved)(formatSize(result.spaceSaved))}.`,
     ),
   )
 
