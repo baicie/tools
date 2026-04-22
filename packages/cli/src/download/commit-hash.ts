@@ -26,14 +26,35 @@ async function getLocalCommit(commitFile: string) {
   return null
 }
 
-export async function diffCommit(tempPath: string): Promise<boolean> {
+export async function diffCommit(tempPath: string): Promise<{
+  needsUpdate: boolean
+  remoteCommit: string | null
+}> {
   const commitFile = path.join(tempPath, '.commit-hash')
   const localCommit = await getLocalCommit(commitFile)
-  const remoteCommit = await getRemoteLatestCommit()
-  // 获取失败不去下载
-  if (localCommit !== '' && localCommit !== remoteCommit) {
-    fs.writeFileSync(commitFile, remoteCommit)
-    return true
+  let remoteCommit: string | null
+  try {
+    remoteCommit = await getRemoteLatestCommit()
+  } catch {
+    return { needsUpdate: false, remoteCommit: null }
   }
-  return false
+
+  if (!remoteCommit) {
+    return { needsUpdate: false, remoteCommit: null }
+  }
+
+  if (localCommit === null || localCommit === '') {
+    return { needsUpdate: true, remoteCommit }
+  }
+
+  const needsUpdate = localCommit !== remoteCommit
+  return { needsUpdate, remoteCommit }
+}
+
+export async function updateLocalCommit(
+  tempPath: string,
+  commit: string,
+): Promise<void> {
+  const commitFile = path.join(tempPath, '.commit-hash')
+  fs.writeFileSync(commitFile, commit)
 }

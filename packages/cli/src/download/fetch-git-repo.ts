@@ -5,7 +5,7 @@ import { CACHE_TEMPLATES, TEMPLATE_CREATOR, templateRoot } from '../util'
 
 import type { FileStat } from './download'
 import { download, readDirWithFileTypes } from './download'
-import { diffCommit } from './commit-hash'
+import { diffCommit, updateLocalCommit } from './commit-hash'
 import type { IProjectConf } from '../steps'
 
 export interface ITemplates {
@@ -27,11 +27,14 @@ export async function fetchTemplate(
   const tempPath = path.join(savePath, TEMP_DOWNLOAD_FOLDER)
   logger.debug(`tempPath: ${tempPath}`)
   fs.ensureDirSync(tempPath)
-  const needUpdate = await diffCommit(tempPath)
+  const { needsUpdate, remoteCommit } = await diffCommit(tempPath)
 
   let files: FileStat[] = []
-  if (needUpdate) {
+  if (needsUpdate) {
     files = await download(repo, tempPath)
+    if (files.length > 0 && remoteCommit) {
+      await updateLocalCommit(tempPath, remoteCommit)
+    }
   } else {
     files = readDirWithFileTypes(tempPath)
   }
@@ -110,7 +113,7 @@ export async function fetchTemplate(
     }
   }
 
-  if (needUpdate) {
+  if (needsUpdate) {
     fs.writeFileSync(path.join(tempPath, CACHE_TEMPLATES), JSON.stringify(res))
   } else {
     res = JSON.parse(
