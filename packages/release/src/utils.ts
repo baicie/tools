@@ -252,3 +252,11 @@ export async function deleteTag(tag: string): Promise<void> {
     // Tag may not exist, ignore error
   }
 }
+
+export async function deleteRemoteTag(tag: string): Promise<void> {
+  try {
+    await runIfNotDry('git', ['push', 'origin', '--delete', `refs/tags/${tag}`])
+  } catch {
+    // Tag may not exist on remote, ignore error
+  }
+}

@@ -5,6 +5,7 @@ import {
   args,
   backupVersion,
   clearBackups,
+  deleteRemoteTag,
   deleteTag,
   getPackageInfo,
   getVersionChoices,
@@ -160,8 +161,11 @@ async function gitDiff(tag: string) {
 
   step('\nTagging...')
   if (await hasTag(tag)) {
-    console.log(colors.yellow(`Tag ${tag} already exists, deleting...`))
+    console.log(
+      colors.yellow(`Tag ${tag} already exists, deleting local and remote...`),
+    )
     await deleteTag(tag)
+    await deleteRemoteTag(tag)
   }
   await runIfNotDry('git', ['tag', '-a', '-m', tag, tag])
 
