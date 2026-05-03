@@ -5,7 +5,6 @@ packages:
   - docs
 
 shellEmulator: true
-verifyDepsBeforeRun: install
 
 catalog:
   '@napi-rs/cli': ^3.5.0
