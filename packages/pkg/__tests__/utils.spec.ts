@@ -3,6 +3,7 @@ import {
   cleanObject,
   compareVersions,
   deepClone,
+  formatDependencyList,
   getPackageScope,
   isEmptyObject,
   isScopedPackage,
@@ -85,6 +86,23 @@ describe('cleanObject', () => {
 
     expect(result.arr).toEqual([1, 2, 3])
   })
+
+  it('应该递归清理嵌套对象', () => {
+    const obj = { a: 1, b: { c: null, d: 2 } }
+    const result = cleanObject(obj)
+
+    expect(result.a).toBe(1)
+    expect((result.b as any).c).toBeUndefined()
+    expect((result.b as any).d).toBe(2)
+  })
+
+  it('应该移除空数组', () => {
+    const obj = { a: 1, b: [] }
+    const result = cleanObject(obj)
+
+    expect(result.a).toBe(1)
+    expect(result.b).toBeUndefined()
+  })
 })
 
 describe('mergePackageJson', () => {
@@ -105,6 +123,25 @@ describe('mergePackageJson', () => {
     expect(result.dependencies?.react).toBe('^18.0.0')
     expect(result.dependencies?.vue).toBe('^3.0.0')
   })
+
+  it('应该合并 scripts', () => {
+    const base = { scripts: { dev: 'echo dev', build: 'echo build' } }
+    const override = { scripts: { test: 'vitest' } }
+    const result = mergePackageJson(base as any, override)
+
+    expect(result.scripts?.dev).toBe('echo dev')
+    expect(result.scripts?.build).toBe('echo build')
+    expect(result.scripts?.test).toBe('vitest')
+  })
+
+  it('应该跳过 undefined 值', () => {
+    const base = { name: 'test', version: '1.0.0' }
+    const override = { version: undefined }
+    const result = mergePackageJson(base as any, override)
+
+    expect(result.name).toBe('test')
+    expect(result.version).toBe('1.0.0')
+  })
 })
 
 describe('compareVersions', () => {
@@ -113,12 +150,25 @@ describe('compareVersions', () => {
     expect(compareVersions('1.0.1', '1.0.0')).toBe(1)
     expect(compareVersions('1.0.0', '1.0.0')).toBe(0)
   })
+
+  it('应该处理不同长度的版本号', () => {
+    expect(compareVersions('1.0', '1.0.0')).toBe(0)
+    expect(compareVersions('1.1.0', '1.0.0.0')).toBe(1)
+  })
+
+  it('应该处理带前缀的版本号', () => {
+    expect(compareVersions('v1.0.0', '1.0.0')).toBe(0)
+  })
 })
 
 describe('normalizePackageName', () => {
   it('应该规范化包名', () => {
     expect(normalizePackageName('Test-Package')).toBe('test-package')
     expect(normalizePackageName('@scope/Package')).toBe('package')
+  })
+
+  it('应该处理作用域包', () => {
+    expect(normalizePackageName('@Scope/Package-Name')).toBe('package-name')
   })
 })
 
@@ -127,11 +177,37 @@ describe('getPackageScope', () => {
     expect(getPackageScope('@scope/package')).toBe('scope')
     expect(getPackageScope('package')).toBe(null)
   })
+
+  it('应该处理复杂作用域', () => {
+    expect(getPackageScope('@org-name/package-name')).toBe('org-name')
+  })
 })
 
 describe('isScopedPackage', () => {
   it('应该识别作用域包', () => {
     expect(isScopedPackage('@scope/package')).toBe(true)
     expect(isScopedPackage('package')).toBe(false)
+  })
+
+  it('应该识别非作用域包', () => {
+    expect(isScopedPackage('@scope')).toBe(false)
+  })
+})
+
+describe('formatDependencyList', () => {
+  it('应该格式化依赖列表', () => {
+    const deps = { react: '^18.0.0', vue: '^3.0.0' }
+    const result = formatDependencyList(deps)
+
+    expect(result).toContain('react@^18.0.0')
+    expect(result).toContain('vue@^3.0.0')
+  })
+
+  it('应该处理空依赖', () => {
+    expect(formatDependencyList({})).toEqual([])
+  })
+
+  it('应该处理 undefined', () => {
+    expect(formatDependencyList(undefined)).toEqual([])
   })
 })

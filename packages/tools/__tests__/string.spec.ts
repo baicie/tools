@@ -4,17 +4,22 @@ import {
   camelToKebab,
   camelToSnake,
   capitalize,
+  countChars,
   escapeHtml,
   hasChinese,
   isPalindrome,
   kebabToCamel,
   randomStr,
+  removeSpaces,
   reverse,
   snakeToCamel,
   stripHtml,
   template,
   toPascalCase,
   truncate,
+  truncateByBytes,
+  uncapitalize,
+  unescapeHtml,
 } from '../src/string'
 
 describe('capitalize', () => {
@@ -119,5 +124,65 @@ describe('byteLength', () => {
   it('应该计算字节长度', () => {
     expect(byteLength('hello')).toBe(5)
     expect(byteLength('你好')).toBe(4)
+  })
+})
+
+describe('uncapitalize', () => {
+  it('应该首字母小写', () => {
+    expect(uncapitalize('Hello')).toBe('hello')
+    expect(uncapitalize('World')).toBe('world')
+  })
+})
+
+describe('unescapeHtml', () => {
+  it('应该反转义HTML字符', () => {
+    expect(unescapeHtml('&lt;div&gt;test&lt;/div&gt;')).toBe('<div>test</div>')
+    expect(unescapeHtml('&amp;')).toBe('&')
+  })
+})
+
+describe('countChars', () => {
+  it('应该统计字符出现次数', () => {
+    const result = countChars('hello')
+    expect(result.h).toBe(1)
+    expect(result.e).toBe(1)
+    expect(result.l).toBe(2)
+    expect(result.o).toBe(1)
+  })
+
+  it('应该处理重复字符', () => {
+    const result = countChars('aaa')
+    expect(result.a).toBe(3)
+  })
+})
+
+describe('removeSpaces', () => {
+  it('应该移除所有空格', () => {
+    expect(removeSpaces('h e l l o')).toBe('hello')
+    expect(removeSpaces('a  b   c')).toBe('abc')
+  })
+
+  it('应该处理连续空格', () => {
+    expect(removeSpaces('a\t\nb')).toBe('ab')
+  })
+})
+
+describe('truncateByBytes', () => {
+  it('应该按字节截断字符串', () => {
+    expect(truncateByBytes('hello世界', 8)).toBe('hello世')
+    expect(truncateByBytes('hello', 10)).toBe('hello')
+  })
+
+  it('中文应该算2字节', () => {
+    const result = truncateByBytes('你好世界', 6)
+    expect(byteLength(result)).toBeLessThanOrEqual(6)
+  })
+
+  it('应该处理空字符串', () => {
+    expect(truncateByBytes('', 5)).toBe('')
+  })
+
+  it('应该处理超长截断', () => {
+    expect(truncateByBytes('hello', 100)).toBe('hello')
   })
 })

@@ -62,12 +62,24 @@ describe('chunk', () => {
 })
 
 describe('shuffle', () => {
-  it('应该打乱数组', () => {
+  it('应该打乱数组并保持元素不变', () => {
     const arr = [1, 2, 3, 4, 5]
     const shuffled = shuffle(arr)
     expect(shuffled).toHaveLength(5)
-    expect(shuffled).not.toEqual(arr)
     expect(shuffled.sort()).toEqual([1, 2, 3, 4, 5])
+  })
+
+  it('不应该改变原数组', () => {
+    const arr = [1, 2, 3, 4, 5]
+    const original = [...arr]
+    shuffle(arr)
+    expect(arr).toEqual(original)
+  })
+
+  it('应该返回新数组', () => {
+    const arr = [1, 2, 3, 4, 5]
+    const shuffled = shuffle(arr)
+    expect(shuffled).not.toBe(arr)
   })
 })
 

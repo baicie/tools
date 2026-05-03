@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   clonePackageJson,
+  createByProjectType,
   createMinimalPackageJson,
   createPackageJson,
   createPackageJsonString,
@@ -48,6 +49,12 @@ describe('createPackageJson', () => {
     expect(pkg.private).toBe(true)
     expect(pkg.type).toBe('module')
   })
+
+  it('应该使用预设的默认值', () => {
+    const pkg = createPackageJson({ name: 'test' })
+    expect(pkg.version).toBe('0.1.0')
+    expect(pkg.license).toBe('MIT')
+  })
 })
 
 describe('createPackageJsonString', () => {
@@ -90,7 +97,7 @@ describe('clonePackageJson', () => {
     expect(cloned.name).toBe('base')
     expect(cloned.version).toBe('2.0.0')
     expect(cloned.description).toBe('Updated')
-    expect(base.version).toBe('1.0.0') // 原对象不应被修改
+    expect(base.version).toBe('1.0.0')
   })
 
   it('应该深度克隆对象', () => {
@@ -113,5 +120,39 @@ describe('createMinimalPackageJson', () => {
     expect(pkg.name).toBe('minimal-pkg')
     expect(pkg.version).toBe('0.0.1')
     expect(Object.keys(pkg).length).toBeLessThan(5)
+  })
+
+  it('应该创建无名包的最小化 package.json', () => {
+    const pkg = createMinimalPackageJson()
+    expect(pkg.name).toBeUndefined()
+    expect(pkg.version).toBe('0.1.0')
+  })
+})
+
+describe('createByProjectType', () => {
+  it('应该为 library 类型创建 package.json', () => {
+    const pkg = createByProjectType('library', 'my-lib')
+    expect(pkg.name).toBe('my-lib')
+    expect(pkg.main).toBeDefined()
+  })
+
+  it('应该为 cli 类型创建 package.json', () => {
+    const pkg = createByProjectType('cli', 'my-cli')
+    expect(pkg.name).toBe('my-cli')
+  })
+
+  it('应该为 app 类型创建 package.json', () => {
+    const pkg = createByProjectType('app', 'my-app')
+    expect(pkg.name).toBe('my-app')
+  })
+
+  it('应该为 monorepo 类型创建 package.json', () => {
+    const pkg = createByProjectType('monorepo', 'my-monorepo')
+    expect(pkg.name).toBe('my-monorepo')
+  })
+
+  it('应该支持不指定名称', () => {
+    const pkg = createByProjectType('library')
+    expect(pkg.name).toBe('')
   })
 })

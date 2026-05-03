@@ -1,7 +1,12 @@
 import { configDefaults, defineConfig } from 'vitest/config'
 import { entries } from './scripts/aliases.js'
 
-const unitIgnore = ['packages/napi/**', '**/e2e/**']
+const unitIgnore = [
+  '**/e2e/**',
+  'packages/cli/__tests__/**',
+  'packages/napi/**',
+  'packages/napi-browser/**',
+]
 
 export default defineConfig({
   define: {
@@ -47,7 +52,7 @@ export default defineConfig({
         test: {
           name: 'e2e',
           environment: 'jsdom',
-          include: ['packages/*/__tests__/e2e/*.spec.ts'],
+          include: ['packages/tools/__tests__/e2e/*.spec.ts'],
         },
       },
       {

@@ -3,9 +3,7 @@ import type { SyncOptions } from 'execa'
 import { execaCommandSync } from 'execa'
 import { describe, expect, it } from 'vitest'
 
-const CLI_PATH = path.join(__dirname, '../cli.js')
-
-const projectName = 'test-app'
+const CLI_PATH = path.join(__dirname, '../../cli.js')
 
 const run = (args: string[], options?: SyncOptions) => {
   return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, {
@@ -14,14 +12,14 @@ const run = (args: string[], options?: SyncOptions) => {
   })
 }
 
-describe('CLI 命令', () => {
+describe('CLI 命令 (E2E)', () => {
   it('应该提示输入项目名称', () => {
     const { stdout } = run([])
     expect(stdout).toContain('项目名称?')
   })
 
   it('应该提示输入项目描述', () => {
-    const { stdout } = run([projectName])
+    const { stdout } = run(['test-app'])
     expect(stdout).toContain('请输入项目介绍')
   })
 

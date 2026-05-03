@@ -68,7 +68,6 @@ describe('native hijack', () => {
   })
 
   it('emits changes when cookie is accessed', () => {
-    // 跳过在非浏览器环境中的测试
     if (typeof window === 'undefined') {
       return
     }
@@ -84,13 +83,85 @@ describe('native hijack', () => {
       logs.push(change.type + ':' + (change.value || ''))
     })
 
-    // 设置cookie
     document.cookie = 'test=value'
-    // 读取cookie
     var cookieValue = document.cookie
 
     unsubscribe()
 
     expect(logs).toEqual(['write:value', 'read:' + cookieValue])
+  })
+
+  it('should emit clear event', () => {
+    var fakeStorage = new FakeStorage()
+    startNativeHijack({
+      storages: [{ storage: fakeStorage, id: 'spec-storage' }],
+      local: false,
+      session: false,
+    })
+
+    var logs: string[] = []
+    var unsubscribe = subscribeStorageChanges(function (change) {
+      logs.push(change.type)
+    })
+
+    fakeStorage.setItem('a', '1')
+    fakeStorage.setItem('b', '2')
+    fakeStorage.clear()
+
+    unsubscribe()
+
+    expect(logs).toContain('write')
+    expect(logs).toContain('clear')
+  })
+
+  it('should handle multiple storage instances', () => {
+    var storage1 = new FakeStorage()
+    var storage2 = new FakeStorage()
+
+    startNativeHijack({
+      storages: [
+        { storage: storage1, id: 'storage-1' },
+        { storage: storage2, id: 'storage-2' },
+      ],
+      local: false,
+      session: false,
+    })
+
+    var sources: string[] = []
+    var unsubscribe = subscribeStorageChanges(function (change) {
+      sources.push(change.source)
+    })
+
+    storage1.setItem('a', '1')
+    storage2.setItem('b', '2')
+
+    unsubscribe()
+
+    expect(sources).toContain('storage-1')
+    expect(sources).toContain('storage-2')
+  })
+
+  it('should support filter by include option', () => {
+    var fakeStorage = new FakeStorage()
+    startNativeHijack({
+      storages: [{ storage: fakeStorage, id: 'spec-storage' }],
+      local: false,
+      session: false,
+    })
+
+    var logs: string[] = []
+    var unsubscribe = subscribeStorageChanges(
+      function (change) {
+        logs.push(change.type + ':' + change.key)
+      },
+      { include: [{ key: 'token' }] },
+    )
+
+    fakeStorage.setItem('token', '123')
+    fakeStorage.setItem('other', '456')
+
+    unsubscribe()
+
+    expect(logs).toEqual(['write:token'])
   })
 })

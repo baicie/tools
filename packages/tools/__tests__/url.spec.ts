@@ -5,10 +5,12 @@ import {
   encodeUrl,
   getDomain,
   getFileExtension,
+  getHash,
   getPath,
   getProtocol,
   getQueryParam,
   isAbsoluteUrl,
+  isSameOrigin,
   joinUrl,
   parseQuery,
   removeQuery,
@@ -96,5 +98,56 @@ describe('getFileExtension', () => {
   it('应该获取文件扩展名', () => {
     expect(getFileExtension('file.txt')).toBe('txt')
     expect(getFileExtension('file.min.js')).toBe('js')
+  })
+
+  it('应该处理带查询参数的URL', () => {
+    expect(getFileExtension('file.txt?v=1')).toBe('txt')
+  })
+
+  it('应该处理无扩展名的文件', () => {
+    expect(getFileExtension('file')).toBe('')
+    expect(getFileExtension('.gitignore')).toBe('')
+  })
+})
+
+describe('getHash', () => {
+  it('应该获取URL的hash', () => {
+    expect(getHash('https://example.com#section')).toBe('#section')
+  })
+
+  it('应该处理无hash的URL', () => {
+    expect(getHash('https://example.com/path')).toBe('')
+  })
+
+  it('应该处理空字符串', () => {
+    expect(getHash('')).toBe('')
+  })
+})
+
+describe('isSameOrigin', () => {
+  it('应该判断同源URL', () => {
+    expect(isSameOrigin('https://example.com/a', 'https://example.com/b')).toBe(
+      true,
+    )
+  })
+
+  it('应该判断不同源的URL', () => {
+    expect(isSameOrigin('https://example.com', 'https://other.com')).toBe(false)
+  })
+
+  it('应该处理协议不同', () => {
+    expect(isSameOrigin('http://example.com', 'https://example.com')).toBe(
+      false,
+    )
+  })
+
+  it('应该处理端口不同', () => {
+    expect(
+      isSameOrigin('https://example.com:8080', 'https://example.com:3000'),
+    ).toBe(false)
+  })
+
+  it('应该处理无效URL', () => {
+    expect(isSameOrigin('not-a-url', 'https://example.com')).toBe(false)
   })
 })
