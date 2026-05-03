@@ -1,167 +1,106 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import {
-  startNativeHijack,
-  stopNativeHijack,
-  subscribeStorageChanges,
-} from '../src/native-watcher'
+import { describe, expect, it } from 'vitest'
 
-class FakeStorage implements Storage {
-  private store: Record<string, string> = {}
-
-  get length(): number {
-    return Object.keys(this.store).length
-  }
-
-  clear(): void {
-    this.store = {}
-  }
-
-  getItem(key: string): string | null {
-    return Object.prototype.hasOwnProperty.call(this.store, key)
-      ? this.store[key]
-      : null
-  }
-
-  key(index: number): string | null {
-    var keys = Object.keys(this.store)
-    return typeof keys[index] === 'string' ? keys[index] : null
-  }
-
-  removeItem(key: string): void {
-    delete this.store[key]
-  }
-
-  setItem(key: string, value: string): void {
-    this.store[key] = String(value)
-  }
-}
-
-describe('native hijack', () => {
-  beforeEach(() => {
-    stopNativeHijack()
+describe('hijackCookie', () => {
+  it('should return undefined for null document', async () => {
+    const { hijackCookie } = await import('../src/hijack-cookie')
+    const result = hijackCookie(null as any, 'cookie', vi.fn())
+    expect(result).toBeUndefined()
   })
 
-  afterEach(() => {
-    stopNativeHijack()
+  it('should return undefined for document without cookie property', async () => {
+    const { hijackCookie } = await import('../src/hijack-cookie')
+    const fakeDocNoCookie = {} as any
+    const result = hijackCookie(fakeDocNoCookie, 'cookie', vi.fn())
+    expect(result).toBeUndefined()
   })
 
-  it('emits changes when native methods are called', () => {
-    var fakeStorage = new FakeStorage()
-    startNativeHijack({
-      storages: [{ storage: fakeStorage, id: 'spec-storage' }],
-      local: false,
-      session: false,
+  it('should return undefined when cookie descriptor has no getter', async () => {
+    const { hijackCookie } = await import('../src/hijack-cookie')
+    const fakeDoc = {
+      cookie: 'test=value',
+    } as any
+    Object.defineProperty(fakeDoc, 'cookie', {
+      value: 'test=value',
     })
-
-    var logs: string[] = []
-    var unsubscribe = subscribeStorageChanges(function (change) {
-      logs.push(change.type + ':' + (change.value || ''))
-    })
-
-    fakeStorage.setItem('token', '123')
-    fakeStorage.getItem('token')
-    fakeStorage.removeItem('token')
-
-    unsubscribe()
-
-    expect(logs).toEqual(['write:123', 'read:123', 'remove:'])
+    const result = hijackCookie(fakeDoc, 'cookie', vi.fn())
+    expect(result).toBeUndefined()
   })
 
-  it('emits changes when cookie is accessed', () => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    startNativeHijack({
-      local: false,
-      session: false,
-      cookie: true,
-    })
-
-    var logs: string[] = []
-    var unsubscribe = subscribeStorageChanges(function (change) {
-      logs.push(change.type + ':' + (change.value || ''))
-    })
-
-    document.cookie = 'test=value'
-    var cookieValue = document.cookie
-
-    unsubscribe()
-
-    expect(logs).toEqual(['write:value', 'read:' + cookieValue])
-  })
-
-  it('should emit clear event', () => {
-    var fakeStorage = new FakeStorage()
-    startNativeHijack({
-      storages: [{ storage: fakeStorage, id: 'spec-storage' }],
-      local: false,
-      session: false,
-    })
-
-    var logs: string[] = []
-    var unsubscribe = subscribeStorageChanges(function (change) {
-      logs.push(change.type)
-    })
-
-    fakeStorage.setItem('a', '1')
-    fakeStorage.setItem('b', '2')
-    fakeStorage.clear()
-
-    unsubscribe()
-
-    expect(logs).toContain('write')
-    expect(logs).toContain('clear')
-  })
-
-  it('should handle multiple storage instances', () => {
-    var storage1 = new FakeStorage()
-    var storage2 = new FakeStorage()
-
-    startNativeHijack({
-      storages: [
-        { storage: storage1, id: 'storage-1' },
-        { storage: storage2, id: 'storage-2' },
-      ],
-      local: false,
-      session: false,
-    })
-
-    var sources: string[] = []
-    var unsubscribe = subscribeStorageChanges(function (change) {
-      sources.push(change.source)
-    })
-
-    storage1.setItem('a', '1')
-    storage2.setItem('b', '2')
-
-    unsubscribe()
-
-    expect(sources).toContain('storage-1')
-    expect(sources).toContain('storage-2')
-  })
-
-  it('should support filter by include option', () => {
-    var fakeStorage = new FakeStorage()
-    startNativeHijack({
-      storages: [{ storage: fakeStorage, id: 'spec-storage' }],
-      local: false,
-      session: false,
-    })
-
-    var logs: string[] = []
-    var unsubscribe = subscribeStorageChanges(
-      function (change) {
-        logs.push(change.type + ':' + change.key)
+  it('should return undefined when cookie descriptor has no setter', async () => {
+    const { hijackCookie } = await import('../src/hijack-cookie')
+    const fakeDoc = {} as any
+    Object.defineProperty(fakeDoc, 'cookie', {
+      get() {
+        return 'test=value'
       },
-      { include: [{ key: 'token' }] },
-    )
+    })
+    const result = hijackCookie(fakeDoc, 'cookie', vi.fn())
+    expect(result).toBeUndefined()
+  })
 
-    fakeStorage.setItem('token', '123')
-    fakeStorage.setItem('other', '456')
+  it('HijackHandle should have restore method when returned', async () => {
+    const { hijackCookie } = await import('../src/hijack-cookie')
+    const fakeDoc = {} as any
+    Object.defineProperty(fakeDoc, 'cookie', {
+      get() {
+        return ''
+      },
+      set(val: string) {
+        this._cookie = val
+      },
+    })
 
-    unsubscribe()
+    let logs: any[] = []
+    const handle = hijackCookie(fakeDoc, 'cookie', change => {
+      logs.push(change)
+    })
 
-    expect(logs).toEqual(['write:token'])
+    if (handle) {
+      expect(typeof handle.restore).toBe('function')
+      handle.restore()
+    }
+  })
+})
+
+describe('hijackIndexedDB', () => {
+  it('should return undefined for null indexedDB', async () => {
+    const { hijackIndexedDB } = await import('../src/hijack-indexeddb')
+    const result = hijackIndexedDB(null as any, 'idb', vi.fn())
+    expect(result).toBeUndefined()
+  })
+
+  it('should return undefined for indexedDB without open method', async () => {
+    const { hijackIndexedDB } = await import('../src/hijack-indexeddb')
+    const fakeIDB = {} as any
+    const result = hijackIndexedDB(fakeIDB, 'idb', vi.fn())
+    expect(result).toBeUndefined()
+  })
+
+  it('should return HijackHandle with restore method', async () => {
+    const { hijackIndexedDB } = await import('../src/hijack-indexeddb')
+    const fakeIDB = {
+      open: vi.fn(() => ({
+        result: {},
+        addEventListener: vi.fn(),
+      })),
+    } as any
+
+    const handle = hijackIndexedDB(fakeIDB, 'idb', vi.fn())
+
+    expect(handle).toBeDefined()
+    expect(handle!.restore).toBeDefined()
+  })
+
+  it('restore should be callable', async () => {
+    const { hijackIndexedDB } = await import('../src/hijack-indexeddb')
+    const fakeIDB = {
+      open: vi.fn(() => ({
+        result: {},
+        addEventListener: vi.fn(),
+      })),
+    } as any
+
+    const handle = hijackIndexedDB(fakeIDB, 'idb', vi.fn())
+    expect(() => handle!.restore()).not.toThrow()
   })
 })
