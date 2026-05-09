@@ -9,3 +9,9 @@ shellEmulator: true
 catalog:
   '@napi-rs/cli': ^3.5.0
   '@napi-rs/wasm-runtime': 1.1.0
+
+allowBuilds:
+  esbuild: true
+  playwright-chromium: true
+  simple-git-hooks: true
+  unrs-resolver: true

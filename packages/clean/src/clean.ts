@@ -4,6 +4,10 @@ import colors from 'picocolors'
 import { exec } from 'tinyexec'
 import type { CleanOptions, CleanResult, TargetInfo } from './types'
 
+function isWindows(): boolean {
+  return process.platform === 'win32'
+}
+
 const DEFAULT_TARGETS = ['node_modules', 'target'] as const
 
 export function formatSize(bytes: number): string {
@@ -20,16 +24,57 @@ export function getSizeColor(bytes: number): (text: string) => string {
   return colors.gray // B only
 }
 
-async function getDirSize(dirPath: string): Promise<number> {
-  try {
-    const { stdout } = await exec('du', ['-sk', dirPath], {
-      nodeOptions: { stdio: 'pipe' },
-    })
-    const kb = parseInt(stdout.trim().split('\t')[0], 10) || 0
-    return kb * 1024
-  } catch {
-    return 0
+async function getDirSizeNative(dirPath: string): Promise<number> {
+  let totalSize = 0
+  const dirsToProcess = [dirPath]
+
+  while (dirsToProcess.length > 0) {
+    const currentDir = dirsToProcess.pop()!
+    try {
+      const entries = await fs.readdir(currentDir, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = path.join(currentDir, entry.name)
+        try {
+          if (entry.isFile()) {
+            const stats = await fs.stat(fullPath)
+            totalSize += stats.size
+          } else if (entry.isDirectory() && !entry.isSymbolicLink()) {
+            dirsToProcess.push(fullPath)
+          }
+        } catch {
+          // Skip files we can't access
+        }
+      }
+    } catch {
+      // Skip dirs we can't access
+    }
   }
+
+  return totalSize
+}
+
+async function getDirSize(dirPath: string): Promise<number> {
+  // Try native Node.js method first (cross-platform)
+  try {
+    return await getDirSizeNative(dirPath)
+  } catch {
+    // Fallback to du command on Unix systems
+  }
+
+  // Only try du on non-Windows systems
+  if (!isWindows()) {
+    try {
+      const { stdout } = await exec('du', ['-sk', dirPath], {
+        nodeOptions: { stdio: 'pipe' },
+      })
+      const kb = parseInt(stdout.trim().split('\t')[0], 10) || 0
+      return kb * 1024
+    } catch {
+      return 0
+    }
+  }
+
+  return 0
 }
 
 export async function scanForTargets(
@@ -137,9 +182,17 @@ export async function clean(options: CleanOptions = {}): Promise<CleanResult> {
     console.info(colors.cyan(`Removing: ${info.path} ...`))
 
     try {
-      await exec('rm', ['-rf', info.path], {
-        throwOnError: false,
-      })
+      if (isWindows()) {
+        // Windows: use rmdir /s /q
+        await exec('rmdir', ['/s', '/q', info.path], {
+          throwOnError: false,
+        })
+      } else {
+        // Unix: use rm -rf
+        await exec('rm', ['-rf', info.path], {
+          throwOnError: false,
+        })
+      }
 
       result.count++
       result.spaceSaved += info.size

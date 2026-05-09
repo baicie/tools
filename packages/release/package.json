@@ -25,20 +25,20 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.33.2",
+  "packageManager": "pnpm@11.0.9",
   "dependencies": {
     "conventional-changelog": "^7.2.0",
     "conventional-changelog-conventionalcommits": "^9.3.1",
     "mri": "^1.2.0",
     "picocolors": "^1.1.1",
     "prompts": "^2.4.2",
-    "publint": "^0.3.18",
-    "semver": "^7.7.4",
+    "publint": "^0.3.20",
+    "semver": "^7.8.0",
     "tinyexec": "^1.1.2"
   },
   "devDependencies": {
     "@arnaud-barre/tnode": "^0.25.0",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.6.2",
     "@types/prompts": "^2.4.9",
     "@types/semver": "^7.7.1",
     "esbuild": "^0.28.0",
