@@ -11,7 +11,7 @@ catalog:
   '@napi-rs/wasm-runtime': 1.1.0
 
 allowBuilds:
-  esbuild: true
-  playwright-chromium: true
+  esbuild: false
+  playwright-chromium: false
   simple-git-hooks: true
-  unrs-resolver: true
+  unrs-resolver: false
