@@ -57,19 +57,19 @@ export interface Logger {
   /**
    * 调试日志
    */
-  debug: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
+  debug: (codeOrMessage: unknown, ...args: unknown[]) => void
   /**
    * 信息日志
    */
-  info: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
+  info: (codeOrMessage: unknown, ...args: unknown[]) => void
   /**
    * 警告日志
    */
-  warn: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
+  warn: (codeOrMessage: unknown, ...args: unknown[]) => void
   /**
    * 错误日志
    */
-  error: (codeOrMessage: LogCode | string, ...args: unknown[]) => void
+  error: (codeOrMessage: unknown, ...args: unknown[]) => void
   /**
    * 设置配置
    */
@@ -126,20 +126,21 @@ function shouldLog(level: LogLevel, force?: boolean): boolean {
 /**
  * 根据日志级别为消息增加颜色
  */
-function colorizeMessage(level: LogLevel, message: string): string {
+function colorizeMessage(level: LogLevel, message: string | unknown): string {
+  const msg = String(message)
   if (level === 'debug') {
-    return pc.gray(message)
+    return pc.gray(msg)
   }
   if (level === 'info') {
-    return pc.blue(message)
+    return pc.blue(msg)
   }
   if (level === 'warn') {
-    return pc.yellow(message)
+    return pc.yellow(msg)
   }
   if (level === 'error') {
-    return pc.red(message)
+    return pc.red(msg)
   }
-  return message
+  return msg
 }
 
 /**
@@ -147,7 +148,7 @@ function colorizeMessage(level: LogLevel, message: string): string {
  */
 function formatMessage(
   level: LogLevel,
-  codeOrMessage: LogCode | string,
+  codeOrMessage: LogCode | string | unknown,
 ): string {
   const parts: string[] = []
 
@@ -164,7 +165,7 @@ function formatMessage(
     parts.push(`[${level.toUpperCase()}]`)
   }
 
-  parts.push(codeOrMessage)
+  parts.push(String(codeOrMessage))
 
   const message = parts.join(' ')
   return colorizeMessage(level, message)
@@ -208,7 +209,7 @@ function createLogger(config?: Partial<LoggerConfig>): Logger {
   }
 
   const logger: Logger = {
-    debug(codeOrMessage: LogCode | string, ...args: unknown[]): void {
+    debug(codeOrMessage: unknown, ...args: unknown[]): void {
       if (!shouldLog('debug')) {
         return
       }
@@ -216,7 +217,7 @@ function createLogger(config?: Partial<LoggerConfig>): Logger {
       safeConsoleLog('debug', message, ...args)
     },
 
-    info(codeOrMessage: LogCode | string, ...args: unknown[]): void {
+    info(codeOrMessage: unknown, ...args: unknown[]): void {
       if (!shouldLog('info')) {
         return
       }
@@ -224,7 +225,7 @@ function createLogger(config?: Partial<LoggerConfig>): Logger {
       safeConsoleLog('info', message, ...args)
     },
 
-    warn(codeOrMessage: LogCode | string, ...args: unknown[]): void {
+    warn(codeOrMessage: unknown, ...args: unknown[]): void {
       if (!shouldLog('warn')) {
         return
       }
@@ -232,7 +233,7 @@ function createLogger(config?: Partial<LoggerConfig>): Logger {
       safeConsoleLog('warn', message, ...args)
     },
 
-    error(codeOrMessage: LogCode | string, ...args: unknown[]): void {
+    error(codeOrMessage: unknown, ...args: unknown[]): void {
       if (!shouldLog('error')) {
         return
       }
@@ -264,19 +265,19 @@ export function createLoggerInstance(config?: Partial<LoggerConfig>): Logger {
   return createLogger(config)
 }
 
-export function debug(message: string, ...args: unknown[]): void {
+export function debug(message: unknown, ...args: unknown[]): void {
   logger.debug(message, ...args)
 }
 
-export function info(message: string, ...args: unknown[]): void {
+export function info(message: unknown, ...args: unknown[]): void {
   logger.info(message, ...args)
 }
 
-export function warn(message: string, ...args: unknown[]): void {
+export function warn(message: unknown, ...args: unknown[]): void {
   logger.warn(message, ...args)
 }
 
-export function error(message: string, ...args: unknown[]): void {
+export function error(message: unknown, ...args: unknown[]): void {
   logger.error(message, ...args)
 }
 
