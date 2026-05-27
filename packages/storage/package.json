@@ -1,7 +1,7 @@
 {
   "name": "@baicie/storage",
   "version": "0.0.7",
-  "packageManager": "pnpm@11.1.1",
+  "packageManager": "pnpm@11.3.0",
   "type": "module",
   "description": "轻量响应式数据存储代理，统一 localStorage / sessionStorage / Cookie / IndexedDB",
   "keywords": [

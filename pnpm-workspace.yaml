@@ -3,6 +3,7 @@ packages:
   - playground/*
   - internal/*
   - docs
+  - /Users/liuzhiwei/Desktop/workspace/git-code/rollup-plugin-dts
 
 shellEmulator: true
 
