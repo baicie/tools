@@ -21,8 +21,8 @@ export const publish: typeof def = async ({
   let version
 
   const lastAtIndex = tag.lastIndexOf('@')
-  if (lastAtIndex > 0) {
-    pkgName = defaultPackage
+  if (lastAtIndex > 0 && !tag.startsWith('@')) {
+    pkgName = tag.slice(0, lastAtIndex)
     version = tag.slice(lastAtIndex + 1)
   } else {
     version = tag
