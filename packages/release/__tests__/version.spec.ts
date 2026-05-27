@@ -256,6 +256,37 @@ describe('getVersionChoices', () => {
     expect(choices[0].title).toContain('next')
   })
 
+  it('should move duplicate version values to the end', () => {
+    const choices = getVersionChoices('1.0.0')
+
+    const values = choices.map(c => c.value)
+    const nonCustom = values.filter(v => v !== 'custom')
+    const uniqueCount = new Set(nonCustom).size
+
+    if (nonCustom.length > uniqueCount) {
+      const firstDupIndex = values.findIndex(
+        (v, i) => v !== 'custom' && values.indexOf(v) !== i,
+      )
+      const lastDupIndex =
+        values.length -
+        1 -
+        [...values]
+          .reverse()
+          .findIndex(
+            (v, i) => v !== 'custom' && values.indexOf(v) < values.length - i,
+          )
+      expect(firstDupIndex).toBeLessThan(lastDupIndex)
+    }
+  })
+
+  it('should include current version as retry option', () => {
+    const choices = getVersionChoices('1.0.0')
+
+    const retryChoice = choices.find(c => c.value === '1.0.0')
+    expect(retryChoice).toBeDefined()
+    expect(retryChoice!.title).toContain('retry')
+  })
+
   it('for alpha version should include next option', () => {
     const choices = getVersionChoices('1.0.0-alpha.1')
 

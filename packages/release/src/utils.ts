@@ -147,6 +147,24 @@ export function getVersionChoices(currentVersion: string): VersionChoice[] {
     })
   }
   versionChoices.push({ value: 'custom', title: 'custom' })
+  versionChoices.push({ value: currentVersion, title: 'retry' })
+
+  const seen = new Set<string>()
+  const unique: VersionChoice[] = []
+  const duplicates: VersionChoice[] = []
+
+  for (const choice of versionChoices) {
+    if (choice.value === currentVersion) {
+      unique.push(choice)
+    } else if (seen.has(choice.value)) {
+      duplicates.push(choice)
+    } else {
+      seen.add(choice.value)
+      unique.push(choice)
+    }
+  }
+
+  versionChoices = [...unique, ...duplicates]
 
   versionChoices = versionChoices.map(i => {
     i.title = `${i.title} (${i.value})`

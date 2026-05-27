@@ -20,8 +20,13 @@ export const publish: typeof def = async ({
   let pkgName = defaultPackage
   let version
 
-  if (tag.includes('@')) [pkgName, version] = tag.split('@')
-  else version = tag
+  const lastAtIndex = tag.lastIndexOf('@')
+  if (lastAtIndex > 0) {
+    pkgName = defaultPackage
+    version = tag.slice(lastAtIndex + 1)
+  } else {
+    version = tag
+  }
 
   if (version.startsWith('v')) version = version.slice(1)
 
