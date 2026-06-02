@@ -3,7 +3,7 @@ import { entries } from './scripts/aliases.js'
 
 const unitIgnore = [
   '**/e2e/**',
-  'packages/cli/__tests__/**',
+  'packages/cli/__tests__/e2e/**',
   'packages/napi/**',
   'packages/napi-browser/**',
 ]

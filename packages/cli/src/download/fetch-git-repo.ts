@@ -15,6 +15,7 @@ export interface ITemplates {
 }
 
 const TEMP_DOWNLOAD_FOLDER = 'baicie-temp'
+const TEMP_CACHE_FOLDER = 'baicie-temp-meta'
 
 export async function fetchTemplate(
   repo: string,
@@ -25,19 +26,27 @@ export async function fetchTemplate(
   // savePath templates/
   // tempPath templates/baicie-temp/
   const tempPath = path.join(savePath, TEMP_DOWNLOAD_FOLDER)
+  const cachePath = path.join(savePath, TEMP_CACHE_FOLDER)
   logger.debug(`tempPath: ${tempPath}`)
+  logger.debug(`cachePath: ${cachePath}`)
   fs.ensureDirSync(tempPath)
-  const { needsUpdate, remoteCommit } = await diffCommit(tempPath)
+  fs.ensureDirSync(cachePath)
+  const { needsUpdate, remoteCommit } = await diffCommit(repo, cachePath)
+
+  if (!needsUpdate) {
+    return JSON.parse(
+      fs.readFileSync(path.join(cachePath, CACHE_TEMPLATES), 'utf-8'),
+    )
+  }
 
   let files: FileStat[] = []
-  if (needsUpdate) {
-    files = await download(repo, tempPath)
-    if (files.length > 0 && remoteCommit) {
-      await updateLocalCommit(tempPath, remoteCommit)
-    }
-  } else {
-    files = readDirWithFileTypes(tempPath)
+  await fs.emptyDir(tempPath)
+  files = await download(repo, tempPath)
+
+  if (files.length === 0) {
+    return []
   }
+
   const repos: FileStat[] = []
 
   files.forEach(file => {
@@ -113,13 +122,8 @@ export async function fetchTemplate(
     }
   }
 
-  if (needsUpdate) {
-    fs.writeFileSync(path.join(tempPath, CACHE_TEMPLATES), JSON.stringify(res))
-  } else {
-    res = JSON.parse(
-      fs.readFileSync(path.join(tempPath, CACHE_TEMPLATES), 'utf-8'),
-    )
-  }
+  fs.writeFileSync(path.join(cachePath, CACHE_TEMPLATES), JSON.stringify(res))
+  await updateLocalCommit(cachePath, remoteCommit, repo)
 
   return res
 }
