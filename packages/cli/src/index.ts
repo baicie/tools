@@ -17,22 +17,22 @@ export async function ask(options: IProjectConf): Promise<IProjectConf> {
   if (!options.projectName) {
     options.projectName = await askProjectName()
   }
+
   options.description = await askDescription()
   options.npm = (await askNpm()) as IProjectConf['npm']
   options.templateSource = await askTemplateSource()
   options.logger.debug('options.templateSource', options.templateSource)
-  if (options.templateSource === 'self-input')
-    options.templateSource = await askSelfInputTemplateSource()
 
-  // 下载模板并返回列表
+  if (options.templateSource === 'self-input') {
+    options.templateSource = await askSelfInputTemplateSource()
+  }
+
   const templates = await fetchTemplates(options)
   options.template = await askTemplate(templates)
 
-  // 询问是否需要初始化 Git 仓库
   options.gitInit = await askGitInit()
   options.autoInstall = await askAutoInstall()
 
-  // 如果需要初始化 Git，则询问远程仓库地址
   if (options.gitInit) {
     options.gitRemote = await askGitRemote()
   }

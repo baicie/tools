@@ -34,10 +34,10 @@
   },
   "simple-git-hooks": {
     "pre-commit": "CI=true pnpm lint-staged && pnpm type-check",
-    "commit-msg": "tsx scripts/verify-commit.ts"
+    "commit-msg": "pnpm exec tsx scripts/verify-commit.ts"
   },
   "lint-staged": {
-    "*.{js|ts|tsx|yml|yaml|md|json}": [
+    "*.{js,ts,tsx,yml,yaml,md,json}": [
       "prettier --write"
     ],
     "*.ts?(x)": [
@@ -55,33 +55,33 @@
     "@types/node": "^25.9.1",
     "@types/prompts": "^2.4.9",
     "@types/resolve": "^1.20.6",
-    "@vitest/coverage-v8": "^4.1.7",
-    "@vitest/eslint-plugin": "^1.6.18",
+    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/eslint-plugin": "^1.6.19",
     "commitizen": "^4.3.1",
     "cross-spawn": "^7.0.6",
     "cz-customizable": "^7.5.4",
-    "eslint": "^10.4.0",
+    "eslint": "^10.4.1",
     "eslint-plugin-import-x": "^4.16.2",
     "execa": "^9.6.1",
     "fast-glob": "^3.3.3",
     "jsdom": "^29.1.1",
     "kolorist": "^1.8.0",
-    "lint-staged": "^17.0.5",
+    "lint-staged": "^17.0.7",
     "minimist": "^1.2.8",
     "npm-run-all2": "^9.0.1",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.60.0",
     "prettier": "^3.8.3",
     "prompts": "^2.4.2",
-    "rolldown": "1.0.2",
-    "rolldown-plugin-dts": "^0.25.1",
+    "rolldown": "1.1.0",
+    "rolldown-plugin-dts": "^0.25.2",
     "simple-git-hooks": "^2.13.1",
-    "tsdown": "^0.22.0",
-    "tsx": "^4.22.3",
+    "tsdown": "^0.22.2",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.60.0",
+    "typescript-eslint": "^8.60.1",
     "unbuild": "^3.6.1",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "dependencies": {
     "@pnpm/find-workspace-packages": "^6.0.9",

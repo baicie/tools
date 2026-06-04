@@ -212,12 +212,15 @@ export async function askTemplateSource(): Promise<
 export async function askTemplate(
   list: ITemplates[],
 ): Promise<'default' | string> {
+  const templates = list.filter(
+    item => item && typeof item.name === 'string' && item.name.trim() !== '',
+  )
   const choices = [
     {
       label: t('action.defaultTemplate'),
       value: 'default',
     },
-    ...list.map(item => ({
+    ...templates.map(item => ({
       label: item.desc ? `${item.name}（${item.desc}）` : item.name,
       value: item.name,
     })),

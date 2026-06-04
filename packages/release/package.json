@@ -33,8 +33,8 @@
     "picocolors": "^1.1.1",
     "prompts": "^2.4.2",
     "publint": "^0.3.21",
-    "semver": "^7.8.1",
-    "tinyexec": "^1.2.2"
+    "semver": "^7.8.2",
+    "tinyexec": "^1.2.4"
   },
   "devDependencies": {
     "@arnaud-barre/tnode": "^0.25.0",
@@ -45,7 +45,7 @@
     "fs-fixture": "^2.14.0",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "publishConfig": {
     "access": "public",

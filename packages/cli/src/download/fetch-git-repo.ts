@@ -94,7 +94,7 @@ export async function fetchTemplate(
       const { platforms = '', desc = '' } = require(creatorFile)
 
       return {
-        name,
+        name: file.name,
         platforms,
         desc,
       }
