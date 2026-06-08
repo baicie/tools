@@ -127,77 +127,6 @@ importers:
         specifier: ^4.1.8
         version: 4.1.8(@types/node@25.9.2)(@vitest/coverage-v8@4.1.8)(jsdom@29.1.1)(vite@8.0.16(@types/node@25.9.2)(esbuild@0.28.0)(jiti@2.6.1)(tsx@4.22.4)(yaml@2.9.0))
 
-  ../rollup-plugin-dts:
-    dependencies:
-      '@jridgewell/remapping':
-        specifier: ^2.3.5
-        version: 2.3.5
-      '@jridgewell/sourcemap-codec':
-        specifier: ^1.5.5
-        version: 1.5.5
-      convert-source-map:
-        specifier: ^2.0.0
-        version: 2.0.0
-      magic-string:
-        specifier: ^0.30.21
-        version: 0.30.21
-    devDependencies:
-      '@baicie/release':
-        specifier: ^0.2.0
-        version: 0.2.0
-      '@baicie/scripts':
-        specifier: ^0.1.2
-        version: 0.1.2
-      '@jridgewell/trace-mapping':
-        specifier: ^0.3.31
-        version: 0.3.31
-      '@types/babel__code-frame':
-        specifier: ^7.27.0
-        version: 7.27.0
-      '@types/convert-source-map':
-        specifier: ^2.0.3
-        version: 2.0.3
-      '@types/d3-drag':
-        specifier: ^3.0.7
-        version: 3.0.7
-      '@types/estree':
-        specifier: 1.0.9
-        version: 1.0.9
-      '@types/node':
-        specifier: ^25.9.1
-        version: 25.9.2
-      '@types/react':
-        specifier: ^19.2.15
-        version: 19.2.17
-      c8:
-        specifier: ^11.0.0
-        version: 11.0.0
-      d3-drag-local:
-        specifier: npm:@types/d3-drag@3.0.7
-        version: '@types/d3-drag@3.0.7'
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      rolldown:
-        specifier: ^1.0.2
-        version: 1.1.0
-      rollup:
-        specifier: 4.60.4
-        version: 4.60.4
-      simple-git-hooks:
-        specifier: ^2.13.1
-        version: 2.13.1
-      tsx:
-        specifier: ^4.22.3
-        version: 4.22.4
-      typescript:
-        specifier: 6.0.3
-        version: 6.0.3
-    optionalDependencies:
-      '@babel/code-frame':
-        specifier: ^7.29.7
-        version: 7.29.7
-
   docs:
     devDependencies:
       vitepress:
@@ -791,13 +720,6 @@ packages:
   '@babel/types@8.0.0-rc.6':
     resolution: {integrity: sha512-p7/ABylAYlexb31wtRdIfH9L9A0Z2T/9H6zAqzqndkY2PLkvNNc580wGhp/gGKN4Sp9sQvSkhc6Oga8/O+wTyw==}
     engines: {node: ^22.18.0 || >=24.11.0}
-
-  '@baicie/release@0.2.0':
-    resolution: {integrity: sha512-loF1ZFc3193BwMUipCnTWmVLBwsBeueVSReCch8VPktg4ah4IXcz2OiIAPT1cT12orjlomNi9wqIP6/CHu5qJA==}
-    engines: {node: '>=18'}
-
-  '@baicie/scripts@0.1.2':
-    resolution: {integrity: sha512-xABSTCwUG882DjXkSFTMLNvCR4zZVL1rYEQngEXxJctw1Qf+VD45CpyYa/tf/KFcW/X3i+JdWVc/RHDcibjJ6Q==}
 
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
@@ -1838,10 +1760,6 @@ packages:
     peerDependenciesMeta:
       '@types/node':
         optional: true
-
-  '@istanbuljs/schema@0.1.6':
-    resolution: {integrity: sha512-+Sg6GCR/wy1oSmQDFq4LQDAhm3ETKnorxN+y5nbLULOR3P0c14f2Wurzj3/xqPXtasLFfHd5iRFQ7AJt4KH2cw==}
-    engines: {node: '>=8'}
 
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
@@ -3203,9 +3121,6 @@ packages:
   '@types/adm-zip@0.5.8':
     resolution: {integrity: sha512-RVVH7QvZYbN+ihqZ4kX/dMiowf6o+Jk1fNwiSdx0NahBJLU787zkULhGhJM8mf/obmLGmgdMM0bXsQTmyfbR7Q==}
 
-  '@types/babel__code-frame@7.27.0':
-    resolution: {integrity: sha512-Dwlo+LrxDx/0SpfmJ/BKveHf7QXWvLBLc+x03l5sbzykj3oB9nHygCpSECF1a+s+QIxbghe+KHqC90vGtxLRAA==}
-
   '@types/caseless@0.12.5':
     resolution: {integrity: sha512-hWtVTC2q7hc7xZ/RLbxapMvDMgUnDvKvMOpKal4DrMyfGBUfB1oKaZlIRr6mJL+If3bAP6sV/QneGzF6tJjZDg==}
 
@@ -3215,17 +3130,8 @@ packages:
   '@types/conventional-commits-parser@5.0.1':
     resolution: {integrity: sha512-7uz5EHdzz2TqoMfV7ee61Egf5y6NkcO4FB/1iCCQnbeiI1F3xzv3vK5dBCXUCLQgGYS+mUeigK1iKQzvED+QnQ==}
 
-  '@types/convert-source-map@2.0.3':
-    resolution: {integrity: sha512-ag0BfJLZf6CQz8VIuRIEYQ5Ggwk/82uvTQf27RcpyDNbY0Vw49LIPqAxk5tqYfrCs9xDaIMvl4aj7ZopnYL8bA==}
-
   '@types/cross-spawn@6.0.6':
     resolution: {integrity: sha512-fXRhhUkG4H3TQk5dBhQ7m/JDdSNHKwR2BBia62lhwEIq9xGiQKLxd6LymNhn47SjXhsUEPmxi+PKw2OkW4LLjA==}
-
-  '@types/d3-drag@3.0.7':
-    resolution: {integrity: sha512-HE3jVKlzU9AaMazNufooRJ5ZpWmLIoc90A37WU2JMmeq28w1FQqCZswHZ3xR+SuxYftzHq6WU6KJHvqxKzTxxQ==}
-
-  '@types/d3-selection@3.0.11':
-    resolution: {integrity: sha512-bhAXu23DJWsrI45xafYpkQ4NtcKMwWnAC/vKrd2l+nxMFuvOT3XMYTIj2opv8vq8AO5Yh7Qac/nSeP/3zjTK0w==}
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
@@ -3254,9 +3160,6 @@ packages:
   '@types/i18next@13.0.0':
     resolution: {integrity: sha512-gp/SIShAuf4WOqi8ey0nuI7qfWaVpMNCcs/xLygrh/QTQIXmlDC1E0TtVejweNW+7SGDY7g0lyxyKZIJuCKIJw==}
     deprecated: This is a stub types definition. i18next provides its own type definitions, so you do not need this installed.
-
-  '@types/istanbul-lib-coverage@2.0.6':
-    resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
 
   '@types/jsesc@2.5.1':
     resolution: {integrity: sha512-9VN+6yxLOPLOav+7PwjZbxiID2bVaeq0ED4qSQmdQTdjnXJSaCVKTR58t15oqH1H5t8Ng2ZX1SabJVoN9Q34bw==}
@@ -4117,16 +4020,6 @@ packages:
   builtin-modules@5.2.0:
     resolution: {integrity: sha512-02yxLeyxF4dNl6SlY6/5HfRSrSdZ/sCPoxy2kZNP5dZZX8LSAD9aE2gtJIUgWrsQTiMPl3mxESyrobSwvRGisQ==}
     engines: {node: '>=18.20'}
-
-  c8@11.0.0:
-    resolution: {integrity: sha512-e/uRViGHSVIJv7zsaDKM7VRn2390TgHXqUSvYwPHBQaU6L7E9L0n9JbdkwdYPvshDT0KymBmmlwSpms3yBaMNg==}
-    engines: {node: 20 || >=22}
-    hasBin: true
-    peerDependencies:
-      monocart-coverage-reports: ^2
-    peerDependenciesMeta:
-      monocart-coverage-reports:
-        optional: true
 
   cac@7.0.0:
     resolution: {integrity: sha512-tixWYgm5ZoOD+3g6UTea91eow5z6AAHaho3g0V9CNSNb45gM8SmflpAc+GRd1InC4AqN/07Unrgp56Y94N9hJQ==}
@@ -5082,10 +4975,6 @@ packages:
 
   focus-trap@7.6.6:
     resolution: {integrity: sha512-v/Z8bvMCajtx4mEXmOo7QEsIzlIOqRXTIwgUfsFOF9gEsespdbD0AkPIka1bSXZ8Y8oZ+2IVDQZePkTfEHZl7Q==}
-
-  foreground-child@3.3.1:
-    resolution: {integrity: sha512-gIXjKqtFuWEgzFRJA9WCQeSJLZDjgJUOMCMzxtvFq/37KojM1BFGufqsCy0r4qSQmYLsZYMeyRqzIWOMup03sw==}
-    engines: {node: '>=14'}
 
   forever-agent@0.6.1:
     resolution: {integrity: sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==}
@@ -7252,10 +7141,6 @@ packages:
     resolution: {integrity: sha512-yYrrsWnrXMcdsnu/7YMYAofM1ktpL5By7vZhf15CrXijWWrEYZks5AXBudalfSWJLlnen/QUJUB5aoB0kqZUGA==}
     engines: {node: '>=6.0.0'}
 
-  test-exclude@8.0.0:
-    resolution: {integrity: sha512-ZOffsNrXYggvU1mDGHk54I96r26P8SyMjO5slMKSc7+IWmtB/MQKnEC2fP51imB3/pT6YK5cT5E8f+Dd9KdyOQ==}
-    engines: {node: 20 || >=22}
-
   through2@4.0.2:
     resolution: {integrity: sha512-iOqSav00cVxEEICeD7TjLB1sueEL+81Wpzp2bY17uZjZN0pWZPuo4suZ/61VujxmqSGFfgOcNuTZ85QJwNZQpw==}
 
@@ -7529,10 +7414,6 @@ packages:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
     deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
     hasBin: true
-
-  v8-to-istanbul@9.3.0:
-    resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
-    engines: {node: '>=10.12.0'}
 
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
@@ -8085,23 +7966,6 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 8.0.0-rc.6
       '@babel/helper-validator-identifier': 8.0.0-rc.6
-
-  '@baicie/release@0.2.0':
-    dependencies:
-      conventional-changelog: 7.2.0(conventional-commits-filter@5.0.0)
-      conventional-changelog-conventionalcommits: 9.3.1
-      mri: 1.2.0
-      picocolors: 1.1.1
-      prompts: 2.4.2
-      publint: 0.3.21
-      semver: 7.8.2
-      tinyexec: 1.2.4
-    transitivePeerDependencies:
-      - conventional-commits-filter
-
-  '@baicie/scripts@0.1.2':
-    dependencies:
-      picocolors: 1.1.1
 
   '@bcoe/v8-coverage@1.0.2': {}
 
@@ -8896,8 +8760,6 @@ snapshots:
   '@inquirer/type@4.0.3(@types/node@25.9.2)':
     optionalDependencies:
       '@types/node': 25.9.2
-
-  '@istanbuljs/schema@0.1.6': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -10048,8 +9910,6 @@ snapshots:
     dependencies:
       '@types/node': 25.9.2
 
-  '@types/babel__code-frame@7.27.0': {}
-
   '@types/caseless@0.12.5': {}
 
   '@types/chai@5.2.3':
@@ -10062,17 +9922,9 @@ snapshots:
       '@types/node': 25.9.2
     optional: true
 
-  '@types/convert-source-map@2.0.3': {}
-
   '@types/cross-spawn@6.0.6':
     dependencies:
       '@types/node': 25.9.2
-
-  '@types/d3-drag@3.0.7':
-    dependencies:
-      '@types/d3-selection': 3.0.11
-
-  '@types/d3-selection@3.0.11': {}
 
   '@types/debug@4.1.12':
     dependencies:
@@ -10102,8 +9954,6 @@ snapshots:
       i18next: 26.3.1(typescript@6.0.3)
     transitivePeerDependencies:
       - typescript
-
-  '@types/istanbul-lib-coverage@2.0.6': {}
 
   '@types/jsesc@2.5.1': {}
 
@@ -11083,20 +10933,6 @@ snapshots:
       ieee754: 1.2.1
 
   builtin-modules@5.2.0: {}
-
-  c8@11.0.0:
-    dependencies:
-      '@bcoe/v8-coverage': 1.0.2
-      '@istanbuljs/schema': 0.1.6
-      find-up: 5.0.0
-      foreground-child: 3.3.1
-      istanbul-lib-coverage: 3.2.2
-      istanbul-lib-report: 3.0.1
-      istanbul-reports: 3.2.0
-      test-exclude: 8.0.0
-      v8-to-istanbul: 9.3.0
-      yargs: 17.7.2
-      yargs-parser: 21.1.1
 
   cac@7.0.0: {}
 
@@ -12220,11 +12056,6 @@ snapshots:
   focus-trap@7.6.6:
     dependencies:
       tabbable: 6.3.0
-
-  foreground-child@3.3.1:
-    dependencies:
-      cross-spawn: 7.0.6
-      signal-exit: 4.1.0
 
   forever-agent@0.6.1: {}
 
@@ -14530,12 +14361,6 @@ snapshots:
       mkdirp: 0.5.6
       rimraf: 2.6.3
 
-  test-exclude@8.0.0:
-    dependencies:
-      '@istanbuljs/schema': 0.1.6
-      glob: 13.0.6
-      minimatch: 10.2.5
-
   through2@4.0.2:
     dependencies:
       readable-stream: 3.6.2
@@ -14842,12 +14667,6 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   uuid@3.4.0: {}
-
-  v8-to-istanbul@9.3.0:
-    dependencies:
-      '@jridgewell/trace-mapping': 0.3.31
-      '@types/istanbul-lib-coverage': 2.0.6
-      convert-source-map: 2.0.0
 
   validate-npm-package-license@3.0.4:
     dependencies:
