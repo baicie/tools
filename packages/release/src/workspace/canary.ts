@@ -1,0 +1,139 @@
+import type { CanaryOptions, ReleaseConfig } from './types'
+
+import { writeFileSync } from 'node:fs'
+import semver from 'semver'
+import colors from 'picocolors'
+
+import { getSharedVersion } from './packages'
+import { versionPackages } from './version'
+import { runPrecheck } from './precheck'
+import { runPublish } from './publish'
+import { run } from './exec'
+
+function parseCanaryArgs(args: string[]): CanaryOptions {
+  return {
+    forceLocal: args.includes('--force-local'),
+  }
+}
+
+function getCanaryVersion(config: ReleaseConfig): string {
+  const base = semver.parse(getSharedVersion(config))
+
+  if (!base) {
+    throw new Error('Invalid base version')
+  }
+
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const runNumber = process.env.GITHUB_RUN_NUMBER ?? Date.now().toString()
+  const runAttempt = process.env.GITHUB_RUN_ATTEMPT ?? '1'
+  const shortSha = process.env.GITHUB_SHA?.slice(0, 8) ?? 'local'
+  const prefix = config.canary?.prefix ?? 'canary'
+
+  return `${base.major}.${base.minor}.${base.patch}-${prefix}.${date}.${runNumber}.${runAttempt}.${shortSha}`
+}
+
+async function dispatchDownstream(
+  config: ReleaseConfig,
+  version: string,
+): Promise<void> {
+  const dispatch = config.canary?.dispatch
+
+  if (!dispatch) return
+
+  const token = process.env[dispatch.tokenEnv]
+  if (!token) return
+
+  const sha = process.env.GITHUB_SHA ?? ''
+  const payload = dispatch.payload?.({ version, sha }) ?? {
+    source: config.repo,
+    sha,
+    version,
+  }
+
+  await run('curl', [
+    '--fail-with-body',
+    '-X',
+    'POST',
+    '-H',
+    'Accept: application/vnd.github+json',
+    '-H',
+    `Authorization: Bearer ${token}`,
+    '-H',
+    'X-GitHub-Api-Version: 2022-11-28',
+    `https://api.github.com/repos/${dispatch.repository}/dispatches`,
+    '-d',
+    JSON.stringify({
+      event_type: dispatch.eventType,
+      client_payload: payload,
+    }),
+  ])
+}
+
+export async function runCanary(
+  config: ReleaseConfig,
+  options: CanaryOptions,
+): Promise<void> {
+  if (!config.canary?.enabled) {
+    throw new Error('Canary release is not enabled in release config.')
+  }
+
+  if (!process.env.CI && !options.forceLocal) {
+    throw new Error(
+      'Canary release is intended to run in CI. Use --force-local for local debug.',
+    )
+  }
+
+  if (!process.env.NODE_AUTH_TOKEN && !process.env.NPM_TOKEN) {
+    throw new Error(
+      'NODE_AUTH_TOKEN or NPM_TOKEN is required for canary publish.',
+    )
+  }
+
+  const version = getCanaryVersion(config)
+
+  console.log(colors.cyan(`Preparing canary ${version}`))
+
+  if (process.env.GITHUB_ENV) {
+    writeFileSync(
+      process.env.GITHUB_ENV,
+      `${config.canary.envName ?? 'CANARY_VERSION'}=${version}\n`,
+      { flag: 'a' },
+    )
+  }
+
+  await versionPackages(config, {
+    version,
+    dryRun: false,
+  })
+
+  await run(config.packageManager ?? 'pnpm', ['install', '--lockfile-only'], {
+    cwd: config.cwd,
+  })
+
+  await runPrecheck(config, {
+    strict: true,
+    allowZero: false,
+  })
+
+  await runPublish(config, {
+    version,
+    tag: config.canary.tag ?? 'canary',
+    dryRun: true,
+    skipExisting: true,
+    provenance: config.publish?.provenance ?? true,
+  })
+
+  await runPublish(config, {
+    version,
+    tag: config.canary.tag ?? 'canary',
+    dryRun: false,
+    skipExisting: true,
+    provenance: config.publish?.provenance ?? true,
+  })
+
+  await dispatchDownstream(config, version)
+}
+
+export async function runCanaryCli(config: ReleaseConfig): Promise<void> {
+  await runCanary(config, parseCanaryArgs(process.argv.slice(2)))
+}
