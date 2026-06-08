@@ -31,16 +31,23 @@ export async function runPrecheck(
 ): Promise<void> {
   for (const command of config.precheck?.commands ?? []) {
     const [bin, ...args] = command
+
     await run(bin, args, {
       cwd: config.cwd,
     })
   }
 
-  await run('pnpm', [
-    'release:verify',
-    ...(options.strict ? ['--strict'] : []),
-    ...(options.allowZero ? ['--allow-zero'] : []),
-  ])
+  await run(
+    config.packageManager ?? 'pnpm',
+    [
+      'release:verify',
+      ...(options.strict ? ['--strict'] : []),
+      ...(options.allowZero ? ['--allow-zero'] : []),
+    ],
+    {
+      cwd: config.cwd,
+    },
+  )
 }
 
 export async function runPrecheckCli(config: ReleaseConfig): Promise<void> {

@@ -1,4 +1,4 @@
-import { x } from 'tinyexec'
+import { exec } from 'tinyexec'
 import colors from 'picocolors'
 
 export async function run(
@@ -25,7 +25,8 @@ export async function run(
 
   console.log(colors.cyan(label))
 
-  const result = await x(command, args, {
+  const result = await exec(command, args, {
+    throwOnError: options.reject ?? true,
     nodeOptions: {
       cwd: options.cwd,
       stdio: options.stdio ?? 'inherit',
@@ -34,7 +35,6 @@ export async function run(
         ...options.env,
       },
     },
-    throwOnError: options.reject ?? true,
   })
 
   return {

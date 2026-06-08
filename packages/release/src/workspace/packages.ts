@@ -27,6 +27,34 @@ function isIncluded(name: string, config: ReleaseConfig): boolean {
   return include.includes(name)
 }
 
+function collectPackageJsonFiles(root: string): string[] {
+  const result: string[] = []
+
+  function walk(dir: string): void {
+    const packageJsonPath = resolve(dir, 'package.json')
+
+    if (existsSync(packageJsonPath)) {
+      result.push(packageJsonPath)
+      return
+    }
+
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue
+      if (entry.name === 'node_modules') continue
+      if (entry.name === 'dist') continue
+      if (entry.name.startsWith('.')) continue
+
+      walk(resolve(dir, entry.name))
+    }
+  }
+
+  if (existsSync(root)) {
+    walk(root)
+  }
+
+  return result
+}
+
 export function listWorkspacePackages(config: ReleaseConfig): ReleasePackage[] {
   const cwd = config.cwd ?? process.cwd()
   const packages: ReleasePackage[] = []
@@ -35,15 +63,9 @@ export function listWorkspacePackages(config: ReleaseConfig): ReleasePackage[] {
   for (const root of config.workspace.roots) {
     const absoluteRoot = resolve(cwd, root)
 
-    if (!existsSync(absoluteRoot)) continue
+    for (const packageJsonPath of collectPackageJsonFiles(absoluteRoot)) {
+      const dir = resolve(packageJsonPath, '..')
 
-    for (const entry of readdirSync(absoluteRoot, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue
-
-      const dir = resolve(absoluteRoot, entry.name)
-      const packageJsonPath = resolve(dir, 'package.json')
-
-      if (!existsSync(packageJsonPath)) continue
       if (seen.has(dir)) continue
 
       const packageJson = readJson<PackageJsonLike>(packageJsonPath)

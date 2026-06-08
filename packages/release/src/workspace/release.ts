@@ -59,7 +59,9 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
     }
 
     if (arg.startsWith('--tag=')) {
-      options.tag = arg.slice('--tag='.length)
+      const value = arg.slice('--tag='.length)
+      if (!value) throw new Error('--tag requires a value')
+      options.tag = value
       continue
     }
 
@@ -81,8 +83,7 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
 async function prepareVersion(
   config: ReleaseConfig,
   version: string,
-  dryRun: boolean,
-) {
+): Promise<void> {
   if (config.mode === 'changesets-fixed') {
     await runChangesetsFixedVersion(config, version)
     return
@@ -90,7 +91,7 @@ async function prepareVersion(
 
   await versionPackages(config, {
     version,
-    dryRun,
+    dryRun: false,
   })
 }
 
@@ -101,6 +102,10 @@ export async function runRelease(
   if (options.publishOnly) {
     if (!options.version) {
       throw new Error('Version is required when using --publishOnly')
+    }
+
+    if (!semver.valid(options.version)) {
+      throw new Error(`Invalid version: ${options.version}`)
     }
 
     if (!options.skipBuild && !options.skipPrecheck) {
@@ -117,6 +122,7 @@ export async function runRelease(
       skipExisting: config.publish?.skipExisting ?? true,
       provenance: config.publish?.provenance ?? true,
     })
+
     return
   }
 
@@ -130,11 +136,10 @@ export async function runRelease(
     await assertCleanGit()
   }
 
-  await prepareVersion(config, version, options.dryRun)
+  await prepareVersion(config, version)
 
   await run(config.packageManager ?? 'pnpm', ['install', '--lockfile-only'], {
     cwd: config.cwd,
-    dryRun: options.dryRun,
   })
 
   if (!options.skipPrecheck) {
@@ -163,6 +168,11 @@ export async function runRelease(
     })
 
     console.log(colors.green('Release dry-run passed.'))
+    console.log(
+      colors.yellow(
+        'Dry-run mutates version files and lockfile. Use git diff to inspect, then revert if needed.',
+      ),
+    )
     return
   }
 

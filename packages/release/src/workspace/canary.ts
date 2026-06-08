@@ -11,9 +11,20 @@ import { runPublish } from './publish'
 import { run } from './exec'
 
 function parseCanaryArgs(args: string[]): CanaryOptions {
-  return {
-    forceLocal: args.includes('--force-local'),
+  const options: CanaryOptions = {
+    forceLocal: false,
   }
+
+  for (const arg of args) {
+    if (arg === '--force-local') {
+      options.forceLocal = true
+      continue
+    }
+
+    throw new Error(`Unknown option: ${arg}`)
+  }
+
+  return options
 }
 
 function getCanaryVersion(config: ReleaseConfig): string {
