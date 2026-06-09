@@ -74,9 +74,10 @@ function shouldUseProvenance(
   config: ReleaseConfig,
   options: PublishOptions,
 ): boolean {
+  const provenance = options.provenance ?? config.publish?.provenance ?? true
+
   return Boolean(
-    options.provenance &&
-    config.publish?.provenance &&
+    provenance &&
     process.env.CI &&
     process.env.GITHUB_ACTIONS &&
     process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN &&
@@ -134,7 +135,11 @@ export async function publishOnePackage(
         },
       })
 
-      console.log(colors.green(`published ${pkg.name}@${pkg.version}`))
+      console.log(
+        colors.green(
+          `${options.dryRun ? 'dry-run publish passed' : 'published'} ${pkg.name}@${pkg.version}`,
+        ),
+      )
       return
     } catch (error) {
       if (await npmVersionExists(config, pkg, options)) {

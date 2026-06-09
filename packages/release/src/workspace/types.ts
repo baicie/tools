@@ -225,8 +225,16 @@ export interface PublishOptions {
   tag?: string
   registry?: string
   dryRun: boolean
-  skipExisting: boolean
-  provenance: boolean
+
+  /**
+   * Undefined means use config.publish.skipExisting.
+   */
+  skipExisting?: boolean
+
+  /**
+   * Undefined means use config.publish.provenance.
+   */
+  provenance?: boolean
 }
 
 export interface PrecheckOptions {

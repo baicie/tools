@@ -5,11 +5,9 @@ import colors from 'picocolors'
 import { getUniqueVersions, listPublishablePackages } from './packages'
 import { publishOnePackage, resolveDistTag } from './npm'
 
-function parsePublishArgs(args: string[]): PublishOptions {
+export function parsePublishArgs(args: string[]): PublishOptions {
   const options: PublishOptions = {
     dryRun: false,
-    skipExisting: true,
-    provenance: true,
   }
 
   for (let index = 0; index < args.length; index += 1) {
@@ -20,8 +18,18 @@ function parsePublishArgs(args: string[]): PublishOptions {
       continue
     }
 
+    if (arg === '--skip-existing') {
+      options.skipExisting = true
+      continue
+    }
+
     if (arg === '--no-skip-existing') {
       options.skipExisting = false
+      continue
+    }
+
+    if (arg === '--provenance') {
+      options.provenance = true
       continue
     }
 
