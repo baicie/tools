@@ -210,22 +210,49 @@ async function normalizePublishablePackages(
   }
 }
 
-function cleanupGeneratedReleaseFiles(
-  config: ReleaseConfig,
-  syntheticChangesetFile: string,
-): void {
-  if (config.changesets?.cleanupPackageChangelogs !== false) {
-    for (const pkg of listWorkspacePackages(config)) {
-      const changelog = resolve(pkg.dir, 'CHANGELOG.md')
+type PackageChangelogSnapshot = Map<
+  string,
+  {
+    existed: boolean
+    content: string
+  }
+>
 
-      if (existsSync(changelog)) {
-        rmSync(changelog)
-      }
-    }
+export function snapshotPackageChangelogs(
+  config: ReleaseConfig,
+): PackageChangelogSnapshot {
+  const snapshot: PackageChangelogSnapshot = new Map()
+
+  for (const pkg of listWorkspacePackages(config)) {
+    const file = resolve(pkg.dir, 'CHANGELOG.md')
+
+    snapshot.set(file, {
+      existed: existsSync(file),
+      content: existsSync(file) ? readFileSync(file, 'utf-8') : '',
+    })
   }
 
-  if (existsSync(syntheticChangesetFile)) {
-    rmSync(syntheticChangesetFile)
+  return snapshot
+}
+
+export function restorePackageChangelogs(
+  snapshot: PackageChangelogSnapshot,
+): void {
+  for (const [file, item] of snapshot) {
+    if (item.existed) {
+      writeFileSync(file, item.content)
+      continue
+    }
+
+    if (existsSync(file)) {
+      rmSync(file)
+    }
+  }
+}
+
+function removeSyntheticChangesetFile(file: string): void {
+  if (existsSync(file)) {
+    rmSync(file)
   }
 }
 
@@ -247,25 +274,38 @@ export async function runChangesetsFixedVersion(
     version,
   )
 
-  await run(config.packageManager ?? 'pnpm', ['changeset', 'version'], {
-    cwd: config.cwd,
-  })
+  const shouldCleanupPackageChangelogs =
+    config.changesets?.cleanupPackageChangelogs !== false
 
-  await forceFixedGroupVersion(config, version)
-  await normalizePublishablePackages(config, version)
-  await updateRootPackageVersion(config, version)
+  const packageChangelogSnapshot = shouldCleanupPackageChangelogs
+    ? snapshotPackageChangelogs(config)
+    : undefined
 
-  if (
-    config.changelogFile !== false &&
-    config.changesets?.unifiedChangelog !== false
-  ) {
-    await generateUnifiedChangelog(config, version, changesets)
+  try {
+    await run(config.packageManager ?? 'pnpm', ['changeset', 'version'], {
+      cwd: config.cwd,
+    })
+
+    await forceFixedGroupVersion(config, version)
+    await normalizePublishablePackages(config, version)
+    await updateRootPackageVersion(config, version)
+
+    if (
+      config.changelogFile !== false &&
+      config.changesets?.unifiedChangelog !== false
+    ) {
+      await generateUnifiedChangelog(config, version, changesets)
+    }
+
+    if (packageChangelogSnapshot) {
+      restorePackageChangelogs(packageChangelogSnapshot)
+    }
+
+    await config.afterVersion?.({
+      version,
+      config,
+    })
+  } finally {
+    removeSyntheticChangesetFile(syntheticChangesetFile)
   }
-
-  cleanupGeneratedReleaseFiles(config, syntheticChangesetFile)
-
-  await config.afterVersion?.({
-    version,
-    config,
-  })
 }
