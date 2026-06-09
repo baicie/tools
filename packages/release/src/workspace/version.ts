@@ -127,15 +127,15 @@ export async function versionPackages(
 
   if (!options.dryRun) {
     await updateRootPackageVersion(config, options.version)
-  }
 
-  await config.afterVersion?.({
-    version: options.version,
-    config,
-  })
+    await config.afterVersion?.({
+      version: options.version,
+      config,
+    })
+  }
 }
 
-function parseVersionCliArgs(args: string[]): VersionPackagesOptions {
+export function parseVersionCliArgs(args: string[]): VersionPackagesOptions {
   let version = ''
   let dryRun = false
 

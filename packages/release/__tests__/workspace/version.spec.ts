@@ -1,16 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import type {
-  PackageJsonLike,
-  ReleaseConfig,
-  ReleasePackage,
-} from '../../src/workspace/types'
-import {
-  normalizePackageJson,
-  versionPackages,
-} from '../../src/workspace/version'
+
+import type { ReleaseConfig } from '../../src/workspace/types'
+import { parseVersionCliArgs } from '../../src/workspace/version'
 
 function createTempDir(): string {
   const dir = join(tmpdir(), 'release-test-version-' + Date.now())
@@ -18,195 +12,135 @@ function createTempDir(): string {
   return dir
 }
 
-const BASE_PACKAGE_JSON: PackageJsonLike = {
-  name: '@zeus-js/core',
-  version: '1.0.0',
-  description: 'Core package',
-  license: 'MIT',
-  type: 'module',
-}
-
-const BASE_RELEASE_PACKAGE: ReleasePackage = {
-  name: '@zeus-js/core',
-  version: '1.0.0',
-  dir: '/root/packages/core',
-  relativeDir: 'packages/core',
-  packageJsonPath: '/root/packages/core/package.json',
-  packageJson: BASE_PACKAGE_JSON,
-  isPrivate: false,
-}
-
-const BASE_CONFIG: ReleaseConfig = {
-  repo: 'baicie/example',
-  repositoryUrl: 'https://github.com/baicie/example.git',
-  mode: 'workspace-fixed',
-  workspace: {
-    roots: ['packages'],
-  },
-  publish: {
-    access: 'public',
-    provenance: true,
-    skipExisting: true,
-    retry: 5,
-  },
-}
-
-function normalize(pkg?: Partial<PackageJsonLike>): PackageJsonLike {
-  return normalizePackageJson(
-    { ...BASE_PACKAGE_JSON, ...pkg },
-    {
-      version: '2.0.0',
-      releasePackage: BASE_RELEASE_PACKAGE,
-      config: BASE_CONFIG,
-    },
-  )
-}
-
-describe('normalizePackageJson', () => {
-  it('sets the version', () => {
-    const result = normalize()
-    expect(result.version).toBe('2.0.0')
-  })
-
-  it('adds repository field', () => {
-    const result = normalize()
-    expect(result.repository).toEqual({
-      type: 'git',
-      url: 'https://github.com/baicie/example.git',
-      directory: 'packages/core',
-    })
-  })
-
-  it('adds publishConfig fields', () => {
-    const result = normalize()
-    expect(result.publishConfig).toMatchObject({
-      access: 'public',
-      provenance: true,
-    })
-  })
-
-  it('preserves existing publishConfig fields', () => {
-    const result = normalize({
-      publishConfig: {
-        registry: 'https://custom.registry.com',
-      },
-    })
-    expect(result.publishConfig).toMatchObject({
-      access: 'public',
-      provenance: true,
-      registry: 'https://custom.registry.com',
-    })
-  })
-
-  it('preserves all original fields', () => {
-    const original: PackageJsonLike = {
-      name: '@zeus-js/core',
+describe('parseVersionCliArgs', () => {
+  it('parses version with --dry', () => {
+    expect(parseVersionCliArgs(['1.0.0', '--dry'])).toEqual({
       version: '1.0.0',
-      description: 'Core package',
-      license: 'MIT',
-      type: 'module',
-      sideEffects: false,
-      dependencies: { react: '^18.0.0' },
-    }
-
-    const result = normalizePackageJson(original, {
-      version: '2.0.0',
-      releasePackage: BASE_RELEASE_PACKAGE,
-      config: BASE_CONFIG,
+      dryRun: true,
     })
-
-    expect(result.name).toBe('@zeus-js/core')
-    expect(result.description).toBe('Core package')
-    expect(result.license).toBe('MIT')
-    expect(result.type).toBe('module')
-    expect(result.dependencies).toEqual({ react: '^18.0.0' })
+    expect(parseVersionCliArgs(['1.0.0', '--dry-run'])).toEqual({
+      version: '1.0.0',
+      dryRun: true,
+    })
   })
 
-  it('orders keys with preferred fields first', () => {
-    const result = normalize({
-      dependencies: { react: '^18.0.0' },
-      scripts: { build: 'tsc' },
+  it('parses version without dry-run flag', () => {
+    expect(parseVersionCliArgs(['1.0.0'])).toEqual({
+      version: '1.0.0',
+      dryRun: false,
     })
-
-    const keys = Object.keys(result)
-    const nameIndex = keys.indexOf('name')
-    const versionIndex = keys.indexOf('version')
-    const scriptsIndex = keys.indexOf('scripts')
-    const dependenciesIndex = keys.indexOf('dependencies')
-
-    expect(nameIndex).toBeLessThan(versionIndex)
-    expect(versionIndex).toBeLessThan(dependenciesIndex)
-    expect(scriptsIndex).toBeLessThan(dependenciesIndex)
   })
 
-  it('adds registry to publishConfig when configured', () => {
-    const configWithRegistry: ReleaseConfig = {
-      ...BASE_CONFIG,
-      publish: {
-        ...BASE_CONFIG.publish!,
-        registry: 'https://custom.registry.com',
-      },
-    }
-
-    const result = normalizePackageJson(BASE_PACKAGE_JSON, {
-      version: '2.0.0',
-      releasePackage: BASE_RELEASE_PACKAGE,
-      config: configWithRegistry,
+  it('parses version with prerelease preid', () => {
+    expect(parseVersionCliArgs(['1.0.0-beta.5'])).toEqual({
+      version: '1.0.0-beta.5',
+      dryRun: false,
     })
+  })
 
-    expect(result.publishConfig).toMatchObject({
-      registry: 'https://custom.registry.com',
-    })
+  it('throws on unknown flag', () => {
+    expect(() => parseVersionCliArgs(['1.0.0', '--unknown'])).toThrow(
+      'Unknown option: --unknown',
+    )
+  })
+
+  it('throws when version is missing', () => {
+    expect(() => parseVersionCliArgs([])).toThrow(
+      'Usage: version:packages <version> [--dry-run]',
+    )
+    expect(() => parseVersionCliArgs(['--dry'])).toThrow(
+      'Usage: version:packages <version> [--dry-run]',
+    )
+  })
+
+  it('throws on unexpected extra positional argument', () => {
+    expect(() => parseVersionCliArgs(['1.0.0', 'extra'])).toThrow(
+      'Unexpected argument: extra',
+    )
   })
 })
 
-describe('versionPackages', () => {
+describe('versionPackages dry-run', () => {
+  let config: ReleaseConfig
   let dir: string
 
   beforeEach(() => {
     dir = createTempDir()
+
+    const pkgJson = {
+      name: '@test/monorepo',
+      version: '0.0.1',
+      private: true,
+      workspaces: { packages: ['packages/*'] },
+    }
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(pkgJson, null, 2))
+
+    const packagesDir = join(dir, 'packages')
+    mkdirSync(packagesDir, { recursive: true })
+
+    const subPkgJson = {
+      name: '@test/pkg',
+      version: '0.0.1',
+    }
+    writeFileSync(
+      join(packagesDir, 'package.json'),
+      JSON.stringify(subPkgJson, null, 2),
+    )
   })
 
   afterEach(() => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  it('applies versionPackage hook when configured', async () => {
-    const pkgDir = join(dir, 'packages', 'core')
-    mkdirSync(pkgDir, { recursive: true })
+  it('does not call afterVersion in dry-run mode', async () => {
+    const afterVersion = vi.fn()
 
-    writeFileSync(
-      join(pkgDir, 'package.json'),
-      JSON.stringify(BASE_PACKAGE_JSON, null, 2),
-    )
-
-    const configWithHook: ReleaseConfig = {
-      ...BASE_CONFIG,
+    config = {
+      repo: 'baicie/test',
+      repositoryUrl: 'https://github.com/baicie/test.git',
+      mode: 'workspace-fixed',
       cwd: dir,
-      versionPackage: (
-        pkg: PackageJsonLike,
-        ctx: {
-          version: string
-          releasePackage: ReleasePackage
-          config: ReleaseConfig
-        },
-      ) => ({
-        ...pkg,
-        version: ctx.version,
-        description: 'Version ' + ctx.version,
-      }),
+      workspace: {
+        roots: [join(dir, 'packages')],
+      },
+      afterVersion,
     }
 
-    await versionPackages(configWithHook, {
-      version: '3.0.0',
+    const { versionPackages } = await import('../../src/workspace/version')
+
+    await versionPackages(config, {
+      version: '1.0.0',
+      dryRun: true,
+    })
+
+    expect(afterVersion).not.toHaveBeenCalled()
+  })
+
+  it('does not call afterVersion when workspace has no packages', async () => {
+    const afterVersion = vi.fn()
+
+    config = {
+      repo: 'baicie/test',
+      repositoryUrl: 'https://github.com/baicie/test.git',
+      mode: 'workspace-fixed',
+      cwd: dir,
+      workspace: {
+        roots: [join(dir, 'packages')],
+      },
+      afterVersion,
+    }
+
+    const { versionPackages } = await import('../../src/workspace/version')
+
+    await versionPackages(config, {
+      version: '1.0.0',
       dryRun: false,
     })
 
-    const result = JSON.parse(
-      readFileSync(join(pkgDir, 'package.json'), 'utf-8'),
-    ) as PackageJsonLike
-
-    expect(result.version).toBe('3.0.0')
-    expect(result.description).toBe('Version 3.0.0')
+    expect(afterVersion).toHaveBeenCalledTimes(1)
+    expect(afterVersion).toHaveBeenCalledWith({
+      version: '1.0.0',
+      config,
+    })
   })
 })
