@@ -43,6 +43,15 @@ function getCanaryVersion(config: ReleaseConfig): string {
   return `${base.major}.${base.minor}.${base.patch}-${prefix}.${date}.${runNumber}.${runAttempt}.${shortSha}`
 }
 
+async function getCurrentBranch(config: ReleaseConfig): Promise<string> {
+  const result = await run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+    cwd: config.cwd,
+    stdio: 'pipe',
+  })
+
+  return result.stdout.trim()
+}
+
 async function dispatchDownstream(
   config: ReleaseConfig,
   version: string,
@@ -92,6 +101,18 @@ export async function runCanary(
     throw new Error(
       'Canary release is intended to run in CI. Use --force-local for local debug.',
     )
+  }
+
+  const includeBranches = config.canary?.includeBranches
+
+  if (includeBranches && includeBranches.length > 0) {
+    const branch = await getCurrentBranch(config)
+
+    if (!includeBranches.includes(branch)) {
+      throw new Error(
+        `Canary release is not allowed on branch "${branch}". Allowed branches: ${includeBranches.join(', ')}`,
+      )
+    }
   }
 
   if (!process.env.NODE_AUTH_TOKEN && !process.env.NPM_TOKEN) {

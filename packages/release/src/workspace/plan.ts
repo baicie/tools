@@ -10,6 +10,7 @@ interface PlanOptions {
   checkNpm: boolean
   tag?: string
   version?: string
+  registry?: string
 }
 
 function parsePlanArgs(args: string[]): PlanOptions {
@@ -31,11 +32,14 @@ function parsePlanArgs(args: string[]): PlanOptions {
       continue
     }
 
-    if (arg === '--tag' || arg === '--version') {
+    if (arg === '--tag' || arg === '--version' || arg === '--registry') {
       const value = args[index + 1]
       if (!value) throw new Error(`${arg} requires a value`)
+
       if (arg === '--tag') options.tag = value
       if (arg === '--version') options.version = value
+      if (arg === '--registry') options.registry = value
+
       index += 1
       continue
     }
@@ -47,6 +51,11 @@ function parsePlanArgs(args: string[]): PlanOptions {
 
     if (arg.startsWith('--version=')) {
       options.version = arg.slice('--version='.length)
+      continue
+    }
+
+    if (arg.startsWith('--registry=')) {
+      options.registry = arg.slice('--registry='.length)
       continue
     }
 
@@ -87,7 +96,11 @@ export async function createReleasePlan(
         name: pkg.name,
         version: pkg.version,
         directory: pkg.relativeDir,
-        npmExists: options.checkNpm ? await npmVersionExists(pkg) : undefined,
+        npmExists: options.checkNpm
+          ? await npmVersionExists(config, pkg, {
+              registry: options.registry,
+            })
+          : undefined,
       })),
     ),
   }

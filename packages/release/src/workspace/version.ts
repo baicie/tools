@@ -5,6 +5,10 @@ import type {
   VersionPackagesOptions,
 } from './types'
 
+import { resolve } from 'node:path'
+
+import { existsSync } from 'node:fs'
+
 import semver from 'semver'
 
 import { readJson, writeJson } from './fs'
@@ -44,7 +48,7 @@ function sortPackageJson(pkg: PackageJsonLike): PackageJsonLike {
   return result
 }
 
-export function defaultVersionPackage(
+export function normalizePackageJson(
   pkg: PackageJsonLike,
   ctx: {
     version: string
@@ -71,6 +75,24 @@ export function defaultVersionPackage(
   })
 }
 
+export async function updateRootPackageVersion(
+  config: ReleaseConfig,
+  version: string,
+): Promise<void> {
+  if (config.rootPackageJson === false) return
+
+  const file = resolve(
+    config.cwd ?? process.cwd(),
+    config.rootPackageJson ?? 'package.json',
+  )
+
+  if (!existsSync(file)) return
+
+  const json = readJson<PackageJsonLike>(file)
+  json.version = version
+  await writeJson(file, json)
+}
+
 export async function versionPackages(
   config: ReleaseConfig,
   options: VersionPackagesOptions,
@@ -89,7 +111,7 @@ export async function versionPackages(
           releasePackage,
           config,
         })
-      : defaultVersionPackage(current, {
+      : normalizePackageJson(current, {
           version: options.version,
           releasePackage,
           config,
@@ -101,6 +123,10 @@ export async function versionPackages(
     }
 
     await writeJson(releasePackage.packageJsonPath, next)
+  }
+
+  if (!options.dryRun) {
+    await updateRootPackageVersion(config, options.version)
   }
 
   await config.afterVersion?.({

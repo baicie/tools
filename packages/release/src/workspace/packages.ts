@@ -4,6 +4,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 
 import { readJson } from './fs'
+import { getChangesetsIgnore } from './config-changesets'
 
 function slash(value: string): string {
   return value.replace(/\\/g, '/')
@@ -14,9 +15,12 @@ function isIgnored(
   relativeDir: string,
   config: ReleaseConfig,
 ): boolean {
-  const ignore = config.workspace.ignore ?? []
+  const ignore = new Set([
+    ...(config.workspace.ignore ?? []),
+    ...getChangesetsIgnore(config),
+  ])
 
-  return ignore.includes(name) || ignore.includes(relativeDir)
+  return ignore.has(name) || ignore.has(relativeDir)
 }
 
 function isIncluded(name: string, config: ReleaseConfig): boolean {
@@ -106,7 +110,12 @@ export function listWorkspacePackages(config: ReleaseConfig): ReleasePackage[] {
 export function listPublishablePackages(
   config: ReleaseConfig,
 ): ReleasePackage[] {
-  return listWorkspacePackages(config).filter(pkg => !pkg.isPrivate)
+  return listWorkspacePackages(config).filter(pkg => {
+    if (pkg.isPrivate) return false
+    if (config.workspace.publishable && !config.workspace.publishable(pkg))
+      return false
+    return true
+  })
 }
 
 export function getUniqueVersions(packages: ReleasePackage[]): string[] {

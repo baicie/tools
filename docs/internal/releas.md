@@ -1,142 +1,70 @@
-可以抽，而且我建议把 `zeus` 和 `zeus-ui` 的 release 逻辑统一抽成一个 **配置驱动的 release kit**，放到：
+下面这版我建议直接把 `@baicie/release` 从“已有 workspace API 雏形”升级成 **Zeus / Zeus-UI 都能复用的配置驱动 release kit**。
 
-```txt
-https://github.com/baicie/tools/tree/main/packages/release/src
-```
+我看了当前 `tools` 代码：`@baicie/release` 已经保留旧 API，并导出 workspace API，如 `release / publish / generateChangelog` 以及 `runReleaseCli / runPublishCli / runCanaryCli` 等。 当前 `ReleaseMode` 也已经有 `changesets-fixed | workspace-fixed` 两种模式。 但它离 Zeus 文档里的完整流程还差几个关键点：文档要求本地 `pnpm release` 负责选择版本、确认 changelog、commit/tag/push，CI 再 `--publishOnly --skipBuild` 发布；同时还要求解析 changeset、统一根 `CHANGELOG.md`、清理包级 changelog、读取 fixed/ignore、按版本自动选择 npm tag、重试发布、canary 发版。
 
-现在 `@baicie/release` 已经有基础 `release / publish / generateChangelog` 导出。
-但它当前更偏“单包/linkedPackages 发布工具”：`release()` 需要手动传 `packages / linkedPackages / toTag / getPkgDir`，内部会选包、改版本、跑 publint、commit、tag、push。
-`publish()` 当前也是基于 tag 推断单个 package，再执行 publish。
-所以要承载 `zeus` 和 `zeus-ui`，需要新增一套 **workspace 级 release API**，不要破坏旧 API。
+## 结论
 
----
+当前代码可以保留，但需要改造这几块：
 
-# 最终设计
+1. **保留旧 API 不动**：`release()`、`publish()`、`generateChangelog()` 继续导出，不影响别的包使用。
+2. **workspace API 继续沿用**：`defineReleaseConfig()`、`runReleaseCli()`、`runPublishCli()` 等保持现有入口。
+3. **增强 changesets-fixed 模式**：
+   - 自动读取 `.changeset/config.json` 的 `fixed` 和 `ignore`。
+   - 读取真实 changeset md，用于生成根 `CHANGELOG.md`。
+   - 执行 `pnpm changeset version` 后，强制 fixed 组版本统一。
+   - 清理包级 `CHANGELOG.md`。
+   - 更新根 `package.json` 版本。
 
-## 目标
+4. **增强 publishOnly / npm publish**：
+   - 支持 `--registry`。
+   - 跳过已发布版本。
+   - 支持 npm tag 自动推断：`alpha / beta / rc / canary / latest`。
+   - `--provenance` 只在 CI 且有 OIDC token 时启用，避免本地或无 OIDC 环境炸。
 
-```txt
-@baicie/release
-
-保留旧 API：
-  release()
-  publish()
-  generateChangelog()
-
-新增 workspace API：
-  defineReleaseConfig()
-  runReleaseCli()
-  runPublishCli()
-  runPrecheckCli()
-  runReleasePlanCli()
-  runVersionPackagesCli()
-  runCanaryCli()
-  runReadinessCli()
-```
+5. **precheck 不再强塞 `pnpm release:verify`**：Zeus 的 13 项门禁应该全部由 config 配置。
+6. **canary 支持完整 Zeus 流程**：
+   - 生成 `{baseVersion}-canary.{date}.{runNumber}.{runAttempt}.{sha}`。
+   - 写入 `GITHUB_ENV`。
+   - 更新包版本和 lockfile。
+   - precheck。
+   - dry-run publish。
+   - 正式 publish。
+   - 可选触发 zeus-ui dispatch。
 
 ---
 
-# 两种仓库模式
-
-## 1. zeus：changeset fixed group 模式
-
-适合：
+# 改造后的目录
 
 ```txt
-@zeus-js/shared
-@zeus-js/signal
-@zeus-js/runtime-dom
-@zeus-js/compiler
-@zeus-js/zeus
-@zeus-js/bundler-plugin
-...
-```
-
-特点：
-
-```txt
-使用 changeset version
-fixed group 统一版本
-生成统一 CHANGELOG
-tag 触发 GitHub Actions
-publishOnly 只发布
-canary 自动发布
-```
-
-`zeus` 现在就是 changeset fixed group，并且 `.changeset/config.json` 里已经有 fixed group。
-
----
-
-## 2. zeus-ui：workspace fixed 模式
-
-适合：
-
-```txt
-@zeus-web/button
-@zeus-web/input
-@zeus-web/themes
-@zeus-web/icons
-@zeus-web/cli
-@zeus-web/registry
-...
-```
-
-特点：
-
-```txt
-不用 changeset
-直接扫描 packages/* 和 packages/primitives/*
-统一写 version
-补 repository / publishConfig
-release readiness 强校验
-tag 触发 GitHub Actions
-publishOnly 只发布
-canary 自动发布
-```
-
----
-
-# 抽离后的目录
-
-在 `tools/packages/release/src` 新增：
-
-```txt
-src/
-  index.ts
+packages/release/src/
+  index.ts                         # 保持兼容，导出旧 API + workspace API
+  release.ts                       # 旧 API，不动
+  publish.ts                       # 旧 API，不动
+  changelog.ts                     # 旧 API，不动
   workspace/
+    index.ts
     types.ts
     config.ts
     fs.ts
     exec.ts
     git.ts
-    npm.ts
     packages.ts
-    version.ts
+    npm.ts
     changesets.ts
     changelog.ts
-    readiness.ts
-    plan.ts
-    publish.ts
+    version.ts
     precheck.ts
+    publish.ts
+    plan.ts
     release.ts
     canary.ts
 ```
 
-旧的：
-
-```txt
-src/release.ts
-src/publish.ts
-src/changelog.ts
-src/utils.ts
-src/types.d.ts
-```
-
-继续保留，避免已有项目炸掉。
-
 ---
 
-# 1. 修改 `packages/release/src/index.ts`
+# 1. `packages/release/src/index.ts`
+
+保持当前兼容方式即可。当前代码已经符合方向。
 
 ```ts
 export { publish } from './publish'
@@ -173,7 +101,7 @@ export type {
 
 ---
 
-# 2. 新增 `packages/release/src/workspace/index.ts`
+# 2. `packages/release/src/workspace/index.ts`
 
 ```ts
 export { defineReleaseConfig } from './config'
@@ -204,10 +132,19 @@ export type {
 
 ---
 
-# 3. 新增 `packages/release/src/workspace/types.ts`
+# 3. `packages/release/src/workspace/types.ts`
 
 ```ts
 export type ReleaseMode = 'changesets-fixed' | 'workspace-fixed'
+
+export type ReleaseVersionBump =
+  | 'major'
+  | 'minor'
+  | 'patch'
+  | 'premajor'
+  | 'preminor'
+  | 'prepatch'
+  | 'prerelease'
 
 export interface PackageJsonLike {
   name?: string
@@ -218,7 +155,7 @@ export interface PackageJsonLike {
   type?: string
   files?: string[]
   exports?: Record<string, unknown>
-  bin?: Record<string, string>
+  bin?: Record<string, string> | string
   scripts?: Record<string, string>
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
@@ -260,6 +197,24 @@ export interface WorkspaceDiscoverOptions {
     relativeDir: string,
     pkg: PackageJsonLike,
   ) => string | undefined
+
+  /**
+   * 发布包过滤。
+   * Zeus 用：pkg => pkg.name.startsWith('@zeus-js/')
+   */
+  publishable?: (pkg: ReleasePackage) => boolean
+}
+
+export interface ParsedChangesetRelease {
+  name: string
+  type: 'major' | 'minor' | 'patch' | 'none'
+}
+
+export interface ParsedChangeset {
+  id: string
+  file: string
+  summary: string
+  releases: ParsedChangesetRelease[]
 }
 
 export interface CheckResult {
@@ -290,10 +245,42 @@ export interface ReleaseConfig {
 
   workspace: WorkspaceDiscoverOptions
 
+  /**
+   * 老字段保留。
+   * 不传时 changesets-fixed 会从 .changeset/config.json fixed 读取。
+   */
   fixedPackages?: string[]
+
+  /**
+   * 老字段保留，作为 synthetic changeset 文件路径。
+   */
   changesetFile?: string
+
+  /**
+   * 用哪个包版本作为 base version。
+   */
   rootVersionPackage?: string
-  changelogFile?: string
+
+  /**
+   * 根 package.json 文件。默认 package.json。
+   * 如果不希望更新根版本，传 false。
+   */
+  rootPackageJson?: string | false
+
+  /**
+   * 根 changelog。默认 CHANGELOG.md。
+   */
+  changelogFile?: string | false
+
+  changesets?: {
+    configFile?: string
+    releaseFile?: string
+    requireChangeset?: boolean
+    readIgnore?: boolean
+    readFixed?: boolean
+    cleanupPackageChangelogs?: boolean
+    unifiedChangelog?: boolean
+  }
 
   publish?: {
     access?: 'public' | 'restricted'
@@ -304,7 +291,16 @@ export interface ReleaseConfig {
   }
 
   precheck?: {
-    commands: string[][]
+    /**
+     * 完整质量门禁命令列表。
+     * Zeus 直接放 13 项即可。
+     */
+    commands?: string[][]
+
+    /**
+     * 兼容旧行为。默认不再自动追加 pnpm release:verify。
+     */
+    verifyCommand?: string[] | false
   }
 
   readiness?: {
@@ -348,17 +344,23 @@ export interface ReleaseConfig {
 
 export interface ReleaseOptions {
   version?: string
+  bump?: ReleaseVersionBump
+  preid?: string
   tag?: string
+  registry?: string
   dryRun: boolean
   skipGit: boolean
   skipPrecheck: boolean
   skipBuild: boolean
+  skipPrompts: boolean
+  publish: boolean
   publishOnly: boolean
 }
 
 export interface PublishOptions {
   version?: string
   tag?: string
+  registry?: string
   dryRun: boolean
   skipExisting: boolean
   provenance: boolean
@@ -381,41 +383,63 @@ export interface CanaryOptions {
 
 ---
 
-# 4. 新增 `packages/release/src/workspace/config.ts`
+# 4. `packages/release/src/workspace/config.ts`
 
 ```ts
 import type { ReleaseConfig } from './types'
 
 export function defineReleaseConfig(config: ReleaseConfig): ReleaseConfig {
   return {
-    packageManager: 'pnpm',
+    ...config,
+    packageManager: config.packageManager ?? 'pnpm',
+    rootPackageJson:
+      config.rootPackageJson === undefined
+        ? 'package.json'
+        : config.rootPackageJson,
+    changelogFile:
+      config.changelogFile === undefined
+        ? 'CHANGELOG.md'
+        : config.changelogFile,
+    changesets: {
+      configFile: '.changeset/config.json',
+      releaseFile: config.changesetFile ?? '.changeset/release.md',
+      requireChangeset: false,
+      readIgnore: true,
+      readFixed: true,
+      cleanupPackageChangelogs: true,
+      unifiedChangelog: true,
+      ...(config.changesets ?? {}),
+    },
     publish: {
       access: 'public',
       provenance: true,
       skipExisting: true,
       retry: 5,
-      ...config.publish,
+      ...(config.publish ?? {}),
+    },
+    precheck: {
+      commands: [],
+      verifyCommand: false,
+      ...(config.precheck ?? {}),
     },
     readiness: {
       common: true,
       allowZero: false,
       strict: false,
-      ...config.readiness,
+      ...(config.readiness ?? {}),
     },
-    ...config,
   }
 }
 ```
 
 ---
 
-# 5. 新增 `packages/release/src/workspace/fs.ts`
+# 5. `packages/release/src/workspace/fs.ts`
 
 ```ts
 import { existsSync, readFileSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { mkdir } from 'node:fs/promises'
 
 export function readJson<T>(file: string): T {
   return JSON.parse(readFileSync(file, 'utf-8')) as T
@@ -433,66 +457,470 @@ export function fileExists(file: string): boolean {
 export function readText(file: string): string {
   return readFileSync(file, 'utf-8')
 }
-```
 
----
-
-# 6. 新增 `packages/release/src/workspace/exec.ts`
-
-```ts
-import { x } from 'tinyexec'
-import colors from 'picocolors'
-
-export async function run(
-  command: string,
-  args: string[],
-  options: {
-    cwd?: string
-    stdio?: 'inherit' | 'pipe'
-    env?: NodeJS.ProcessEnv
-    dryRun?: boolean
-    reject?: boolean
-  } = {},
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const label = `${command} ${args.join(' ')}`
-
-  if (options.dryRun) {
-    console.log(colors.blue(`[dry-run] ${label}`))
-    return {
-      stdout: '',
-      stderr: '',
-      exitCode: 0,
-    }
-  }
-
-  console.log(colors.cyan(label))
-
-  const result = await x(command, args, {
-    nodeOptions: {
-      cwd: options.cwd,
-      stdio: options.stdio ?? 'inherit',
-      env: {
-        ...process.env,
-        ...options.env,
-      },
-    },
-    throwOnError: options.reject ?? true,
-  })
-
-  return {
-    stdout: result.stdout ?? '',
-    stderr: result.stderr ?? '',
-    exitCode: result.exitCode,
-  }
+export async function writeText(file: string, value: string): Promise<void> {
+  await mkdir(dirname(file), { recursive: true })
+  await writeFile(file, value, 'utf-8')
 }
 ```
 
-> 你当前 `@baicie/release` 已经依赖 `tinyexec`。
-> 旧 `utils.ts` 也已经基于 `tinyexec` 封装了 run/publishPackage。
+---
+
+# 6. `packages/release/src/workspace/changesets.ts`
+
+```ts
+import type {
+  PackageJsonLike,
+  ParsedChangeset,
+  ParsedChangesetRelease,
+  ReleaseConfig,
+} from './types'
+
+import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdir } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
+
+import semver from 'semver'
+
+import { readJson, readText, writeJson } from './fs'
+import { run } from './exec'
+import { generateUnifiedChangelog } from './changelog'
+import { listPublishablePackages, listWorkspacePackages } from './packages'
+import { normalizePackageJson } from './version'
+
+interface ChangesetsConfig {
+  fixed?: string[][]
+  ignore?: string[]
+  access?: 'public' | 'restricted'
+}
+
+function getChangesetsConfigPath(config: ReleaseConfig): string {
+  return resolve(
+    config.cwd ?? process.cwd(),
+    config.changesets?.configFile ?? '.changeset/config.json',
+  )
+}
+
+export function readChangesetsConfig(config: ReleaseConfig): ChangesetsConfig {
+  const file = getChangesetsConfigPath(config)
+
+  if (!existsSync(file)) {
+    return {}
+  }
+
+  return readJson<ChangesetsConfig>(file)
+}
+
+export function getChangesetsIgnore(config: ReleaseConfig): string[] {
+  if (config.changesets?.readIgnore === false) {
+    return []
+  }
+
+  return readChangesetsConfig(config).ignore ?? []
+}
+
+export function getChangesetsFixedPackages(config: ReleaseConfig): string[] {
+  if (config.fixedPackages?.length) {
+    return config.fixedPackages
+  }
+
+  if (config.changesets?.readFixed === false) {
+    return []
+  }
+
+  const fixed = readChangesetsConfig(config).fixed ?? []
+  return Array.from(new Set(fixed.flat()))
+}
+
+function getBumpType(
+  current: string,
+  target: string,
+): 'major' | 'minor' | 'patch' {
+  const currentParsed = semver.parse(current)
+  const targetParsed = semver.parse(target)
+
+  if (!currentParsed || !targetParsed) return 'patch'
+  if (targetParsed.major > currentParsed.major) return 'major'
+  if (targetParsed.minor > currentParsed.minor) return 'minor'
+  return 'patch'
+}
+
+function parseChangesetFrontmatter(value: string): {
+  releases: ParsedChangesetRelease[]
+  summary: string
+} | null {
+  const match = value.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/)
+
+  if (!match) {
+    return null
+  }
+
+  const [, frontmatter, body] = match
+  const releases: ParsedChangesetRelease[] = []
+
+  for (const rawLine of frontmatter.split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line || line.startsWith('#')) continue
+
+    const release = line.match(/^['"]?(.+?)['"]?:\s*(major|minor|patch|none)$/)
+
+    if (!release) {
+      continue
+    }
+
+    releases.push({
+      name: release[1],
+      type: release[2] as ParsedChangesetRelease['type'],
+    })
+  }
+
+  return {
+    releases,
+    summary: body.trim(),
+  }
+}
+
+export function readChangesets(config: ReleaseConfig): ParsedChangeset[] {
+  const cwd = config.cwd ?? process.cwd()
+  const dir = resolve(cwd, '.changeset')
+
+  if (!existsSync(dir)) {
+    return []
+  }
+
+  const releaseFile = resolve(
+    cwd,
+    config.changesets?.releaseFile ??
+      config.changesetFile ??
+      '.changeset/release.md',
+  )
+
+  return readdirSync(dir)
+    .filter(file => file.endsWith('.md'))
+    .filter(file => file !== 'README.md')
+    .map(file => resolve(dir, file))
+    .filter(file => file !== releaseFile)
+    .map(file => {
+      const parsed = parseChangesetFrontmatter(readText(file))
+
+      if (!parsed) {
+        return undefined
+      }
+
+      return {
+        id: file.split(/[\\/]/).pop()!.replace(/\.md$/, ''),
+        file,
+        ...parsed,
+      }
+    })
+    .filter(Boolean) as ParsedChangeset[]
+}
+
+function createSyntheticReleaseChangeset(
+  config: ReleaseConfig,
+  version: string,
+): string {
+  const cwd = config.cwd ?? process.cwd()
+  const packages = listPublishablePackages(config)
+  const fixed = getChangesetsFixedPackages(config)
+
+  const fixedPackages = fixed.length ? fixed : packages.map(pkg => pkg.name)
+  const rootPackage =
+    packages.find(pkg => pkg.name === config.rootVersionPackage) ?? packages[0]
+
+  if (!rootPackage) {
+    throw new Error('No package found for changesets release.')
+  }
+
+  const bump = getBumpType(rootPackage.version, version)
+
+  const changesetFile = resolve(
+    cwd,
+    config.changesets?.releaseFile ??
+      config.changesetFile ??
+      '.changeset/release.md',
+  )
+
+  const body = [
+    '---',
+    ...fixedPackages.map(name => `"${name}": ${bump}`),
+    '---',
+    '',
+    `Release v${version}`,
+    '',
+  ].join('\n')
+
+  mkdir(dirname(changesetFile), { recursive: true })
+  writeFileSync(changesetFile, body)
+
+  return changesetFile
+}
+
+async function forceFixedGroupVersion(
+  config: ReleaseConfig,
+  version: string,
+): Promise<void> {
+  const fixed = getChangesetsFixedPackages(config)
+
+  if (!fixed.length) {
+    return
+  }
+
+  const fixedSet = new Set(fixed)
+
+  for (const pkg of listWorkspacePackages(config)) {
+    if (!fixedSet.has(pkg.name)) continue
+
+    const json = readJson<PackageJsonLike>(pkg.packageJsonPath)
+    json.version = version
+
+    await writeJson(
+      pkg.packageJsonPath,
+      normalizePackageJson(json, {
+        config,
+        releasePackage: pkg,
+        version,
+      }),
+    )
+  }
+}
+
+async function normalizePublishablePackages(
+  config: ReleaseConfig,
+  version: string,
+): Promise<void> {
+  for (const releasePackage of listPublishablePackages(config)) {
+    const current = readJson<PackageJsonLike>(releasePackage.packageJsonPath)
+
+    const next = config.versionPackage
+      ? config.versionPackage(current, {
+          version,
+          releasePackage,
+          config,
+        })
+      : normalizePackageJson(
+          {
+            ...current,
+            version,
+          },
+          {
+            version,
+            releasePackage,
+            config,
+          },
+        )
+
+    await writeJson(releasePackage.packageJsonPath, next)
+  }
+}
+
+async function updateRootPackageVersion(
+  config: ReleaseConfig,
+  version: string,
+): Promise<void> {
+  if (config.rootPackageJson === false) {
+    return
+  }
+
+  const cwd = config.cwd ?? process.cwd()
+  const file = resolve(cwd, config.rootPackageJson ?? 'package.json')
+
+  if (!existsSync(file)) {
+    return
+  }
+
+  const json = readJson<PackageJsonLike>(file)
+  json.version = version
+  await writeJson(file, json)
+}
+
+function cleanupGeneratedReleaseFiles(
+  config: ReleaseConfig,
+  syntheticChangesetFile: string,
+): void {
+  if (config.changesets?.cleanupPackageChangelogs !== false) {
+    for (const pkg of listWorkspacePackages(config)) {
+      const changelog = resolve(pkg.dir, 'CHANGELOG.md')
+
+      if (existsSync(changelog)) {
+        rmSync(changelog)
+      }
+    }
+  }
+
+  if (existsSync(syntheticChangesetFile)) {
+    rmSync(syntheticChangesetFile)
+  }
+}
+
+export async function runChangesetsFixedVersion(
+  config: ReleaseConfig,
+  version: string,
+): Promise<void> {
+  const changesets = readChangesets(config)
+
+  if (
+    (config.changesets?.requireChangeset ?? false) &&
+    changesets.length === 0
+  ) {
+    throw new Error('No changeset found. Run `pnpm changeset` before release.')
+  }
+
+  const syntheticChangesetFile = createSyntheticReleaseChangeset(
+    config,
+    version,
+  )
+
+  await run(config.packageManager ?? 'pnpm', ['changeset', 'version'], {
+    cwd: config.cwd,
+  })
+
+  await forceFixedGroupVersion(config, version)
+  await normalizePublishablePackages(config, version)
+  await updateRootPackageVersion(config, version)
+
+  if (
+    config.changelogFile !== false &&
+    config.changesets?.unifiedChangelog !== false
+  ) {
+    await generateUnifiedChangelog(config, version, changesets)
+  }
+
+  cleanupGeneratedReleaseFiles(config, syntheticChangesetFile)
+
+  await config.afterVersion?.({
+    version,
+    config,
+  })
+}
+```
 
 ---
 
-# 7. 新增 `packages/release/src/workspace/packages.ts`
+# 7. `packages/release/src/workspace/changelog.ts`
+
+```ts
+import type {
+  ParsedChangeset,
+  ParsedChangesetRelease,
+  ReleaseConfig,
+} from './types'
+
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+
+import { readText, writeText } from './fs'
+
+function getHighestReleaseType(
+  releases: ParsedChangesetRelease[],
+): 'major' | 'minor' | 'patch' {
+  if (releases.some(item => item.type === 'major')) return 'major'
+  if (releases.some(item => item.type === 'minor')) return 'minor'
+  return 'patch'
+}
+
+function sectionTitle(type: 'major' | 'minor' | 'patch'): string {
+  switch (type) {
+    case 'major':
+      return 'Breaking Changes'
+    case 'minor':
+      return 'Features'
+    case 'patch':
+      return 'Fixes'
+  }
+}
+
+function formatSummary(summary: string): string {
+  const normalized = summary
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+    .join(' ')
+
+  return normalized || 'Release updates.'
+}
+
+function buildEntry(version: string, changesets: ParsedChangeset[]): string {
+  const date = new Date().toISOString().slice(0, 10)
+
+  const groups: Record<'major' | 'minor' | 'patch', string[]> = {
+    major: [],
+    minor: [],
+    patch: [],
+  }
+
+  if (changesets.length === 0) {
+    groups.patch.push(`Release v${version}.`)
+  } else {
+    for (const changeset of changesets) {
+      const type = getHighestReleaseType(changeset.releases)
+      groups[type].push(formatSummary(changeset.summary))
+    }
+  }
+
+  const lines = [`## ${version} (${date})`, '']
+
+  for (const type of ['major', 'minor', 'patch'] as const) {
+    if (!groups[type].length) continue
+
+    lines.push(`### ${sectionTitle(type)}`, '')
+
+    for (const item of groups[type]) {
+      lines.push(`- ${item}`)
+    }
+
+    lines.push('')
+  }
+
+  return lines.join('\n').trimEnd()
+}
+
+function prependChangelog(existing: string, entry: string): string {
+  if (!existing.trim()) {
+    return `# Changelog\n\n${entry}\n`
+  }
+
+  const lines = existing.split(/\r?\n/)
+
+  if (lines[0]?.startsWith('# ')) {
+    return (
+      [
+        lines[0],
+        '',
+        entry,
+        '',
+        ...lines.slice(1).join('\n').trimStart().split(/\r?\n/),
+      ]
+        .join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trimEnd() + '\n'
+    )
+  }
+
+  return `${entry}\n\n${existing.trimEnd()}\n`
+}
+
+export async function generateUnifiedChangelog(
+  config: ReleaseConfig,
+  version: string,
+  changesets: ParsedChangeset[],
+): Promise<void> {
+  if (config.changelogFile === false) {
+    return
+  }
+
+  const cwd = config.cwd ?? process.cwd()
+  const file = resolve(cwd, config.changelogFile ?? 'CHANGELOG.md')
+  const existing = existsSync(file) ? readText(file) : ''
+  const entry = buildEntry(version, changesets)
+
+  await writeText(file, prependChangelog(existing, entry))
+}
+```
+
+---
+
+# 8. `packages/release/src/workspace/packages.ts`
 
 ```ts
 import type { PackageJsonLike, ReleaseConfig, ReleasePackage } from './types'
@@ -501,6 +929,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 
 import { readJson } from './fs'
+import { getChangesetsIgnore } from './changesets'
 
 function slash(value: string): string {
   return value.replace(/\\/g, '/')
@@ -511,9 +940,12 @@ function isIgnored(
   relativeDir: string,
   config: ReleaseConfig,
 ): boolean {
-  const ignore = config.workspace.ignore ?? []
+  const ignore = new Set([
+    ...(config.workspace.ignore ?? []),
+    ...getChangesetsIgnore(config),
+  ])
 
-  return ignore.includes(name) || ignore.includes(relativeDir)
+  return ignore.has(name) || ignore.has(relativeDir)
 }
 
 function isIncluded(name: string, config: ReleaseConfig): boolean {
@@ -524,6 +956,34 @@ function isIncluded(name: string, config: ReleaseConfig): boolean {
   return include.includes(name)
 }
 
+function collectPackageJsonFiles(root: string): string[] {
+  const result: string[] = []
+
+  function walk(dir: string): void {
+    const packageJsonPath = resolve(dir, 'package.json')
+
+    if (existsSync(packageJsonPath)) {
+      result.push(packageJsonPath)
+      return
+    }
+
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue
+      if (entry.name === 'node_modules') continue
+      if (entry.name === 'dist') continue
+      if (entry.name.startsWith('.')) continue
+
+      walk(resolve(dir, entry.name))
+    }
+  }
+
+  if (existsSync(root)) {
+    walk(root)
+  }
+
+  return result
+}
+
 export function listWorkspacePackages(config: ReleaseConfig): ReleasePackage[] {
   const cwd = config.cwd ?? process.cwd()
   const packages: ReleasePackage[] = []
@@ -532,15 +992,9 @@ export function listWorkspacePackages(config: ReleaseConfig): ReleasePackage[] {
   for (const root of config.workspace.roots) {
     const absoluteRoot = resolve(cwd, root)
 
-    if (!existsSync(absoluteRoot)) continue
+    for (const packageJsonPath of collectPackageJsonFiles(absoluteRoot)) {
+      const dir = resolve(packageJsonPath, '..')
 
-    for (const entry of readdirSync(absoluteRoot, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue
-
-      const dir = resolve(absoluteRoot, entry.name)
-      const packageJsonPath = resolve(dir, 'package.json')
-
-      if (!existsSync(packageJsonPath)) continue
       if (seen.has(dir)) continue
 
       const packageJson = readJson<PackageJsonLike>(packageJsonPath)
@@ -581,7 +1035,12 @@ export function listWorkspacePackages(config: ReleaseConfig): ReleasePackage[] {
 export function listPublishablePackages(
   config: ReleaseConfig,
 ): ReleasePackage[] {
-  return listWorkspacePackages(config).filter(pkg => !pkg.isPrivate)
+  return listWorkspacePackages(config).filter(pkg => {
+    if (pkg.isPrivate) return false
+    if (config.workspace.publishable && !config.workspace.publishable(pkg))
+      return false
+    return true
+  })
 }
 
 export function getUniqueVersions(packages: ReleasePackage[]): string[] {
@@ -603,209 +1062,7 @@ export function getSharedVersion(config: ReleaseConfig): string {
 
 ---
 
-# 8. 新增 `packages/release/src/workspace/npm.ts`
-
-```ts
-import type { PublishOptions, ReleaseConfig, ReleasePackage } from './types'
-
-import colors from 'picocolors'
-
-import { run } from './exec'
-
-export function resolveDistTag(version: string, explicit?: string): string {
-  if (explicit) return explicit
-  if (version.includes('canary')) return 'canary'
-  if (version.includes('alpha')) return 'alpha'
-  if (version.includes('beta')) return 'beta'
-  if (version.includes('rc')) return 'rc'
-  return 'latest'
-}
-
-export async function npmVersionExists(pkg: ReleasePackage): Promise<boolean> {
-  const result = await run(
-    'npm',
-    ['view', `${pkg.name}@${pkg.version}`, 'version'],
-    {
-      stdio: 'pipe',
-      reject: false,
-    },
-  )
-
-  return result.exitCode === 0
-}
-
-function isRetryablePublishError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error)
-
-  return (
-    message.includes('E409') ||
-    message.includes('409 Conflict') ||
-    message.includes('Failed to save packument') ||
-    message.includes('previous package has been fully processed')
-  )
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-function retryDelay(attempt: number): number {
-  return Math.min(10_000 * 2 ** (attempt - 1), 60_000)
-}
-
-export async function publishOnePackage(
-  config: ReleaseConfig,
-  pkg: ReleasePackage,
-  options: PublishOptions,
-): Promise<void> {
-  const publishConfig = config.publish ?? {}
-  const packageManager = config.packageManager ?? 'pnpm'
-  const skipExisting =
-    options.skipExisting ?? publishConfig.skipExisting ?? true
-
-  if (skipExisting && (await npmVersionExists(pkg))) {
-    console.log(colors.yellow(`skip existing ${pkg.name}@${pkg.version}`))
-    return
-  }
-
-  const tag = resolveDistTag(pkg.version, options.tag)
-  const args =
-    packageManager === 'pnpm'
-      ? [
-          '--filter',
-          pkg.name,
-          'publish',
-          '--access',
-          publishConfig.access ?? 'public',
-          '--tag',
-          tag,
-          '--no-git-checks',
-        ]
-      : ['publish', '--access', publishConfig.access ?? 'public', '--tag', tag]
-
-  if (
-    options.provenance &&
-    publishConfig.provenance &&
-    process.env.CI &&
-    !options.dryRun
-  ) {
-    args.push('--provenance')
-  }
-
-  if (options.dryRun) {
-    args.push('--dry-run')
-  }
-
-  const maxAttempts = options.dryRun ? 1 : (publishConfig.retry ?? 5)
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      await run(packageManager, args, {
-        cwd: packageManager === 'npm' ? pkg.dir : config.cwd,
-        env: {
-          NODE_AUTH_TOKEN: process.env.NODE_AUTH_TOKEN ?? process.env.NPM_TOKEN,
-        },
-      })
-
-      console.log(colors.green(`published ${pkg.name}@${pkg.version}`))
-      return
-    } catch (error) {
-      if (await npmVersionExists(pkg)) {
-        console.log(
-          colors.yellow(
-            `${pkg.name}@${pkg.version} is visible on npm; treating publish as complete.`,
-          ),
-        )
-        return
-      }
-
-      if (!isRetryablePublishError(error) || attempt === maxAttempts) {
-        throw error
-      }
-
-      const delay = retryDelay(attempt)
-
-      console.log(
-        colors.yellow(
-          `retryable npm error for ${pkg.name}; retrying in ${Math.round(delay / 1000)}s`,
-        ),
-      )
-
-      await sleep(delay)
-    }
-  }
-}
-```
-
----
-
-# 9. 新增 `packages/release/src/workspace/git.ts`
-
-```ts
-import colors from 'picocolors'
-
-import { run } from './exec'
-
-export async function gitStatus(): Promise<string> {
-  const result = await run('git', ['status', '--porcelain'], {
-    stdio: 'pipe',
-  })
-
-  return result.stdout.trim()
-}
-
-export async function assertCleanGit(): Promise<void> {
-  const status = await gitStatus()
-
-  if (status) {
-    throw new Error(
-      'Git working tree is not clean. Commit or stash changes before release.',
-    )
-  }
-}
-
-export async function tagExists(tag: string): Promise<boolean> {
-  const result = await run('git', ['tag', '-l', tag], {
-    stdio: 'pipe',
-    reject: false,
-  })
-
-  return result.stdout.trim() === tag
-}
-
-export async function commitAndTag(params: {
-  version: string
-  dryRun: boolean
-  skipGit: boolean
-}): Promise<void> {
-  if (params.skipGit) {
-    console.log(colors.yellow('skipGit enabled; not committing or tagging.'))
-    return
-  }
-
-  const status = await gitStatus()
-  const tag = `v${params.version}`
-
-  if (status) {
-    await run('git', ['add', '-A'], { dryRun: params.dryRun })
-    await run('git', ['commit', '-m', `release: ${tag}`], {
-      dryRun: params.dryRun,
-    })
-  }
-
-  if (await tagExists(tag)) {
-    throw new Error(`Tag already exists: ${tag}`)
-  }
-
-  await run('git', ['tag', tag], { dryRun: params.dryRun })
-  await run('git', ['push'], { dryRun: params.dryRun })
-  await run('git', ['push', 'origin', tag], { dryRun: params.dryRun })
-}
-```
-
----
-
-# 10. 新增 `packages/release/src/workspace/version.ts`
+# 9. `packages/release/src/workspace/version.ts`
 
 ```ts
 import type {
@@ -814,6 +1071,8 @@ import type {
   ReleasePackage,
   VersionPackagesOptions,
 } from './types'
+
+import { resolve } from 'node:path'
 
 import semver from 'semver'
 
@@ -854,7 +1113,7 @@ function sortPackageJson(pkg: PackageJsonLike): PackageJsonLike {
   return result
 }
 
-export function defaultVersionPackage(
+export function normalizePackageJson(
   pkg: PackageJsonLike,
   ctx: {
     version: string
@@ -881,6 +1140,22 @@ export function defaultVersionPackage(
   })
 }
 
+export async function updateRootPackageVersion(
+  config: ReleaseConfig,
+  version: string,
+): Promise<void> {
+  if (config.rootPackageJson === false) return
+
+  const file = resolve(
+    config.cwd ?? process.cwd(),
+    config.rootPackageJson ?? 'package.json',
+  )
+
+  const json = readJson<PackageJsonLike>(file)
+  json.version = version
+  await writeJson(file, json)
+}
+
 export async function versionPackages(
   config: ReleaseConfig,
   options: VersionPackagesOptions,
@@ -899,7 +1174,7 @@ export async function versionPackages(
           releasePackage,
           config,
         })
-      : defaultVersionPackage(current, {
+      : normalizePackageJson(current, {
           version: options.version,
           releasePackage,
           config,
@@ -911,6 +1186,10 @@ export async function versionPackages(
     }
 
     await writeJson(releasePackage.packageJsonPath, next)
+  }
+
+  if (!options.dryRun) {
+    await updateRootPackageVersion(config, options.version)
   }
 
   await config.afterVersion?.({
@@ -960,222 +1239,175 @@ export async function runVersionPackagesCli(
 
 ---
 
-# 11. 新增 `packages/release/src/workspace/readiness.ts`
+# 10. `packages/release/src/workspace/npm.ts`
 
 ```ts
-import type { CheckResult, ReleaseConfig, ReleasePackage } from './types'
+import type { PublishOptions, ReleaseConfig, ReleasePackage } from './types'
 
-import { existsSync } from 'node:fs'
-import { resolve } from 'node:path'
 import colors from 'picocolors'
 
-import { getUniqueVersions, listPublishablePackages } from './packages'
+import { run } from './exec'
 
-function hasExport(pkg: ReleasePackage, key: string): boolean {
-  return Boolean(pkg.packageJson.exports && key in pkg.packageJson.exports)
+export function resolveDistTag(version: string, explicit?: string): string {
+  if (explicit) return explicit
+  if (version.includes('canary')) return 'canary'
+  if (version.includes('alpha')) return 'alpha'
+  if (version.includes('beta')) return 'beta'
+  if (version.includes('rc')) return 'rc'
+  return 'latest'
 }
 
-function hasFile(pkg: ReleasePackage, file: string): boolean {
+function getRegistry(
+  config: ReleaseConfig,
+  options?: Pick<PublishOptions, 'registry'>,
+): string | undefined {
+  return options?.registry ?? config.publish?.registry
+}
+
+export async function npmVersionExists(
+  config: ReleaseConfig,
+  pkg: ReleasePackage,
+  options?: Pick<PublishOptions, 'registry'>,
+): Promise<boolean> {
+  const registry = getRegistry(config, options)
+
+  const result = await run(
+    'npm',
+    [
+      'view',
+      `${pkg.name}@${pkg.version}`,
+      'version',
+      ...(registry ? ['--registry', registry] : []),
+    ],
+    {
+      stdio: 'pipe',
+      reject: false,
+    },
+  )
+
+  return result.exitCode === 0
+}
+
+function isRetryablePublishError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+
   return (
-    Array.isArray(pkg.packageJson.files) && pkg.packageJson.files.includes(file)
+    message.includes('E409') ||
+    message.includes('409 Conflict') ||
+    message.includes('429') ||
+    message.includes('5') ||
+    message.includes('ETIMEDOUT') ||
+    message.includes('ECONNRESET') ||
+    message.includes('Failed to save packument') ||
+    message.includes('previous package has been fully processed')
   )
 }
 
-function hasDist(pkg: ReleasePackage, path: string): boolean {
-  return existsSync(resolve(pkg.dir, path.replace(/^\.\//, '')))
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function checkCommon(
+function retryDelay(attempt: number): number {
+  return Math.min(10_000 * 2 ** (attempt - 1), 60_000)
+}
+
+function shouldUseProvenance(
+  config: ReleaseConfig,
+  options: PublishOptions,
+): boolean {
+  return Boolean(
+    options.provenance &&
+    config.publish?.provenance &&
+    process.env.CI &&
+    process.env.GITHUB_ACTIONS &&
+    process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN &&
+    !options.dryRun,
+  )
+}
+
+export async function publishOnePackage(
   config: ReleaseConfig,
   pkg: ReleasePackage,
-  errors: string[],
-): void {
-  if (!pkg.name.startsWith('@')) {
-    errors.push(`${pkg.name}: scoped package name is recommended`)
+  options: PublishOptions,
+): Promise<void> {
+  const publishConfig = config.publish ?? {}
+  const packageManager = config.packageManager ?? 'pnpm'
+  const skipExisting =
+    options.skipExisting ?? publishConfig.skipExisting ?? true
+  const registry = getRegistry(config, options)
+
+  if (skipExisting && (await npmVersionExists(config, pkg, options))) {
+    console.log(colors.yellow(`skip existing ${pkg.name}@${pkg.version}`))
+    return
   }
 
-  if (!pkg.packageJson.description) {
-    errors.push(`${pkg.name}: description is required`)
+  const tag = resolveDistTag(pkg.version, options.tag)
+  const commonArgs = [
+    '--access',
+    publishConfig.access ?? 'public',
+    '--tag',
+    tag,
+    '--no-git-checks',
+    ...(registry ? ['--registry', registry] : []),
+  ]
+
+  const args =
+    packageManager === 'pnpm'
+      ? ['--filter', pkg.name, 'publish', ...commonArgs]
+      : ['publish', ...commonArgs]
+
+  if (shouldUseProvenance(config, options)) {
+    args.push('--provenance')
   }
 
-  if (!pkg.packageJson.license) {
-    errors.push(`${pkg.name}: license is required`)
+  if (options.dryRun) {
+    args.push('--dry-run')
   }
 
-  if (!pkg.packageJson.exports) {
-    errors.push(`${pkg.name}: exports is required`)
-  }
+  const maxAttempts = options.dryRun ? 1 : (publishConfig.retry ?? 5)
 
-  if (!hasFile(pkg, 'dist')) {
-    errors.push(`${pkg.name}: files must include dist`)
-  }
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await run(packageManager, args, {
+        cwd: packageManager === 'npm' ? pkg.dir : config.cwd,
+        env: {
+          NODE_AUTH_TOKEN: process.env.NODE_AUTH_TOKEN ?? process.env.NPM_TOKEN,
+        },
+      })
 
-  if (!pkg.packageJson.scripts?.build) {
-    errors.push(`${pkg.name}: scripts.build is required`)
-  }
+      console.log(colors.green(`published ${pkg.name}@${pkg.version}`))
+      return
+    } catch (error) {
+      if (await npmVersionExists(config, pkg, options)) {
+        console.log(
+          colors.yellow(
+            `${pkg.name}@${pkg.version} is visible on npm; treating publish as complete.`,
+          ),
+        )
+        return
+      }
 
-  if (!pkg.packageJson.scripts?.check && !pkg.packageJson.scripts?.typecheck) {
-    errors.push(`${pkg.name}: scripts.check or scripts.typecheck is required`)
-  }
+      if (!isRetryablePublishError(error) || attempt === maxAttempts) {
+        throw error
+      }
 
-  if (!hasDist(pkg, 'dist')) {
-    errors.push(`${pkg.name}: dist missing`)
-  }
+      const delay = retryDelay(attempt)
 
-  if (config.readiness?.strict) {
-    const repository = pkg.packageJson.repository
-
-    if (
-      !repository ||
-      typeof repository === 'string' ||
-      repository.type !== 'git' ||
-      repository.url !== config.repositoryUrl ||
-      repository.directory !== pkg.relativeDir
-    ) {
-      errors.push(
-        `${pkg.name}: repository must point to ${config.repositoryUrl} and ${pkg.relativeDir}`,
+      console.log(
+        colors.yellow(
+          `retryable npm error for ${pkg.name}; retrying in ${Math.round(delay / 1000)}s`,
+        ),
       )
-    }
 
-    if (
-      !pkg.packageJson.publishConfig ||
-      pkg.packageJson.publishConfig.access !==
-        (config.publish?.access ?? 'public') ||
-      pkg.packageJson.publishConfig.provenance !==
-        (config.publish?.provenance ?? true)
-    ) {
-      errors.push(`${pkg.name}: publishConfig is invalid`)
+      await sleep(delay)
     }
   }
-}
-
-function checkZeusWebPrimitive(pkg: ReleasePackage, errors: string[]): void {
-  if (pkg.kind !== 'primitive') return
-
-  for (const key of [
-    '.',
-    './wc',
-    './react',
-    './vue',
-    './vue/global',
-    './custom-elements.json',
-    './zeus.components.json',
-  ]) {
-    if (!hasExport(pkg, key)) {
-      errors.push(`${pkg.name}: missing export ${key}`)
-    }
-  }
-}
-
-function checkZeusWebIcons(pkg: ReleasePackage, errors: string[]): void {
-  if (pkg.kind !== 'icons') return
-
-  for (const key of [
-    '.',
-    './react',
-    './vue',
-    './wc',
-    './manifest.json',
-    './svg/*',
-  ]) {
-    if (!hasExport(pkg, key)) {
-      errors.push(`${pkg.name}: missing export ${key}`)
-    }
-  }
-}
-
-export function checkReleaseReadiness(config: ReleaseConfig): CheckResult {
-  const errors: string[] = []
-  const warnings: string[] = []
-  const packages = listPublishablePackages(config)
-  const versions = getUniqueVersions(packages)
-
-  if (packages.length === 0) {
-    errors.push('No publishable packages found.')
-  }
-
-  if (versions.length > 1) {
-    errors.push(
-      `All packages must share the same version. Found: ${versions.join(', ')}`,
-    )
-  }
-
-  if (!config.readiness?.allowZero && versions.includes('0.0.0')) {
-    errors.push('0.0.0 is not allowed for release')
-  }
-
-  for (const pkg of packages) {
-    if (config.readiness?.common !== false) {
-      checkCommon(config, pkg, errors)
-    }
-
-    checkZeusWebPrimitive(pkg, errors)
-    checkZeusWebIcons(pkg, errors)
-
-    const customErrors = config.readiness?.package?.(pkg) ?? []
-    errors.push(...customErrors)
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings,
-  }
-}
-
-function parseReadinessArgs(
-  args: string[],
-  config: ReleaseConfig,
-): ReleaseConfig {
-  const next: ReleaseConfig = {
-    ...config,
-    readiness: {
-      ...config.readiness,
-    },
-  }
-
-  for (const arg of args) {
-    if (arg === '--strict') {
-      next.readiness!.strict = true
-      continue
-    }
-
-    if (arg === '--allow-zero') {
-      next.readiness!.allowZero = true
-      continue
-    }
-
-    throw new Error(`Unknown option: ${arg}`)
-  }
-
-  return next
-}
-
-export async function runReadinessCli(config: ReleaseConfig): Promise<void> {
-  const next = parseReadinessArgs(process.argv.slice(2), config)
-  const result = checkReleaseReadiness(next)
-
-  for (const warning of result.warnings) {
-    console.log(colors.yellow(`- ${warning}`))
-  }
-
-  if (!result.valid) {
-    console.error(colors.red('Release readiness check failed:'))
-
-    for (const error of result.errors) {
-      console.error(`- ${error}`)
-    }
-
-    process.exit(1)
-  }
-
-  console.log(colors.green('Release readiness check passed.'))
 }
 ```
 
 ---
 
-# 12. 新增 `packages/release/src/workspace/precheck.ts`
+# 11. `packages/release/src/workspace/precheck.ts`
 
 ```ts
 import type { PrecheckOptions, ReleaseConfig } from './types'
@@ -1211,16 +1443,29 @@ export async function runPrecheck(
 ): Promise<void> {
   for (const command of config.precheck?.commands ?? []) {
     const [bin, ...args] = command
+
     await run(bin, args, {
       cwd: config.cwd,
     })
   }
 
-  await run('pnpm', [
-    'release:verify',
-    ...(options.strict ? ['--strict'] : []),
-    ...(options.allowZero ? ['--allow-zero'] : []),
-  ])
+  const verifyCommand = config.precheck?.verifyCommand
+
+  if (verifyCommand && verifyCommand.length > 0) {
+    const [bin, ...args] = verifyCommand
+
+    await run(
+      bin,
+      [
+        ...args,
+        ...(options.strict ? ['--strict'] : []),
+        ...(options.allowZero ? ['--allow-zero'] : []),
+      ],
+      {
+        cwd: config.cwd,
+      },
+    )
+  }
 }
 
 export async function runPrecheckCli(config: ReleaseConfig): Promise<void> {
@@ -1230,133 +1475,7 @@ export async function runPrecheckCli(config: ReleaseConfig): Promise<void> {
 
 ---
 
-# 13. 新增 `packages/release/src/workspace/plan.ts`
-
-```ts
-import type { ReleaseConfig, ReleasePlan } from './types'
-
-import colors from 'picocolors'
-
-import { listPublishablePackages, getUniqueVersions } from './packages'
-import { npmVersionExists, resolveDistTag } from './npm'
-
-interface PlanOptions {
-  json: boolean
-  checkNpm: boolean
-  tag?: string
-  version?: string
-}
-
-function parsePlanArgs(args: string[]): PlanOptions {
-  const options: PlanOptions = {
-    json: false,
-    checkNpm: false,
-  }
-
-  for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index]
-
-    if (arg === '--json') {
-      options.json = true
-      continue
-    }
-
-    if (arg === '--check-npm') {
-      options.checkNpm = true
-      continue
-    }
-
-    if (arg === '--tag' || arg === '--version') {
-      const value = args[index + 1]
-      if (!value) throw new Error(`${arg} requires a value`)
-      if (arg === '--tag') options.tag = value
-      if (arg === '--version') options.version = value
-      index += 1
-      continue
-    }
-
-    if (arg.startsWith('--tag=')) {
-      options.tag = arg.slice('--tag='.length)
-      continue
-    }
-
-    if (arg.startsWith('--version=')) {
-      options.version = arg.slice('--version='.length)
-      continue
-    }
-
-    throw new Error(`Unknown option: ${arg}`)
-  }
-
-  return options
-}
-
-export async function createReleasePlan(
-  config: ReleaseConfig,
-  options: PlanOptions,
-): Promise<ReleasePlan> {
-  const packages = listPublishablePackages(config)
-  const versions = getUniqueVersions(packages)
-
-  if (versions.length !== 1) {
-    throw new Error(
-      `Release plan requires one shared version. Found: ${versions.join(', ')}`,
-    )
-  }
-
-  const version = options.version ?? versions[0]
-
-  if (version !== versions[0]) {
-    throw new Error(
-      `Requested version ${version} does not match package version ${versions[0]}`,
-    )
-  }
-
-  const tag = resolveDistTag(version, options.tag)
-
-  return {
-    version,
-    tag,
-    packages: await Promise.all(
-      packages.map(async pkg => ({
-        name: pkg.name,
-        version: pkg.version,
-        directory: pkg.relativeDir,
-        npmExists: options.checkNpm ? await npmVersionExists(pkg) : undefined,
-      })),
-    ),
-  }
-}
-
-export async function runReleasePlanCli(config: ReleaseConfig): Promise<void> {
-  const options = parsePlanArgs(process.argv.slice(2))
-  const plan = await createReleasePlan(config, options)
-
-  if (options.json) {
-    console.log(JSON.stringify(plan, null, 2))
-    return
-  }
-
-  console.log(colors.bold(`Release plan: ${plan.version} (${plan.tag})`))
-
-  for (const item of plan.packages) {
-    const status =
-      item.npmExists === undefined
-        ? ''
-        : item.npmExists
-          ? colors.yellow(' already exists')
-          : colors.green(' new')
-
-    console.log(
-      `  ${item.name}@${item.version} ${colors.gray(item.directory)}${status}`,
-    )
-  }
-}
-```
-
----
-
-# 14. 新增 `packages/release/src/workspace/publish.ts`
+# 12. `packages/release/src/workspace/publish.ts`
 
 ```ts
 import type { PublishOptions, ReleaseConfig } from './types'
@@ -1391,11 +1510,14 @@ function parsePublishArgs(args: string[]): PublishOptions {
       continue
     }
 
-    if (arg === '--tag' || arg === '--version') {
+    if (arg === '--tag' || arg === '--version' || arg === '--registry') {
       const value = args[index + 1]
       if (!value) throw new Error(`${arg} requires a value`)
+
       if (arg === '--tag') options.tag = value
       if (arg === '--version') options.version = value
+      if (arg === '--registry') options.registry = value
+
       index += 1
       continue
     }
@@ -1407,6 +1529,11 @@ function parsePublishArgs(args: string[]): PublishOptions {
 
     if (arg.startsWith('--version=')) {
       options.version = arg.slice('--version='.length)
+      continue
+    }
+
+    if (arg.startsWith('--registry=')) {
+      options.registry = arg.slice('--registry='.length)
       continue
     }
 
@@ -1463,115 +1590,16 @@ export async function runPublishCli(config: ReleaseConfig): Promise<void> {
 
 ---
 
-# 15. 新增 `packages/release/src/workspace/changesets.ts`
+# 13. `packages/release/src/workspace/release.ts`
 
 ```ts
-import type { ReleaseConfig } from './types'
-
-import { existsSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-
-import semver from 'semver'
-
-import { run } from './exec'
-import { listPublishablePackages } from './packages'
-import { readJson, writeJson } from './fs'
-import type { PackageJsonLike } from './types'
-
-function getBumpType(
-  current: string,
-  target: string,
-): 'major' | 'minor' | 'patch' {
-  const currentParsed = semver.parse(current)
-  const targetParsed = semver.parse(target)
-
-  if (!currentParsed || !targetParsed) return 'patch'
-  if (targetParsed.major > currentParsed.major) return 'major'
-  if (targetParsed.minor > currentParsed.minor) return 'minor'
-  return 'patch'
-}
-
-export async function runChangesetsFixedVersion(
-  config: ReleaseConfig,
-  version: string,
-): Promise<void> {
-  const cwd = config.cwd ?? process.cwd()
-  const packages = listPublishablePackages(config)
-  const fixed = config.fixedPackages ?? packages.map(pkg => pkg.name)
-  const rootPackage =
-    packages.find(pkg => pkg.name === config.rootVersionPackage) ?? packages[0]
-
-  if (!rootPackage) {
-    throw new Error('No package found for changesets release')
-  }
-
-  const bump = getBumpType(rootPackage.version, version)
-  const changesetFile = resolve(
-    cwd,
-    config.changesetFile ?? '.changeset/release.md',
-  )
-
-  const body = [
-    '---',
-    ...fixed.map(name => `"${name}": ${bump}`),
-    '---',
-    '',
-    `Release v${version}`,
-    '',
-  ].join('\n')
-
-  writeFileSync(changesetFile, body)
-
-  await run('pnpm', ['changeset', 'version'], {
-    cwd,
-  })
-
-  await forceWorkspaceVersion(config, version)
-
-  cleanupPackageChangelogs(config)
-}
-
-export async function forceWorkspaceVersion(
-  config: ReleaseConfig,
-  version: string,
-): Promise<void> {
-  for (const pkg of listPublishablePackages(config)) {
-    const json = readJson<PackageJsonLike>(pkg.packageJsonPath)
-    json.version = version
-    await writeJson(pkg.packageJsonPath, json)
-  }
-}
-
-function cleanupPackageChangelogs(config: ReleaseConfig): void {
-  for (const pkg of listPublishablePackages(config)) {
-    const changelog = resolve(pkg.dir, 'CHANGELOG.md')
-    if (existsSync(changelog)) rmSync(changelog)
-  }
-
-  const cwd = config.cwd ?? process.cwd()
-  const changesetDir = resolve(cwd, '.changeset')
-
-  if (existsSync(changesetDir)) {
-    for (const file of readdirSync(changesetDir)) {
-      if (file.endsWith('.md') && file !== 'README.md') {
-        rmSync(resolve(changesetDir, file))
-      }
-    }
-  }
-}
-```
-
----
-
-# 16. 新增 `packages/release/src/workspace/release.ts`
-
-```ts
-import type { ReleaseConfig, ReleaseOptions } from './types'
+import type { ReleaseConfig, ReleaseOptions, ReleaseVersionBump } from './types'
 
 import semver from 'semver'
 import colors from 'picocolors'
+import prompts from 'prompts'
 
-import { commitAndTag, assertCleanGit } from './git'
+import { assertCleanGit, commitAndTag } from './git'
 import { getSharedVersion } from './packages'
 import { createReleasePlan } from './plan'
 import { runPrecheck } from './precheck'
@@ -1587,6 +1615,8 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
     skipGit: false,
     skipPrecheck: false,
     skipBuild: false,
+    skipPrompts: false,
+    publish: false,
     publishOnly: false,
   }
 
@@ -1613,21 +1643,56 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
       continue
     }
 
+    if (arg === '--skipPrompts' || arg === '--yes' || arg === '-y') {
+      options.skipPrompts = true
+      continue
+    }
+
+    if (arg === '--publish') {
+      options.publish = true
+      continue
+    }
+
     if (arg === '--publishOnly') {
       options.publishOnly = true
       continue
     }
 
-    if (arg === '--tag') {
+    if (
+      arg === '--tag' ||
+      arg === '--preid' ||
+      arg === '--registry' ||
+      arg === '--bump'
+    ) {
       const value = args[index + 1]
-      if (!value) throw new Error('--tag requires a value')
-      options.tag = value
+      if (!value) throw new Error(`${arg} requires a value`)
+
+      if (arg === '--tag') options.tag = value
+      if (arg === '--preid') options.preid = value
+      if (arg === '--registry') options.registry = value
+      if (arg === '--bump') options.bump = value as ReleaseVersionBump
+
       index += 1
       continue
     }
 
     if (arg.startsWith('--tag=')) {
       options.tag = arg.slice('--tag='.length)
+      continue
+    }
+
+    if (arg.startsWith('--preid=')) {
+      options.preid = arg.slice('--preid='.length)
+      continue
+    }
+
+    if (arg.startsWith('--registry=')) {
+      options.registry = arg.slice('--registry='.length)
+      continue
+    }
+
+    if (arg.startsWith('--bump=')) {
+      options.bump = arg.slice('--bump='.length) as ReleaseVersionBump
       continue
     }
 
@@ -1646,11 +1711,101 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
   return options
 }
 
+function incVersion(
+  current: string,
+  bump: ReleaseVersionBump,
+  preid?: string,
+): string {
+  const next = semver.inc(current, bump, preid)
+
+  if (!next) {
+    throw new Error(`Cannot bump ${current} with ${bump}`)
+  }
+
+  return next
+}
+
+async function resolveReleaseVersion(
+  config: ReleaseConfig,
+  options: ReleaseOptions,
+): Promise<string> {
+  if (options.version) {
+    if (!semver.valid(options.version)) {
+      throw new Error(`Invalid version: ${options.version}`)
+    }
+
+    return options.version
+  }
+
+  const current = getSharedVersion(config)
+
+  if (options.bump) {
+    return incVersion(current, options.bump, options.preid)
+  }
+
+  if (options.skipPrompts || !process.stdin.isTTY) {
+    throw new Error(
+      'Version is required in non-interactive mode. Pass a version or --bump.',
+    )
+  }
+
+  const choices = [
+    {
+      title: `patch ${incVersion(current, 'patch')}`,
+      value: incVersion(current, 'patch'),
+    },
+    {
+      title: `minor ${incVersion(current, 'minor')}`,
+      value: incVersion(current, 'minor'),
+    },
+    {
+      title: `major ${incVersion(current, 'major')}`,
+      value: incVersion(current, 'major'),
+    },
+    {
+      title: `beta ${incVersion(current, semver.prerelease(current) ? 'prerelease' : 'prepatch', 'beta')}`,
+      value: incVersion(
+        current,
+        semver.prerelease(current) ? 'prerelease' : 'prepatch',
+        'beta',
+      ),
+    },
+    {
+      title: 'custom',
+      value: 'custom',
+    },
+  ]
+
+  const response = await prompts([
+    {
+      type: 'select',
+      name: 'version',
+      message: `Current version is ${current}. Select next version`,
+      choices,
+    },
+    {
+      type: prev => (prev === 'custom' ? 'text' : null),
+      name: 'customVersion',
+      message: 'Input custom version',
+      validate: value =>
+        semver.valid(value) ? true : 'Invalid semver version',
+    },
+  ])
+
+  const version =
+    response.version === 'custom' ? response.customVersion : response.version
+
+  if (!version || !semver.valid(version)) {
+    throw new Error('Release cancelled or invalid version.')
+  }
+
+  return version
+}
+
 async function prepareVersion(
   config: ReleaseConfig,
   version: string,
-  dryRun: boolean,
-) {
+): Promise<void> {
   if (config.mode === 'changesets-fixed') {
     await runChangesetsFixedVersion(config, version)
     return
@@ -1658,17 +1813,48 @@ async function prepareVersion(
 
   await versionPackages(config, {
     version,
-    dryRun,
+    dryRun: false,
   })
+}
+
+async function confirmRelease(
+  version: string,
+  options: ReleaseOptions,
+): Promise<void> {
+  if (options.skipPrompts || options.dryRun || !process.stdin.isTTY) {
+    return
+  }
+
+  const response = await prompts({
+    type: 'confirm',
+    name: 'ok',
+    message: `Release v${version}?`,
+    initial: false,
+  })
+
+  if (!response.ok) {
+    throw new Error('Release cancelled.')
+  }
 }
 
 export async function runRelease(
   config: ReleaseConfig,
   options: ReleaseOptions,
 ): Promise<void> {
+  if (options.registry) {
+    config.publish = {
+      ...(config.publish ?? {}),
+      registry: options.registry,
+    }
+  }
+
   if (options.publishOnly) {
     if (!options.version) {
       throw new Error('Version is required when using --publishOnly')
+    }
+
+    if (!semver.valid(options.version)) {
+      throw new Error(`Invalid version: ${options.version}`)
     }
 
     if (!options.skipBuild && !options.skipPrecheck) {
@@ -1681,28 +1867,27 @@ export async function runRelease(
     await runPublish(config, {
       version: options.version,
       tag: options.tag,
+      registry: options.registry,
       dryRun: false,
       skipExisting: config.publish?.skipExisting ?? true,
       provenance: config.publish?.provenance ?? true,
     })
+
     return
   }
 
-  const version = options.version ?? getSharedVersion(config)
-
-  if (!semver.valid(version)) {
-    throw new Error(`Invalid version: ${version}`)
-  }
+  const version = await resolveReleaseVersion(config, options)
 
   if (!options.dryRun && !options.skipGit) {
     await assertCleanGit()
   }
 
-  await prepareVersion(config, version, options.dryRun)
+  await confirmRelease(version, options)
+
+  await prepareVersion(config, version)
 
   await run(config.packageManager ?? 'pnpm', ['install', '--lockfile-only'], {
     cwd: config.cwd,
-    dryRun: options.dryRun,
   })
 
   if (!options.skipPrecheck) {
@@ -1717,6 +1902,7 @@ export async function runRelease(
     checkNpm: !options.dryRun,
     version,
     tag: options.tag,
+    registry: options.registry,
   })
 
   const tag = resolveDistTag(version, options.tag)
@@ -1725,13 +1911,30 @@ export async function runRelease(
     await runPublish(config, {
       version,
       tag,
+      registry: options.registry,
       dryRun: true,
       skipExisting: config.publish?.skipExisting ?? true,
       provenance: config.publish?.provenance ?? true,
     })
 
     console.log(colors.green('Release dry-run passed.'))
+    console.log(
+      colors.yellow(
+        'Dry-run mutates version files, changelog and lockfile. Use git diff to inspect, then revert if needed.',
+      ),
+    )
     return
+  }
+
+  if (options.publish) {
+    await runPublish(config, {
+      version,
+      tag,
+      registry: options.registry,
+      dryRun: false,
+      skipExisting: config.publish?.skipExisting ?? true,
+      provenance: config.publish?.provenance ?? true,
+    })
   }
 
   await commitAndTag({
@@ -1750,7 +1953,146 @@ export async function runReleaseCli(config: ReleaseConfig): Promise<void> {
 
 ---
 
-# 17. 新增 `packages/release/src/workspace/canary.ts`
+# 14. `packages/release/src/workspace/plan.ts`
+
+```ts
+import type { ReleaseConfig, ReleasePlan } from './types'
+
+import colors from 'picocolors'
+
+import { getUniqueVersions, listPublishablePackages } from './packages'
+import { npmVersionExists, resolveDistTag } from './npm'
+
+interface PlanOptions {
+  json: boolean
+  checkNpm: boolean
+  tag?: string
+  version?: string
+  registry?: string
+}
+
+function parsePlanArgs(args: string[]): PlanOptions {
+  const options: PlanOptions = {
+    json: false,
+    checkNpm: false,
+  }
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]
+
+    if (arg === '--json') {
+      options.json = true
+      continue
+    }
+
+    if (arg === '--check-npm') {
+      options.checkNpm = true
+      continue
+    }
+
+    if (arg === '--tag' || arg === '--version' || arg === '--registry') {
+      const value = args[index + 1]
+      if (!value) throw new Error(`${arg} requires a value`)
+
+      if (arg === '--tag') options.tag = value
+      if (arg === '--version') options.version = value
+      if (arg === '--registry') options.registry = value
+
+      index += 1
+      continue
+    }
+
+    if (arg.startsWith('--tag=')) {
+      options.tag = arg.slice('--tag='.length)
+      continue
+    }
+
+    if (arg.startsWith('--version=')) {
+      options.version = arg.slice('--version='.length)
+      continue
+    }
+
+    if (arg.startsWith('--registry=')) {
+      options.registry = arg.slice('--registry='.length)
+      continue
+    }
+
+    throw new Error(`Unknown option: ${arg}`)
+  }
+
+  return options
+}
+
+export async function createReleasePlan(
+  config: ReleaseConfig,
+  options: PlanOptions,
+): Promise<ReleasePlan> {
+  const packages = listPublishablePackages(config)
+  const versions = getUniqueVersions(packages)
+
+  if (versions.length !== 1) {
+    throw new Error(
+      `Release plan requires one shared version. Found: ${versions.join(', ')}`,
+    )
+  }
+
+  const version = options.version ?? versions[0]
+
+  if (version !== versions[0]) {
+    throw new Error(
+      `Requested version ${version} does not match package version ${versions[0]}`,
+    )
+  }
+
+  const tag = resolveDistTag(version, options.tag)
+
+  return {
+    version,
+    tag,
+    packages: await Promise.all(
+      packages.map(async pkg => ({
+        name: pkg.name,
+        version: pkg.version,
+        directory: pkg.relativeDir,
+        npmExists: options.checkNpm
+          ? await npmVersionExists(config, pkg, {
+              registry: options.registry,
+            })
+          : undefined,
+      })),
+    ),
+  }
+}
+
+export async function runReleasePlanCli(config: ReleaseConfig): Promise<void> {
+  const options = parsePlanArgs(process.argv.slice(2))
+  const plan = await createReleasePlan(config, options)
+
+  if (options.json) {
+    console.log(JSON.stringify(plan, null, 2))
+    return
+  }
+
+  console.log(colors.bold(`Release plan: ${plan.version} (${plan.tag})`))
+
+  for (const item of plan.packages) {
+    const status =
+      item.npmExists === undefined
+        ? ''
+        : item.npmExists
+          ? colors.yellow(' already exists')
+          : colors.green(' new')
+
+    console.log(
+      `  ${item.name}@${item.version} ${colors.gray(item.directory)}${status}`,
+    )
+  }
+}
+```
+
+---
+
+# 15. `packages/release/src/workspace/canary.ts`
 
 ```ts
 import type { CanaryOptions, ReleaseConfig } from './types'
@@ -1766,9 +2108,20 @@ import { runPublish } from './publish'
 import { run } from './exec'
 
 function parseCanaryArgs(args: string[]): CanaryOptions {
-  return {
-    forceLocal: args.includes('--force-local'),
+  const options: CanaryOptions = {
+    forceLocal: false,
   }
+
+  for (const arg of args) {
+    if (arg === '--force-local') {
+      options.forceLocal = true
+      continue
+    }
+
+    throw new Error(`Unknown option: ${arg}`)
+  }
+
+  return options
 }
 
 function getCanaryVersion(config: ReleaseConfig): string {
@@ -1896,48 +2249,51 @@ export async function runCanaryCli(config: ReleaseConfig): Promise<void> {
 
 ---
 
-# 18. `zeus` 接入方式
+# 16. Zeus 侧接入示例
 
-## `zeus/scripts/release.config.ts`
+新增：
 
 ```ts
+// scripts/release/config.ts
 import { defineReleaseConfig } from '@baicie/release'
 
-const fixedPackages = [
-  '@zeus-js/shared',
-  '@zeus-js/signal',
-  '@zeus-js/runtime-dom',
-  '@zeus-js/compiler',
-  '@zeus-js/zeus',
-  '@zeus-js/bundler-plugin',
-  '@zeus-js/component-analyzer',
-  '@zeus-js/component-dts',
-  '@zeus-js/output-wc',
-  '@zeus-js/output-react-wrapper',
-  '@zeus-js/output-vue-wrapper',
-  '@zeus-js/output-css',
-  '@zeus-js/output-icons',
-]
-
-export default defineReleaseConfig({
+export const releaseConfig = defineReleaseConfig({
   repo: 'baicie/zeus',
-  repositoryUrl: 'https://github.com/baicie/zeus.git',
+  repositoryUrl: 'https://github.com/baicie/zeus',
   mode: 'changesets-fixed',
   packageManager: 'pnpm',
-  workspace: {
-    roots: ['packages/core', 'packages/bundler', 'packages/web-c'],
-    include: fixedPackages,
-  },
-  fixedPackages,
   rootVersionPackage: '@zeus-js/zeus',
-  changesetFile: '.changeset/release.md',
-  changelogFile: 'CHANGELOG.md',
+
+  workspace: {
+    roots: [
+      'packages/core',
+      'packages/devtools',
+      'packages/web-c',
+      'packages/create',
+      'examples',
+      'benchmarks',
+      'docs',
+    ],
+    publishable: pkg => pkg.name.startsWith('@zeus-js/'),
+  },
+
+  changesets: {
+    configFile: '.changeset/config.json',
+    releaseFile: '.changeset/release.md',
+    requireChangeset: true,
+    readFixed: true,
+    readIgnore: true,
+    cleanupPackageChangelogs: true,
+    unifiedChangelog: true,
+  },
+
   publish: {
     access: 'public',
     provenance: true,
     skipExisting: true,
     retry: 5,
   },
+
   precheck: {
     commands: [
       ['pnpm', ['check:branch']],
@@ -1949,26 +2305,13 @@ export default defineReleaseConfig({
       ['pnpm', ['lint']],
       ['pnpm', ['test-unit']],
       ['pnpm', ['examples:check:all']],
-      ['pnpm', ['bench:component-host:ci']],
       ['pnpm', ['docs:build']],
       ['pnpm', ['size:ci']],
       ['pnpm', ['check:exports']],
       ['pnpm', ['check:repository']],
     ],
   },
-  readiness: {
-    common: true,
-    strict: true,
-    package(pkg) {
-      const errors: string[] = []
 
-      if (!pkg.name.startsWith('@zeus-js/')) {
-        errors.push(`${pkg.name}: must use @zeus-js scope`)
-      }
-
-      return errors
-    },
-  },
   canary: {
     enabled: true,
     prefix: 'canary',
@@ -1979,190 +2322,58 @@ export default defineReleaseConfig({
       repository: 'baicie/zeus-ui',
       eventType: 'zeus-canary-published',
       payload: ({ version, sha }) => ({
-        source: 'zeus',
-        sha,
+        source: 'baicie/zeus',
         version,
+        sha,
       }),
     },
   },
 })
 ```
 
-## zeus thin scripts
+入口脚本：
 
 ```ts
 // scripts/release/release.ts
 import { runReleaseCli } from '@baicie/release'
-import config from '../release.config'
+import { releaseConfig } from './config'
 
-await runReleaseCli(config)
+await runReleaseCli(releaseConfig)
 ```
 
 ```ts
 // scripts/release/release-precheck.ts
 import { runPrecheckCli } from '@baicie/release'
-import config from '../release.config'
+import { releaseConfig } from './config'
 
-await runPrecheckCli(config)
+await runPrecheckCli(releaseConfig)
 ```
 
 ```ts
 // scripts/release/release-canary.ts
 import { runCanaryCli } from '@baicie/release'
-import config from '../release.config'
+import { releaseConfig } from './config'
 
-await runCanaryCli(config)
-```
-
-```ts
-// scripts/release/publish.ts
-import { runPublishCli } from '@baicie/release'
-import config from '../release.config'
-
-await runPublishCli(config)
+await runCanaryCli(releaseConfig)
 ```
 
 ```ts
 // scripts/release/release-plan.ts
 import { runReleasePlanCli } from '@baicie/release'
-import config from '../release.config'
+import { releaseConfig } from './config'
 
-await runReleasePlanCli(config)
-```
-
----
-
-# 19. `zeus-ui` 接入方式
-
-## `zeus-ui/scripts/release.config.ts`
-
-```ts
-import { defineReleaseConfig } from '@baicie/release'
-
-export default defineReleaseConfig({
-  repo: 'baicie/zeus-ui',
-  repositoryUrl: 'https://github.com/baicie/zeus-ui.git',
-  mode: 'workspace-fixed',
-  packageManager: 'pnpm',
-  workspace: {
-    roots: ['packages', 'packages/primitives'],
-    packageKind(relativeDir, pkg) {
-      if (relativeDir.startsWith('packages/primitives/')) return 'primitive'
-      if (pkg.name === '@zeus-web/icons') return 'icons'
-      if (pkg.name === '@zeus-web/cli') return 'cli'
-      return undefined
-    },
-  },
-  publish: {
-    access: 'public',
-    provenance: true,
-    skipExisting: true,
-    retry: 5,
-  },
-  precheck: {
-    commands: [
-      ['pnpm', ['format-check']],
-      ['pnpm', ['lint']],
-      ['pnpm', ['test']],
-      ['pnpm', ['check']],
-      ['pnpm', ['build']],
-      ['pnpm', ['check:exports']],
-      ['pnpm', ['check:build-output']],
-      ['pnpm', ['site:check']],
-    ],
-  },
-  readiness: {
-    common: true,
-    strict: true,
-    package(pkg) {
-      const errors: string[] = []
-
-      if (!pkg.name.startsWith('@zeus-web/')) {
-        errors.push(`${pkg.name}: must use @zeus-web scope`)
-      }
-
-      if (pkg.kind === 'cli') {
-        const bin = pkg.packageJson.bin
-        if (!bin || bin.zweb !== './dist/index.js') {
-          errors.push(`${pkg.name}: bin.zweb must be ./dist/index.js`)
-        }
-      }
-
-      return errors
-    },
-  },
-  canary: {
-    enabled: true,
-    prefix: 'canary',
-    tag: 'canary',
-    envName: 'ZEUS_WEB_CANARY_VERSION',
-  },
-})
-```
-
-## zeus-ui thin scripts
-
-```ts
-// scripts/release/release.ts
-import { runReleaseCli } from '@baicie/release'
-import config from '../release.config'
-
-await runReleaseCli(config)
-```
-
-```ts
-// scripts/release/release-precheck.ts
-import { runPrecheckCli } from '@baicie/release'
-import config from '../release.config'
-
-await runPrecheckCli(config)
+await runReleasePlanCli(releaseConfig)
 ```
 
 ```ts
 // scripts/release/version-packages.ts
 import { runVersionPackagesCli } from '@baicie/release'
-import config from '../release.config'
+import { releaseConfig } from './config'
 
-await runVersionPackagesCli(config)
+await runVersionPackagesCli(releaseConfig)
 ```
 
-```ts
-// scripts/release/release-plan.ts
-import { runReleasePlanCli } from '@baicie/release'
-import config from '../release.config'
-
-await runReleasePlanCli(config)
-```
-
-```ts
-// scripts/release/publish.ts
-import { runPublishCli } from '@baicie/release'
-import config from '../release.config'
-
-await runPublishCli(config)
-```
-
-```ts
-// scripts/release/release-canary.ts
-import { runCanaryCli } from '@baicie/release'
-import config from '../release.config'
-
-await runCanaryCli(config)
-```
-
-```ts
-// scripts/checks/check-release-readiness.ts
-import { runReadinessCli } from '@baicie/release'
-import config from '../release.config'
-
-await runReadinessCli(config)
-```
-
----
-
-# 20. 两个仓库的 package scripts
-
-## zeus
+根 `package.json`：
 
 ```json
 {
@@ -2170,174 +2381,50 @@ await runReadinessCli(config)
     "release": "tsx scripts/release/release.ts",
     "release:publishOnly": "tsx scripts/release/release.ts --publishOnly",
     "release:precheck": "tsx scripts/release/release-precheck.ts",
-    "release:plan": "tsx scripts/release/release-plan.ts",
-    "release:dry": "tsx scripts/release/release.ts --dry --skipGit",
-    "release:canary": "tsx scripts/release/release-canary.ts"
-  }
-}
-```
-
-## zeus-ui
-
-```json
-{
-  "scripts": {
-    "release": "tsx scripts/release/release.ts",
-    "release:publishOnly": "tsx scripts/release/release.ts --publishOnly",
-    "release:precheck": "tsx scripts/release/release-precheck.ts",
-    "release:plan": "tsx scripts/release/release-plan.ts",
-    "release:verify": "tsx scripts/checks/check-release-readiness.ts",
     "release:dry": "tsx scripts/release/release.ts --dry --skipGit",
     "release:canary": "tsx scripts/release/release-canary.ts",
-    "version:packages": "tsx scripts/release/version-packages.ts",
-    "ci-publish": "tsx scripts/release/publish.ts"
+    "release:plan": "tsx scripts/release/release-plan.ts",
+    "version:packages": "tsx scripts/release/version-packages.ts"
   }
 }
 ```
 
 ---
 
-# 21. GitHub Actions 统一模板
+# 自测顺序
 
-## `.github/workflows/release.yml`
+```bash
+# tools 仓库内
+pnpm --filter @baicie/release typecheck
+pnpm --filter @baicie/release test
+pnpm --filter @baicie/release build
 
-```yaml
-name: Release
+# zeus 仓库内
+pnpm release:plan
+pnpm release:dry
 
-on:
-  push:
-    tags:
-      - 'v*'
+# 模拟 CI publishOnly
+pnpm release --publishOnly 0.1.0-beta.5 --skipBuild --dry
 
-concurrency:
-  group: release
-  cancel-in-progress: false
-
-env:
-  PUPPETEER_SKIP_DOWNLOAD: 'true'
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-      id-token: write
-
-    environment: Release
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .node-version
-          registry-url: https://registry.npmjs.org
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Extract version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - run: pnpm release:precheck --strict
-
-      - run: pnpm release:publishOnly ${{ env.VERSION }} --skipBuild
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+# canary 本地 debug，只验证流程会改版本，不建议提交
+NODE_AUTH_TOKEN=xxx pnpm release:canary --force-local
 ```
 
-## `.github/workflows/release-canary.yml`
-
-```yaml
-name: Release Canary
-
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-      - feat/**
-      - fix/**
-      - refactor/**
-      - chore/**
-      - release/**
-      - hotfix/**
-
-concurrency:
-  group: release-canary-${{ github.ref }}
-  cancel-in-progress: false
-
-env:
-  PUPPETEER_SKIP_DOWNLOAD: 'true'
-
-jobs:
-  release-canary:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write
-
-    environment: Canary
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: .node-version
-          registry-url: https://registry.npmjs.org
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm release:canary
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          ZEUS_UI_DISPATCH_TOKEN: ${{ secrets.ZEUS_UI_DISPATCH_TOKEN }}
-```
-
----
-
-# 最终收益
-
-抽完以后：
+这版改造后，`@baicie/release` 可以同时承载：
 
 ```txt
-tools/@baicie/release：
-  负责 release 核心能力
+zeus:
+  changesets-fixed
+  读取 .changeset/config.json fixed / ignore
+  统一 CHANGELOG
+  tag -> CI publishOnly
 
-zeus：
-  只维护 release.config.ts
-  保留 changeset fixed group 行为
-
-zeus-ui：
-  只维护 release.config.ts
-  保留 workspace fixed + readiness gate 行为
-
-两个仓库：
-  release/publish/canary/precheck/tag/publishOnly 行为一致
+zeus-ui:
+  workspace-fixed
+  直接扫描 workspace 包
+  统一写 version / repository / publishConfig
+  readiness 强校验
+  tag -> CI publishOnly
 ```
 
-建议分三步落地：
-
-```txt
-PR 1: tools/packages/release 增加 workspace release kit，保留旧 API。
-PR 2: zeus 接入 @baicie/release workspace API，删除本地大段 release 脚本。
-PR 3: zeus-ui 接入 @baicie/release workspace API，删除本地大段 release 脚本。
-```
-
-对应分支名：
-
-```txt
-feat/release-kit
-refactor/zeus-release-kit
-refactor/zeus-ui-release-kit
-```
+并且旧的 `release()`、`publish()`、`generateChangelog()` 不动，别的包继续按老 API 用。

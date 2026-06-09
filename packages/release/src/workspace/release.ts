@@ -1,7 +1,8 @@
-import type { ReleaseConfig, ReleaseOptions } from './types'
+import type { ReleaseConfig, ReleaseOptions, ReleaseVersionBump } from './types'
 
 import semver from 'semver'
 import colors from 'picocolors'
+import prompts from 'prompts'
 
 import { assertCleanGit, commitAndTag } from './git'
 import { getSharedVersion } from './packages'
@@ -19,6 +20,8 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
     skipGit: false,
     skipPrecheck: false,
     skipBuild: false,
+    skipPrompts: false,
+    publish: false,
     publishOnly: false,
   }
 
@@ -45,23 +48,56 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
       continue
     }
 
+    if (arg === '--skipPrompts' || arg === '--yes' || arg === '-y') {
+      options.skipPrompts = true
+      continue
+    }
+
+    if (arg === '--publish') {
+      options.publish = true
+      continue
+    }
+
     if (arg === '--publishOnly') {
       options.publishOnly = true
       continue
     }
 
-    if (arg === '--tag') {
+    if (
+      arg === '--tag' ||
+      arg === '--preid' ||
+      arg === '--registry' ||
+      arg === '--bump'
+    ) {
       const value = args[index + 1]
-      if (!value) throw new Error('--tag requires a value')
-      options.tag = value
+      if (!value) throw new Error(`${arg} requires a value`)
+
+      if (arg === '--tag') options.tag = value
+      if (arg === '--preid') options.preid = value
+      if (arg === '--registry') options.registry = value
+      if (arg === '--bump') options.bump = value as ReleaseVersionBump
+
       index += 1
       continue
     }
 
     if (arg.startsWith('--tag=')) {
-      const value = arg.slice('--tag='.length)
-      if (!value) throw new Error('--tag requires a value')
-      options.tag = value
+      options.tag = arg.slice('--tag='.length)
+      continue
+    }
+
+    if (arg.startsWith('--preid=')) {
+      options.preid = arg.slice('--preid='.length)
+      continue
+    }
+
+    if (arg.startsWith('--registry=')) {
+      options.registry = arg.slice('--registry='.length)
+      continue
+    }
+
+    if (arg.startsWith('--bump=')) {
+      options.bump = arg.slice('--bump='.length) as ReleaseVersionBump
       continue
     }
 
@@ -80,6 +116,99 @@ function parseReleaseArgs(args: string[]): ReleaseOptions {
   return options
 }
 
+function incVersion(
+  current: string,
+  bump: ReleaseVersionBump,
+  preid?: string,
+): string {
+  const next = preid
+    ? semver.inc(current, bump, preid)
+    : semver.inc(current, bump)
+
+  if (!next) {
+    throw new Error(`Cannot bump ${current} with ${bump}`)
+  }
+
+  return next
+}
+
+async function resolveReleaseVersion(
+  config: ReleaseConfig,
+  options: ReleaseOptions,
+): Promise<string> {
+  if (options.version) {
+    if (!semver.valid(options.version)) {
+      throw new Error(`Invalid version: ${options.version}`)
+    }
+
+    return options.version
+  }
+
+  const current = getSharedVersion(config)
+
+  if (options.bump) {
+    return incVersion(current, options.bump, options.preid)
+  }
+
+  if (options.skipPrompts || !process.stdin.isTTY) {
+    throw new Error(
+      'Version is required in non-interactive mode. Pass a version or --bump.',
+    )
+  }
+
+  const choices = [
+    {
+      title: `patch ${incVersion(current, 'patch')}`,
+      value: incVersion(current, 'patch'),
+    },
+    {
+      title: `minor ${incVersion(current, 'minor')}`,
+      value: incVersion(current, 'minor'),
+    },
+    {
+      title: `major ${incVersion(current, 'major')}`,
+      value: incVersion(current, 'major'),
+    },
+    {
+      title: `beta ${incVersion(current, semver.prerelease(current) ? 'prerelease' : 'prepatch', 'beta')}`,
+      value: incVersion(
+        current,
+        semver.prerelease(current) ? 'prerelease' : 'prepatch',
+        'beta',
+      ),
+    },
+    {
+      title: 'custom',
+      value: 'custom',
+    },
+  ]
+
+  const response = await prompts([
+    {
+      type: 'select',
+      name: 'version',
+      message: `Current version is ${current}. Select next version`,
+      choices,
+    },
+    {
+      type: prev => (prev === 'custom' ? 'text' : null),
+      name: 'customVersion',
+      message: 'Input custom version',
+      validate: value =>
+        semver.valid(value) ? true : 'Invalid semver version',
+    },
+  ])
+
+  const version =
+    response.version === 'custom' ? response.customVersion : response.version
+
+  if (!version || !semver.valid(version)) {
+    throw new Error('Release cancelled or invalid version.')
+  }
+
+  return version
+}
+
 async function prepareVersion(
   config: ReleaseConfig,
   version: string,
@@ -95,10 +224,37 @@ async function prepareVersion(
   })
 }
 
+async function confirmRelease(
+  version: string,
+  options: ReleaseOptions,
+): Promise<void> {
+  if (options.skipPrompts || options.dryRun || !process.stdin.isTTY) {
+    return
+  }
+
+  const response = await prompts({
+    type: 'confirm',
+    name: 'ok',
+    message: `Release v${version}?`,
+    initial: false,
+  })
+
+  if (!response.ok) {
+    throw new Error('Release cancelled.')
+  }
+}
+
 export async function runRelease(
   config: ReleaseConfig,
   options: ReleaseOptions,
 ): Promise<void> {
+  if (options.registry) {
+    config.publish = {
+      ...(config.publish ?? {}),
+      registry: options.registry,
+    }
+  }
+
   if (options.publishOnly) {
     if (!options.version) {
       throw new Error('Version is required when using --publishOnly')
@@ -118,6 +274,7 @@ export async function runRelease(
     await runPublish(config, {
       version: options.version,
       tag: options.tag,
+      registry: options.registry,
       dryRun: false,
       skipExisting: config.publish?.skipExisting ?? true,
       provenance: config.publish?.provenance ?? true,
@@ -126,15 +283,13 @@ export async function runRelease(
     return
   }
 
-  const version = options.version ?? getSharedVersion(config)
-
-  if (!semver.valid(version)) {
-    throw new Error(`Invalid version: ${version}`)
-  }
+  const version = await resolveReleaseVersion(config, options)
 
   if (!options.dryRun && !options.skipGit) {
     await assertCleanGit()
   }
+
+  await confirmRelease(version, options)
 
   await prepareVersion(config, version)
 
@@ -154,6 +309,7 @@ export async function runRelease(
     checkNpm: !options.dryRun,
     version,
     tag: options.tag,
+    registry: options.registry,
   })
 
   const tag = resolveDistTag(version, options.tag)
@@ -162,6 +318,7 @@ export async function runRelease(
     await runPublish(config, {
       version,
       tag,
+      registry: options.registry,
       dryRun: true,
       skipExisting: config.publish?.skipExisting ?? true,
       provenance: config.publish?.provenance ?? true,
@@ -170,10 +327,21 @@ export async function runRelease(
     console.log(colors.green('Release dry-run passed.'))
     console.log(
       colors.yellow(
-        'Dry-run mutates version files and lockfile. Use git diff to inspect, then revert if needed.',
+        'Dry-run mutates version files, changelog and lockfile. Use git diff to inspect, then revert if needed.',
       ),
     )
     return
+  }
+
+  if (options.publish) {
+    await runPublish(config, {
+      version,
+      tag,
+      registry: options.registry,
+      dryRun: false,
+      skipExisting: config.publish?.skipExisting ?? true,
+      provenance: config.publish?.provenance ?? true,
+    })
   }
 
   await commitAndTag({

@@ -37,17 +37,23 @@ export async function runPrecheck(
     })
   }
 
-  await run(
-    config.packageManager ?? 'pnpm',
-    [
-      'release:verify',
-      ...(options.strict ? ['--strict'] : []),
-      ...(options.allowZero ? ['--allow-zero'] : []),
-    ],
-    {
-      cwd: config.cwd,
-    },
-  )
+  const verifyCommand = config.precheck?.verifyCommand
+
+  if (verifyCommand && verifyCommand.length > 0) {
+    const [bin, ...args] = verifyCommand
+
+    await run(
+      bin,
+      [
+        ...args,
+        ...(options.strict ? ['--strict'] : []),
+        ...(options.allowZero ? ['--allow-zero'] : []),
+      ],
+      {
+        cwd: config.cwd,
+      },
+    )
+  }
 }
 
 export async function runPrecheckCli(config: ReleaseConfig): Promise<void> {

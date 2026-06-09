@@ -6,10 +6,6 @@ import colors from 'picocolors'
 
 import { getUniqueVersions, listPublishablePackages } from './packages'
 
-function hasExport(pkg: ReleasePackage, key: string): boolean {
-  return Boolean(pkg.packageJson.exports && key in pkg.packageJson.exports)
-}
-
 function hasFile(pkg: ReleasePackage, file: string): boolean {
   return (
     Array.isArray(pkg.packageJson.files) && pkg.packageJson.files.includes(file)
@@ -84,41 +80,6 @@ function checkCommon(
   }
 }
 
-function checkZeusWebPrimitive(pkg: ReleasePackage, errors: string[]): void {
-  if (pkg.kind !== 'primitive') return
-
-  for (const key of [
-    '.',
-    './wc',
-    './react',
-    './vue',
-    './vue/global',
-    './custom-elements.json',
-    './zeus.components.json',
-  ]) {
-    if (!hasExport(pkg, key)) {
-      errors.push(`${pkg.name}: missing export ${key}`)
-    }
-  }
-}
-
-function checkZeusWebIcons(pkg: ReleasePackage, errors: string[]): void {
-  if (pkg.kind !== 'icons') return
-
-  for (const key of [
-    '.',
-    './react',
-    './vue',
-    './wc',
-    './manifest.json',
-    './svg/*',
-  ]) {
-    if (!hasExport(pkg, key)) {
-      errors.push(`${pkg.name}: missing export ${key}`)
-    }
-  }
-}
-
 export function checkReleaseReadiness(config: ReleaseConfig): CheckResult {
   const errors: string[] = []
   const warnings: string[] = []
@@ -143,9 +104,6 @@ export function checkReleaseReadiness(config: ReleaseConfig): CheckResult {
     if (config.readiness?.common !== false) {
       checkCommon(config, pkg, errors)
     }
-
-    checkZeusWebPrimitive(pkg, errors)
-    checkZeusWebIcons(pkg, errors)
 
     const customErrors = config.readiness?.package?.(pkg) ?? []
     errors.push(...customErrors)

@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { mkdir } from 'node:fs/promises'
 
 export function readJson<T>(file: string): T {
   return JSON.parse(readFileSync(file, 'utf-8')) as T
@@ -18,4 +17,9 @@ export function fileExists(file: string): boolean {
 
 export function readText(file: string): string {
   return readFileSync(file, 'utf-8')
+}
+
+export async function writeText(file: string, value: string): Promise<void> {
+  await mkdir(dirname(file), { recursive: true })
+  await writeFile(file, value, 'utf-8')
 }

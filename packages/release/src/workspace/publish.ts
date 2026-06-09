@@ -30,11 +30,14 @@ function parsePublishArgs(args: string[]): PublishOptions {
       continue
     }
 
-    if (arg === '--tag' || arg === '--version') {
+    if (arg === '--tag' || arg === '--version' || arg === '--registry') {
       const value = args[index + 1]
       if (!value) throw new Error(`${arg} requires a value`)
+
       if (arg === '--tag') options.tag = value
       if (arg === '--version') options.version = value
+      if (arg === '--registry') options.registry = value
+
       index += 1
       continue
     }
@@ -46,6 +49,11 @@ function parsePublishArgs(args: string[]): PublishOptions {
 
     if (arg.startsWith('--version=')) {
       options.version = arg.slice('--version='.length)
+      continue
+    }
+
+    if (arg.startsWith('--registry=')) {
+      options.registry = arg.slice('--registry='.length)
       continue
     }
 

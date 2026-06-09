@@ -13,10 +13,28 @@ export function resolveDistTag(version: string, explicit?: string): string {
   return 'latest'
 }
 
-export async function npmVersionExists(pkg: ReleasePackage): Promise<boolean> {
+function getRegistry(
+  config: ReleaseConfig,
+  options?: Pick<PublishOptions, 'registry'>,
+): string | undefined {
+  return options?.registry ?? config.publish?.registry
+}
+
+export async function npmVersionExists(
+  config: ReleaseConfig,
+  pkg: ReleasePackage,
+  options?: Pick<PublishOptions, 'registry'>,
+): Promise<boolean> {
+  const registry = getRegistry(config, options)
+
   const result = await run(
     'npm',
-    ['view', `${pkg.name}@${pkg.version}`, 'version'],
+    [
+      'view',
+      `${pkg.name}@${pkg.version}`,
+      'version',
+      ...(registry ? ['--registry', registry] : []),
+    ],
     {
       stdio: 'pipe',
       reject: false,
@@ -32,6 +50,10 @@ function isRetryablePublishError(error: unknown): boolean {
   return (
     message.includes('E409') ||
     message.includes('409 Conflict') ||
+    message.includes('429') ||
+    message.includes('5xx') ||
+    message.includes('ETIMEDOUT') ||
+    message.includes('ECONNRESET') ||
     message.includes('Failed to save packument') ||
     message.includes('previous package has been fully processed')
   )
@@ -45,6 +67,20 @@ function retryDelay(attempt: number): number {
   return Math.min(10_000 * 2 ** (attempt - 1), 60_000)
 }
 
+function shouldUseProvenance(
+  config: ReleaseConfig,
+  options: PublishOptions,
+): boolean {
+  return Boolean(
+    options.provenance &&
+    config.publish?.provenance &&
+    process.env.CI &&
+    process.env.GITHUB_ACTIONS &&
+    process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN &&
+    !options.dryRun,
+  )
+}
+
 export async function publishOnePackage(
   config: ReleaseConfig,
   pkg: ReleasePackage,
@@ -54,33 +90,29 @@ export async function publishOnePackage(
   const packageManager = config.packageManager ?? 'pnpm'
   const skipExisting =
     options.skipExisting ?? publishConfig.skipExisting ?? true
+  const registry = getRegistry(config, options)
 
-  if (skipExisting && (await npmVersionExists(pkg))) {
+  if (skipExisting && (await npmVersionExists(config, pkg, options))) {
     console.log(colors.yellow(`skip existing ${pkg.name}@${pkg.version}`))
     return
   }
 
   const tag = resolveDistTag(pkg.version, options.tag)
+  const commonArgs = [
+    '--access',
+    publishConfig.access ?? 'public',
+    '--tag',
+    tag,
+    '--no-git-checks',
+    ...(registry ? ['--registry', registry] : []),
+  ]
+
   const args =
     packageManager === 'pnpm'
-      ? [
-          '--filter',
-          pkg.name,
-          'publish',
-          '--access',
-          publishConfig.access ?? 'public',
-          '--tag',
-          tag,
-          '--no-git-checks',
-        ]
-      : ['publish', '--access', publishConfig.access ?? 'public', '--tag', tag]
+      ? ['--filter', pkg.name, 'publish', ...commonArgs]
+      : ['publish', ...commonArgs]
 
-  if (
-    options.provenance &&
-    publishConfig.provenance &&
-    process.env.CI &&
-    !options.dryRun
-  ) {
+  if (shouldUseProvenance(config, options)) {
     args.push('--provenance')
   }
 
@@ -102,7 +134,7 @@ export async function publishOnePackage(
       console.log(colors.green(`published ${pkg.name}@${pkg.version}`))
       return
     } catch (error) {
-      if (await npmVersionExists(pkg)) {
+      if (await npmVersionExists(config, pkg, options)) {
         console.log(
           colors.yellow(
             `${pkg.name}@${pkg.version} is visible on npm; treating publish as complete.`,

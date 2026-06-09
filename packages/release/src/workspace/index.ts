@@ -11,6 +11,8 @@ export type {
   CanaryOptions,
   CheckResult,
   PackageJsonLike,
+  ParsedChangeset,
+  ParsedChangesetRelease,
   PrecheckOptions,
   PublishOptions,
   ReleaseConfig,
@@ -19,6 +21,7 @@ export type {
   ReleasePackage,
   ReleasePlan,
   ReleasePlanItem,
+  ReleaseVersionBump,
   VersionPackagesOptions,
   WorkspaceDiscoverOptions,
 } from './types'
