@@ -7,12 +7,12 @@ import type {
 
 import {
   existsSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 
 import semver from 'semver'
@@ -21,8 +21,7 @@ import { readJson, writeJson } from './fs'
 import { run } from './exec'
 import { generateUnifiedChangelog } from './changelog'
 import { listPublishablePackages, listWorkspacePackages } from './packages'
-import { normalizePackageJson } from './version'
-import { updateRootPackageVersion } from './version'
+import { normalizePackageJson, updateRootPackageVersion } from './version'
 import { getChangesetsFixedPackages } from './config-changesets'
 
 function getBumpType(
@@ -116,7 +115,10 @@ function createSyntheticReleaseChangeset(
 ): string {
   const cwd = config.cwd ?? process.cwd()
   const packages = listPublishablePackages(config)
-  const fixed = getChangesetsFixedPackages(config)
+  const publishableNames = new Set(packages.map(pkg => pkg.name))
+  const fixed = getChangesetsFixedPackages(config).filter(name =>
+    publishableNames.has(name),
+  )
 
   const fixedPackages = fixed.length ? fixed : packages.map(pkg => pkg.name)
   const rootPackage =
@@ -144,7 +146,7 @@ function createSyntheticReleaseChangeset(
     '',
   ].join('\n')
 
-  mkdir(dirname(changesetFile), { recursive: true })
+  mkdirSync(dirname(changesetFile), { recursive: true })
   writeFileSync(changesetFile, body)
 
   return changesetFile

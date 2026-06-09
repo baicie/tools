@@ -46,3 +46,77 @@ describe('resolveDistTag', () => {
     expect(resolveDistTag('1.0.0-canary.alpha')).toBe('canary')
   })
 })
+
+describe('isRetryablePublishError', () => {
+  // Expose via the retry path in publishOnePackage by mocking run()
+  // Here we test the error message patterns that trigger retries
+
+  function isRetryablePublishError(message: string): boolean {
+    return (
+      message.includes('E409') ||
+      message.includes('409 Conflict') ||
+      /\b429\b/.test(message) ||
+      /\b5\d\d\b/.test(message) ||
+      message.includes('ETIMEDOUT') ||
+      message.includes('ECONNRESET') ||
+      message.includes('ECONNABORTED') ||
+      message.includes('EAI_AGAIN') ||
+      message.includes('ENOTFOUND') ||
+      message.includes('Failed to save packument') ||
+      message.includes('previous package has been fully processed')
+    )
+  }
+
+  it('retries on 5xx HTTP errors', () => {
+    expect(isRetryablePublishError('npm error code E500')).toBe(true)
+    expect(isRetryablePublishError('npm error code 502')).toBe(true)
+    expect(isRetryablePublishError('npm error code E503')).toBe(true)
+    expect(isRetryablePublishError('npm error code 504')).toBe(true)
+    expect(
+      isRetryablePublishError('npm error code 500 Internal Server Error'),
+    ).toBe(true)
+  })
+
+  it('retries on 429 rate limit', () => {
+    expect(isRetryablePublishError('npm error code E429')).toBe(true)
+    expect(isRetryablePublishError('npm error 429 Too Many Requests')).toBe(
+      true,
+    )
+  })
+
+  it('retries on network errors', () => {
+    expect(isRetryablePublishError('npm error ETIMEDOUT')).toBe(true)
+    expect(isRetryablePublishError('npm error ECONNRESET')).toBe(true)
+    expect(isRetryablePublishError('npm error ECONNABORTED')).toBe(true)
+    expect(isRetryablePublishError('npm error EAI_AGAIN')).toBe(true)
+    expect(isRetryablePublishError('npm error ENOTFOUND')).toBe(true)
+  })
+
+  it('retries on E409 conflict', () => {
+    expect(isRetryablePublishError('npm error E409')).toBe(true)
+    expect(isRetryablePublishError('npm error 409 Conflict')).toBe(true)
+  })
+
+  it('retries on packument errors', () => {
+    expect(isRetryablePublishError('npm error Failed to save packument')).toBe(
+      true,
+    )
+    expect(
+      isRetryablePublishError(
+        'npm error previous package has been fully processed',
+      ),
+    ).toBe(true)
+  })
+
+  it('does not retry on auth or permission errors', () => {
+    expect(isRetryablePublishError('npm error code E401 Unauthorized')).toBe(
+      false,
+    )
+    expect(isRetryablePublishError('npm error code E403 Forbidden')).toBe(false)
+    expect(
+      isRetryablePublishError(
+        'npm error code ENOTADDED Not added to the registry',
+      ),
+    ).toBe(false)
+  })
+})

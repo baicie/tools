@@ -248,12 +248,15 @@ export async function runRelease(
   config: ReleaseConfig,
   options: ReleaseOptions,
 ): Promise<void> {
-  if (options.registry) {
-    config.publish = {
-      ...(config.publish ?? {}),
-      registry: options.registry,
-    }
-  }
+  const activeConfig: ReleaseConfig = options.registry
+    ? {
+        ...config,
+        publish: {
+          ...(config.publish ?? {}),
+          registry: options.registry,
+        },
+      }
+    : config
 
   if (options.publishOnly) {
     if (!options.version) {
@@ -265,46 +268,50 @@ export async function runRelease(
     }
 
     if (!options.skipBuild && !options.skipPrecheck) {
-      await runPrecheck(config, {
+      await runPrecheck(activeConfig, {
         strict: true,
         allowZero: false,
       })
     }
 
-    await runPublish(config, {
+    await runPublish(activeConfig, {
       version: options.version,
       tag: options.tag,
       registry: options.registry,
       dryRun: false,
-      skipExisting: config.publish?.skipExisting ?? true,
-      provenance: config.publish?.provenance ?? true,
+      skipExisting: activeConfig.publish?.skipExisting ?? true,
+      provenance: activeConfig.publish?.provenance ?? true,
     })
 
     return
   }
 
-  const version = await resolveReleaseVersion(config, options)
+  const version = await resolveReleaseVersion(activeConfig, options)
 
   if (!options.dryRun && !options.skipGit) {
-    await assertCleanGit()
+    await assertCleanGit(activeConfig.cwd)
   }
 
   await confirmRelease(version, options)
 
-  await prepareVersion(config, version)
+  await prepareVersion(activeConfig, version)
 
-  await run(config.packageManager ?? 'pnpm', ['install', '--lockfile-only'], {
-    cwd: config.cwd,
-  })
+  await run(
+    activeConfig.packageManager ?? 'pnpm',
+    ['install', '--lockfile-only'],
+    {
+      cwd: activeConfig.cwd,
+    },
+  )
 
   if (!options.skipPrecheck) {
-    await runPrecheck(config, {
+    await runPrecheck(activeConfig, {
       strict: true,
       allowZero: false,
     })
   }
 
-  await createReleasePlan(config, {
+  await createReleasePlan(activeConfig, {
     json: false,
     checkNpm: !options.dryRun,
     version,
@@ -315,13 +322,13 @@ export async function runRelease(
   const tag = resolveDistTag(version, options.tag)
 
   if (options.dryRun) {
-    await runPublish(config, {
+    await runPublish(activeConfig, {
       version,
       tag,
       registry: options.registry,
       dryRun: true,
-      skipExisting: config.publish?.skipExisting ?? true,
-      provenance: config.publish?.provenance ?? true,
+      skipExisting: activeConfig.publish?.skipExisting ?? true,
+      provenance: activeConfig.publish?.provenance ?? true,
     })
 
     console.log(colors.green('Release dry-run passed.'))
@@ -334,13 +341,13 @@ export async function runRelease(
   }
 
   if (options.publish) {
-    await runPublish(config, {
+    await runPublish(activeConfig, {
       version,
       tag,
       registry: options.registry,
       dryRun: false,
-      skipExisting: config.publish?.skipExisting ?? true,
-      provenance: config.publish?.provenance ?? true,
+      skipExisting: activeConfig.publish?.skipExisting ?? true,
+      provenance: activeConfig.publish?.provenance ?? true,
     })
   }
 
@@ -348,6 +355,7 @@ export async function runRelease(
     version,
     dryRun: false,
     skipGit: options.skipGit,
+    cwd: activeConfig.cwd,
   })
 
   console.log(colors.green(`Release prepared. CI will publish v${version}.`))

@@ -1,6 +1,17 @@
 import { exec } from 'tinyexec'
 import colors from 'picocolors'
 
+function redact(value: string, masks: Array<string | undefined> = []): string {
+  let next = value
+
+  for (const mask of masks) {
+    if (!mask) continue
+    next = next.split(mask).join('***')
+  }
+
+  return next
+}
+
 export async function run(
   command: string,
   args: string[],
@@ -10,9 +21,20 @@ export async function run(
     env?: NodeJS.ProcessEnv
     dryRun?: boolean
     reject?: boolean
+
+    /**
+     * Optional display label. Useful when args contain secrets.
+     */
+    label?: string
+
+    /**
+     * Sensitive values to redact from logs.
+     */
+    mask?: Array<string | undefined>
   } = {},
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const label = `${command} ${args.join(' ')}`
+  const rawLabel = options.label ?? `${command} ${args.join(' ')}`
+  const label = redact(rawLabel, options.mask)
 
   if (options.dryRun) {
     console.log(colors.blue(`[dry-run] ${label}`))

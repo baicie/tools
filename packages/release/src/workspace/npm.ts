@@ -50,10 +50,13 @@ function isRetryablePublishError(error: unknown): boolean {
   return (
     message.includes('E409') ||
     message.includes('409 Conflict') ||
-    message.includes('429') ||
-    message.includes('5xx') ||
+    /\b429\b/.test(message) ||
+    /\b5\d\d\b/.test(message) ||
     message.includes('ETIMEDOUT') ||
     message.includes('ECONNRESET') ||
+    message.includes('ECONNABORTED') ||
+    message.includes('EAI_AGAIN') ||
+    message.includes('ENOTFOUND') ||
     message.includes('Failed to save packument') ||
     message.includes('previous package has been fully processed')
   )

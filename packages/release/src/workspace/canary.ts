@@ -43,7 +43,27 @@ function getCanaryVersion(config: ReleaseConfig): string {
   return `${base.major}.${base.minor}.${base.patch}-${prefix}.${date}.${runNumber}.${runAttempt}.${shortSha}`
 }
 
+function getBranchFromGitHubEnv(): string | undefined {
+  if (process.env.GITHUB_HEAD_REF) return process.env.GITHUB_HEAD_REF
+  if (process.env.GITHUB_REF_NAME) return process.env.GITHUB_REF_NAME
+
+  const ref = process.env.GITHUB_REF
+  if (!ref) return undefined
+
+  if (ref.startsWith('refs/heads/')) {
+    return ref.slice('refs/heads/'.length)
+  }
+
+  return undefined
+}
+
 async function getCurrentBranch(config: ReleaseConfig): Promise<string> {
+  const envBranch = getBranchFromGitHubEnv()
+
+  if (envBranch) {
+    return envBranch
+  }
+
   const result = await run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
     cwd: config.cwd,
     stdio: 'pipe',
@@ -70,23 +90,32 @@ async function dispatchDownstream(
     version,
   }
 
-  await run('curl', [
-    '--fail-with-body',
-    '-X',
-    'POST',
-    '-H',
-    'Accept: application/vnd.github+json',
-    '-H',
-    `Authorization: Bearer ${token}`,
-    '-H',
-    'X-GitHub-Api-Version: 2022-11-28',
-    `https://api.github.com/repos/${dispatch.repository}/dispatches`,
-    '-d',
-    JSON.stringify({
-      event_type: dispatch.eventType,
-      client_payload: payload,
-    }),
-  ])
+  const url = `https://api.github.com/repos/${dispatch.repository}/dispatches`
+
+  await run(
+    'curl',
+    [
+      '--fail-with-body',
+      '-X',
+      'POST',
+      '-H',
+      'Accept: application/vnd.github+json',
+      '-H',
+      `Authorization: Bearer ${token}`,
+      '-H',
+      'X-GitHub-Api-Version: 2022-11-28',
+      url,
+      '-d',
+      JSON.stringify({
+        event_type: dispatch.eventType,
+        client_payload: payload,
+      }),
+    ],
+    {
+      mask: [token],
+      label: `curl --fail-with-body -X POST ${url}`,
+    },
+  )
 }
 
 export async function runCanary(
