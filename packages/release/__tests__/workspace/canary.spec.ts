@@ -1,17 +1,8 @@
 import { describe, expect, it } from 'vitest'
-
-function branchPatternToRegExp(pattern: string): RegExp {
-  const escaped = pattern
-    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '.*')
-    .replace(/\*/g, '[^/]*')
-
-  return new RegExp(`^${escaped}$`)
-}
-
-function branchMatches(branch: string, patterns: string[]): boolean {
-  return patterns.some(pattern => branchPatternToRegExp(pattern).test(branch))
-}
+import {
+  branchMatches,
+  branchPatternToRegExp,
+} from '../../src/workspace/canary'
 
 describe('branchPatternToRegExp', () => {
   it('exact match', () => {
@@ -19,21 +10,25 @@ describe('branchPatternToRegExp', () => {
     expect(branchPatternToRegExp('main').test('master')).toBe(false)
   })
 
-  it('supports single star wildcard', () => {
-    expect(branchPatternToRegExp('feat/*').test('feat/a')).toBe(true)
-    expect(branchPatternToRegExp('feat/*').test('feat/compiler')).toBe(true)
-    expect(branchPatternToRegExp('feat/*').test('feat/a/b')).toBe(false)
-    expect(branchPatternToRegExp('feat/*').test('fix/a')).toBe(false)
-  })
-
-  it('supports double star wildcard', () => {
+  it('double star matches recursive paths', () => {
     expect(branchPatternToRegExp('feat/**').test('feat/a')).toBe(true)
     expect(branchPatternToRegExp('feat/**').test('feat/a/b')).toBe(true)
     expect(branchPatternToRegExp('feat/**').test('feat/a/b/c')).toBe(true)
     expect(branchPatternToRegExp('fix/**').test('fix/compiler/attrs')).toBe(
       true,
     )
-    expect(branchPatternToRegExp('feat/**').test('fix/a')).toBe(false)
+  })
+
+  it('double star does not cross path boundaries', () => {
+    expect(branchPatternToRegExp('feat/**').test('featx/a')).toBe(false)
+    expect(branchPatternToRegExp('feat/**').test('feats/a')).toBe(false)
+  })
+
+  it('single star matches within one path segment', () => {
+    expect(branchPatternToRegExp('feat/*').test('feat/a')).toBe(true)
+    expect(branchPatternToRegExp('feat/*').test('feat/compiler')).toBe(true)
+    expect(branchPatternToRegExp('feat/*').test('feat/a/b')).toBe(false)
+    expect(branchPatternToRegExp('feat/*').test('fix/a')).toBe(false)
   })
 
   it('escapes regex metacharacters', () => {

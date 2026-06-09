@@ -155,4 +155,73 @@ describe('generateUnifiedChangelog', () => {
     const content = readFileSync(join(dir, 'HISTORY.md'), 'utf-8')
     expect(content).toContain('## 1.0.0')
   })
+
+  it('skips changeset with type none instead of adding to Fixes', async () => {
+    const changesets: ParsedChangeset[] = [
+      {
+        id: 'none-only',
+        file: '',
+        summary: 'Internal refactor with no user-facing changes',
+        releases: [{ name: '@zeus-js/core', type: 'none' }],
+      },
+      {
+        id: 'patch1',
+        file: '',
+        summary: 'Fix runtime error',
+        releases: [{ name: '@zeus-js/core', type: 'patch' }],
+      },
+    ]
+
+    await generateUnifiedChangelog(config, '1.0.0', changesets)
+
+    const content = readFileSync(join(dir, 'CHANGELOG.md'), 'utf-8')
+
+    expect(content).not.toContain('Internal refactor')
+    expect(content).not.toContain('Breaking Changes')
+    expect(content).not.toContain('Features')
+    expect(content).toContain('Fixes')
+    expect(content).toContain('Fix runtime error')
+  })
+
+  it('all-none changeset generates plain Fixes entry', async () => {
+    const changesets: ParsedChangeset[] = [
+      {
+        id: 'all-none',
+        file: '',
+        summary: 'This changeset only has type: none entries',
+        releases: [{ name: '@zeus-js/core', type: 'none' }],
+      },
+    ]
+
+    await generateUnifiedChangelog(config, '1.0.0', changesets)
+
+    const content = readFileSync(join(dir, 'CHANGELOG.md'), 'utf-8')
+
+    expect(content).toContain('Fixes')
+    expect(content).toContain('Release v1.0.0.')
+    expect(content).not.toContain('Internal refactor')
+  })
+
+  it('mixed none with major/minor ignores none in type selection', async () => {
+    const changesets: ParsedChangeset[] = [
+      {
+        id: 'mixed',
+        file: '',
+        summary: 'Major internal cleanup',
+        releases: [
+          { name: '@zeus-js/core', type: 'none' },
+          { name: '@zeus-js/core', type: 'major' },
+        ],
+      },
+    ]
+
+    await generateUnifiedChangelog(config, '2.0.0', changesets)
+
+    const content = readFileSync(join(dir, 'CHANGELOG.md'), 'utf-8')
+
+    expect(content).toContain('Breaking Changes')
+    expect(content).toContain('Major internal cleanup')
+    expect(content).not.toContain('Features')
+    expect(content).not.toContain('Fixes')
+  })
 })

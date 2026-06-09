@@ -72,16 +72,28 @@ async function getCurrentBranch(config: ReleaseConfig): Promise<string> {
   return result.stdout.trim()
 }
 
-function branchPatternToRegExp(pattern: string): RegExp {
-  const escaped = pattern
-    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*\*/g, '.*')
-    .replace(/\*/g, '[^/]*')
-
-  return new RegExp(`^${escaped}$`)
+function escapeRegExp(value: string): string {
+  return value.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function branchMatches(branch: string, patterns: string[]): boolean {
+export function branchPatternToRegExp(pattern: string): RegExp {
+  const doubleStar = '\0DOUBLE_STAR\0'
+  const singleStar = '\0SINGLE_STAR\0'
+
+  const escaped = escapeRegExp(
+    pattern.replace(/\*\*/g, doubleStar).replace(/\*/g, singleStar),
+  )
+
+  const source = escaped
+    .split(doubleStar)
+    .join('.*')
+    .split(singleStar)
+    .join('[^/]*')
+
+  return new RegExp(`^${source}$`)
+}
+
+export function branchMatches(branch: string, patterns: string[]): boolean {
   return patterns.some(pattern => branchPatternToRegExp(pattern).test(branch))
 }
 

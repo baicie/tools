@@ -9,15 +9,20 @@ import { resolve } from 'node:path'
 
 import { readText, writeText } from './fs'
 
+type ChangelogReleaseType = 'major' | 'minor' | 'patch'
+
 function getHighestReleaseType(
   releases: ParsedChangesetRelease[],
-): 'major' | 'minor' | 'patch' {
-  if (releases.some(item => item.type === 'major')) return 'major'
-  if (releases.some(item => item.type === 'minor')) return 'minor'
+): ChangelogReleaseType | undefined {
+  const effective = releases.filter(item => item.type !== 'none')
+
+  if (effective.length === 0) return undefined
+  if (effective.some(item => item.type === 'major')) return 'major'
+  if (effective.some(item => item.type === 'minor')) return 'minor'
   return 'patch'
 }
 
-function sectionTitle(type: 'major' | 'minor' | 'patch'): string {
+function sectionTitle(type: ChangelogReleaseType): string {
   switch (type) {
     case 'major':
       return 'Breaking Changes'
@@ -41,7 +46,7 @@ function formatSummary(summary: string): string {
 function buildEntry(version: string, changesets: ParsedChangeset[]): string {
   const date = new Date().toISOString().slice(0, 10)
 
-  const groups: Record<'major' | 'minor' | 'patch', string[]> = {
+  const groups: Record<ChangelogReleaseType, string[]> = {
     major: [],
     minor: [],
     patch: [],
@@ -52,6 +57,9 @@ function buildEntry(version: string, changesets: ParsedChangeset[]): string {
   } else {
     for (const changeset of changesets) {
       const type = getHighestReleaseType(changeset.releases)
+
+      if (!type) continue
+
       groups[type].push(formatSummary(changeset.summary))
     }
   }
@@ -68,6 +76,10 @@ function buildEntry(version: string, changesets: ParsedChangeset[]): string {
     }
 
     lines.push('')
+  }
+
+  if (lines.length === 2) {
+    lines.push('### Fixes', '', `- Release v${version}.`, '')
   }
 
   return lines.join('\n').trimEnd()
