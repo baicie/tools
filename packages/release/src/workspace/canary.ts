@@ -72,6 +72,19 @@ async function getCurrentBranch(config: ReleaseConfig): Promise<string> {
   return result.stdout.trim()
 }
 
+function branchPatternToRegExp(pattern: string): RegExp {
+  const escaped = pattern
+    .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*/g, '.*')
+    .replace(/\*/g, '[^/]*')
+
+  return new RegExp(`^${escaped}$`)
+}
+
+function branchMatches(branch: string, patterns: string[]): boolean {
+  return patterns.some(pattern => branchPatternToRegExp(pattern).test(branch))
+}
+
 async function dispatchDownstream(
   config: ReleaseConfig,
   version: string,
@@ -137,7 +150,7 @@ export async function runCanary(
   if (includeBranches && includeBranches.length > 0) {
     const branch = await getCurrentBranch(config)
 
-    if (!includeBranches.includes(branch)) {
+    if (!branchMatches(branch, includeBranches)) {
       throw new Error(
         `Canary release is not allowed on branch "${branch}". Allowed branches: ${includeBranches.join(', ')}`,
       )

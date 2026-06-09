@@ -278,10 +278,14 @@ export async function runRelease(
       version: options.version,
       tag: options.tag,
       registry: options.registry,
-      dryRun: false,
+      dryRun: options.dryRun,
       skipExisting: activeConfig.publish?.skipExisting ?? true,
       provenance: activeConfig.publish?.provenance ?? true,
     })
+
+    if (options.dryRun) {
+      console.log(colors.green('Publish-only dry-run passed.'))
+    }
 
     return
   }
