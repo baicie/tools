@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   existsSync,
   mkdirSync,
@@ -132,5 +132,98 @@ describe('restorePackageChangelogs', () => {
 
     expect(readFileSync(fileA, 'utf-8')).toBe(contentA)
     expect(readFileSync(fileB, 'utf-8')).toBe(contentB)
+  })
+})
+
+describe('runChangesetsFixedVersion failure recovery', () => {
+  let dir: string
+
+  beforeEach(() => {
+    dir = createTempDir()
+    mkdirSync(join(dir, 'packages', 'pkg-a'), { recursive: true })
+    mkdirSync(join(dir, '.changeset'), { recursive: true })
+  })
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true })
+    vi.restoreAllMocks()
+  })
+
+  it('restores existing package changelog when changeset version fails', async () => {
+    const fileA = join(dir, 'packages', 'pkg-a', 'CHANGELOG.md')
+    const originalContent = '# Changelog\n\n- Important entry.'
+    writeFileSync(fileA, originalContent)
+
+    const config = makeReleaseConfig(dir)
+    const afterVersion = vi.fn()
+
+    vi.spyOn(
+      await import('../../src/workspace/exec'),
+      'run',
+    ).mockImplementation(async (cmd: string) => {
+      if (cmd === 'pnpm') {
+        throw new Error('changeset version failed')
+      }
+      return { exitCode: 0, stdout: '', stderr: '' }
+    })
+
+    const { runChangesetsFixedVersion } =
+      await import('../../src/workspace/changesets')
+
+    await expect(
+      runChangesetsFixedVersion({ ...config, afterVersion }, '1.0.0'),
+    ).rejects.toThrow('changeset version failed')
+
+    expect(readFileSync(fileA, 'utf-8')).toBe(originalContent)
+    expect(afterVersion).not.toHaveBeenCalled()
+  })
+
+  it('removes generated package changelog when changeset version fails', async () => {
+    const fileA = join(dir, 'packages', 'pkg-a', 'CHANGELOG.md')
+
+    const config = makeReleaseConfig(dir)
+
+    vi.spyOn(
+      await import('../../src/workspace/exec'),
+      'run',
+    ).mockImplementation(async (cmd: string) => {
+      if (cmd === 'pnpm') {
+        throw new Error('changeset version failed')
+      }
+      return { exitCode: 0, stdout: '', stderr: '' }
+    })
+
+    const { runChangesetsFixedVersion } =
+      await import('../../src/workspace/changesets')
+
+    await expect(runChangesetsFixedVersion(config, '1.0.0')).rejects.toThrow(
+      'changeset version failed',
+    )
+
+    expect(existsSync(fileA)).toBe(false)
+  })
+
+  it('removes synthetic changeset file even when flow fails', async () => {
+    const config = makeReleaseConfig(dir)
+
+    vi.spyOn(
+      await import('../../src/workspace/exec'),
+      'run',
+    ).mockImplementation(async (cmd: string) => {
+      if (cmd === 'pnpm') {
+        throw new Error('changeset version failed')
+      }
+      return { exitCode: 0, stdout: '', stderr: '' }
+    })
+
+    const { runChangesetsFixedVersion } =
+      await import('../../src/workspace/changesets')
+
+    await expect(runChangesetsFixedVersion(config, '1.0.0')).rejects.toThrow(
+      'changeset version failed',
+    )
+
+    const syntheticFile = join(dir, '.changeset', 'release.md')
+    expect(existsSync(syntheticFile)).toBe(false)
   })
 })

@@ -296,16 +296,16 @@ export async function runChangesetsFixedVersion(
     ) {
       await generateUnifiedChangelog(config, version, changesets)
     }
+  } finally {
+    removeSyntheticChangesetFile(syntheticChangesetFile)
 
     if (packageChangelogSnapshot) {
       restorePackageChangelogs(packageChangelogSnapshot)
     }
-
-    await config.afterVersion?.({
-      version,
-      config,
-    })
-  } finally {
-    removeSyntheticChangesetFile(syntheticChangesetFile)
   }
+
+  await config.afterVersion?.({
+    version,
+    config,
+  })
 }
