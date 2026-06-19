@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Baicie Scripts'
+  short_description: 'Use @baicie/scripts for commit checks.'
+  default_prompt: '帮我接入或维护 @baicie/scripts 的提交信息校验能力。'
