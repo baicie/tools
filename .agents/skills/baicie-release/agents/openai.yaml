@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Baicie Release'
+  short_description: 'Use @baicie/release for fixed-version pnpm monorepo releases.'
+  default_prompt: '帮我为 pnpm monorepo 接入或排查 @baicie/release 发版流程。'
