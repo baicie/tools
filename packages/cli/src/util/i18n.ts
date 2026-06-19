@@ -37,6 +37,7 @@ i18next.init({
             packageManager: 'Select package manager',
             templateSource: 'Select template source',
             template: 'Select template',
+            templateSearch: 'Type to search templates',
             gitInit: 'Initialize Git repository?',
             autoInstall: 'Auto install dependencies?',
             remoteRepo: 'Enter remote repository URL',
@@ -140,6 +141,7 @@ i18next.init({
             packageManager: '请选择包管理工具',
             templateSource: '请选择模板源',
             template: '请选择模板',
+            templateSearch: '输入关键字搜索模板',
             gitInit: '是否需要初始化 Git 仓库?',
             autoInstall: '是否需要自动安装依赖?',
             remoteRepo:

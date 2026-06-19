@@ -1,5 +1,6 @@
 import fs from 'fs-extra'
-import { confirm, select, text } from '@clack/prompts'
+import { autocomplete, confirm, select, text } from '@clack/prompts'
+import type { Option } from '@clack/prompts'
 import {
   DEFAULT_TEMPLATE_SRC,
   DEFAULT_TEMPLATE_SRC_GITEE,
@@ -226,9 +227,25 @@ export async function askTemplate(
     })),
   ]
 
-  const value = await select({
+  const value = await autocomplete({
     message: t('command.create.template'),
+    placeholder: t('command.create.templateSearch'),
     options: choices,
+    filter: (keyword: string, option: Option<string>): boolean => {
+      const searchValue = keyword.trim().toLowerCase()
+
+      if (searchValue === '') {
+        return true
+      }
+
+      const label = typeof option.label === 'string' ? option.label : ''
+      const value = String(option.value)
+
+      return (
+        label.toLowerCase().includes(searchValue) ||
+        value.toLowerCase().includes(searchValue)
+      )
+    },
   })
 
   if (typeof value === 'symbol') {
