@@ -1,8 +1,12 @@
 import {
+  backupAppJson,
+  buildAppJsonPatch,
   defineReleaseConfig,
   generateChangelog,
   publish,
   release,
+  restoreAppJson,
+  runAppJsonSyncFromConfig,
   runCanaryCli,
   runPrecheckCli,
   runPublishCli,
@@ -10,6 +14,7 @@ import {
   runReleaseCli,
   runReleasePlanCli,
   runVersionPackagesCli,
+  syncAppJsonVersion,
 } from '../src/index'
 
 describe('@baicie/release public API', () => {
@@ -28,6 +33,14 @@ describe('@baicie/release public API', () => {
     expect(typeof runReleasePlanCli).toBe('function')
     expect(typeof runVersionPackagesCli).toBe('function')
     expect(typeof runCanaryCli).toBe('function')
+  })
+
+  it('adds app.json sync exports', () => {
+    expect(typeof syncAppJsonVersion).toBe('function')
+    expect(typeof runAppJsonSyncFromConfig).toBe('function')
+    expect(typeof backupAppJson).toBe('function')
+    expect(typeof restoreAppJson).toBe('function')
+    expect(typeof buildAppJsonPatch).toBe('function')
   })
 
   it('merges workspace defaults without overriding user config', () => {

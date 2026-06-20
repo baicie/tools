@@ -13,6 +13,7 @@ import semver from 'semver'
 
 import { readJson, writeJson } from './fs'
 import { listPublishablePackages } from './packages'
+import { runAppJsonSyncFromConfig } from './appjson'
 
 function sortPackageJson(pkg: PackageJsonLike): PackageJsonLike {
   const preferred = [
@@ -127,6 +128,8 @@ export async function versionPackages(
 
   if (!options.dryRun) {
     await updateRootPackageVersion(config, options.version)
+
+    await runAppJsonSyncFromConfig(config, options.version, false)
 
     await config.afterVersion?.({
       version: options.version,

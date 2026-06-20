@@ -17,6 +17,11 @@ import {
   step,
   updateVersion,
 } from './utils'
+import {
+  clearAppJsonRecord,
+  rollbackAppJsonRecord,
+  syncAppJsonVersion,
+} from './workspace/appjson'
 import type { release as def } from './types.d.ts'
 import { publint } from 'publint'
 import { formatMessage } from 'publint/utils'
@@ -28,6 +33,7 @@ export const release: typeof def = async ({
   generateChangelog,
   toTag,
   getPkgDir,
+  appJson,
 }) => {
   let targetVersion: string | undefined
   let tag: string | undefined
@@ -120,6 +126,19 @@ export const release: typeof def = async ({
     step(`\nUpdating package version(${colors.yellow(selectedPkg)})...`)
     updateVersion(pkgPath, targetVersion)
     backupVersion(pkgPath, originalVersion, targetVersion)
+
+    if (appJson?.enabled) {
+      try {
+        await syncAppJsonVersion({
+          cwd: process.cwd(),
+          config: appJson,
+          version: targetVersion,
+        })
+      } catch (error) {
+        throw new Error(`app.json sync failed: ${(error as Error).message}`)
+      }
+    }
+
     if (generateChangelog) {
       await generateChangelog(selectedPkg, targetVersion)
     }
@@ -139,9 +158,11 @@ export const release: typeof def = async ({
     console.error(colors.red(`\nRelease failed: ${(error as Error).message}`))
     console.log(colors.yellow('\nRolling back version changes...'))
     rollbackVersion()
+    rollbackAppJsonRecord()
     throw error
   } finally {
     clearBackups()
+    clearAppJsonRecord()
   }
 
   console.log()

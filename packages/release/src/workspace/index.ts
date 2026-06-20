@@ -6,6 +6,20 @@ export { runReadinessCli } from './readiness'
 export { runReleaseCli } from './release'
 export { runReleasePlanCli } from './plan'
 export { runVersionPackagesCli } from './version'
+export {
+  backupAppJson,
+  buildAppJsonPatch,
+  restoreAppJson,
+  runAppJsonSyncFromConfig,
+  syncAppJsonVersion,
+} from './appjson'
+
+export type {
+  AppJsonConfig,
+  AppJsonLike,
+  SyncAppJsonOptions,
+  SyncAppJsonResult,
+} from './appjson'
 
 export type {
   CanaryOptions,

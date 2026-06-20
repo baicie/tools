@@ -15,7 +15,8 @@
 - 支持 canary 版本；
 - 支持发布失败后重新执行 `publishOnly`；
 - 支持 CI 中 tag 触发稳定发版；
-- 支持 canary 发布后触发下游仓库兼容检查。
+- 支持 canary 发布后触发下游仓库兼容检查；
+- 支持 Expo `app.json` 的 `expo.version` / `expo.android.versionCode` 同步。
 
 ---
 
@@ -949,6 +950,63 @@ pnpm release --publishOnly 0.1.0 --skipBuild
 git diff
 git checkout -- .
 ```
+
+---
+
+## 十九、Expo app.json 同步
+
+`versionPackages` 末尾会调用 `runAppJsonSyncFromConfig`，把 version 写入 `app.json`，让 Expo/EAS 构建出来的版本号和 `package.json` 保持一致。
+
+### 配置
+
+```ts
+// release.config.ts
+import { defineReleaseConfig } from '@baicie/release'
+
+export default defineReleaseConfig({
+  repo: 'baicie/clash-helper',
+  repositoryUrl: 'https://github.com/baicie/clash-helper',
+  mode: 'workspace-fixed',
+  workspace: { roots: ['packages'] },
+
+  appJson: {
+    enabled: true,
+    file: 'app.json',
+    versionNameStrategy: 'exact',
+    versionCode: 'auto',
+    writeIosBuildNumber: false,
+  },
+})
+```
+
+字段说明：
+
+| 字段                  | 类型                            | 默认         | 含义                                                                                               |
+| --------------------- | ------------------------------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| `enabled`             | `boolean`                       | `false`      | 是否启用同步。`false` 时整个 sync 流程为 no-op                                                     |
+| `file`                | `string`                        | `'app.json'` | app.json 路径，相对 cwd                                                                            |
+| `versionNameStrategy` | `'exact' \| 'strip-prerelease'` | `'exact'`    | `exact` 原样写入 `0.0.0-beta.2`；`strip-prerelease` 去掉预发布后缀后写入 `0.0.0`                   |
+| `versionCode`         | `number \| 'auto' \| undefined` | `undefined`  | 不传则不动 `expo.android.versionCode`；传数字直接覆盖；传 `'auto'` 在当前值基础上 +1（要求已存在） |
+| `writeIosBuildNumber` | `boolean`                       | `false`      | 是否把 `expo.ios.buildNumber` 同步为 versionName                                                   |
+
+### 行为
+
+- 文件不存在时直接跳过，不报错。
+- `dry-run` 模式下只计算 patch、不写盘、不生成 `.bak`。
+- 写盘前会把原文件复制为 `app.json.bak`，失败时还原回 `.bak`。
+- 同步失败会抛错进入 `release.ts` 的 try/catch 流程，自动回滚。
+- `versionCode='auto'` 而当前没有 `expo.android.versionCode` 时抛错（避免静默重置为 0）。
+
+### 与 EAS `autoIncrement` 配合
+
+如果 `eas.json` 启用了 `autoIncrement: true`，EAS 会自动累加 `versionCode`，和 `appJson.versionCode='auto'` 重复计数。两种选择：
+
+1. **让 EAS 控制 versionCode**：`appJson.versionCode` 不传，只同步 `expo.version`。
+2. **让 release 工具控制 versionCode**：`appJson.versionCode='auto'`，`eas.json` 里把 `autoIncrement` 设为 `false`。
+
+### 老 `release()` API
+
+`src/release.ts` 暴露的 legacy `release(options)` 也支持同样的 `appJson` 字段，写入失败会触发整个 release 流程的回滚。
 
 ---
 

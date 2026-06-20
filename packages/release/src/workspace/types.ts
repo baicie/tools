@@ -99,6 +99,40 @@ export interface ReleasePlan {
   packages: ReleasePlanItem[]
 }
 
+export interface AppJsonConfig {
+  /**
+   * 是否启用 Expo app.json 同步。默认 false，保持向后兼容。
+   */
+  enabled?: boolean
+
+  /**
+   * app.json 路径。相对于 cwd。默认 'app.json'。
+   * 当文件不存在时跳过同步，不抛错。
+   */
+  file?: string
+
+  /**
+   * versionName 写入策略。
+   * - 'exact'：原样写入 package.json 的 version（如 0.0.0-beta.2）
+   * - 'strip-prerelease'：去掉预发布后缀（0.0.0-beta.2 -> 0.0.0）
+   * 默认 'exact'。
+   */
+  versionNameStrategy?: 'exact' | 'strip-prerelease'
+
+  /**
+   * versionCode 处理：
+   * - 不传：跳过 expo.android.versionCode 字段，避免和 EAS autoIncrement 冲突。
+   * - 传 number：写入该数字；若是 NaN/undefined 则跳过。
+   * - 传 'auto'：读取当前 expo.android.versionCode 累加 1（必须存在，否则抛错）。
+   */
+  versionCode?: number | 'auto'
+
+  /**
+   * iOS buildNumber 是否同步写一份与 versionName 相同。默认 false。
+   */
+  writeIosBuildNumber?: boolean
+}
+
 export interface ReleaseConfig {
   repo: string
   repositoryUrl: string
@@ -134,6 +168,13 @@ export interface ReleaseConfig {
    * 根 changelog。默认 CHANGELOG.md。
    */
   changelogFile?: string | false
+
+  /**
+   * Expo app.json 同步配置。
+   * 启用后会在 versionPackages 末尾把 version 写入 app.json 的 expo.version，
+   * 并按需更新 expo.android.versionCode 与 ios.buildNumber。
+   */
+  appJson?: AppJsonConfig
 
   changesets?: {
     configFile?: string

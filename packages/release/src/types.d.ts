@@ -28,4 +28,16 @@ export declare function release(options: {
   generateChangelog?: (pkg: string, version: string) => void | Promise<void>
   toTag: (pkg: string, version: string) => string
   getPkgDir?: (pkg: string) => string
+  /**
+   * 同步到 app.json 的版本相关字段。
+   * 启用后会在 release() 末尾写入 app.json 的 expo.version，
+   * 可选同步 expo.android.versionCode 与 ios.buildNumber。
+   */
+  appJson?: {
+    enabled?: boolean
+    file?: string
+    versionNameStrategy?: 'exact' | 'strip-prerelease'
+    versionCode?: number | 'auto'
+    writeIosBuildNumber?: boolean
+  }
 }): Promise<void>

@@ -11,6 +11,18 @@ export {
   runReleaseCli,
   runReleasePlanCli,
   runVersionPackagesCli,
+  backupAppJson,
+  buildAppJsonPatch,
+  restoreAppJson,
+  runAppJsonSyncFromConfig,
+  syncAppJsonVersion,
+} from './workspace'
+
+export type {
+  AppJsonConfig,
+  AppJsonLike,
+  SyncAppJsonOptions,
+  SyncAppJsonResult,
 } from './workspace'
 
 export type {
