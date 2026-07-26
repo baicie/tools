@@ -13,6 +13,8 @@ pub struct DiffItem {
 }
 
 /// 计算两个JSON字符串的差异，直接返回差异对象数组
+// napi-rs owns JavaScript strings at the ABI boundary.
+#[allow(clippy::needless_pass_by_value)]
 #[napi]
 pub fn diff_json(old_json: String, new_json: String) -> Result<Vec<DiffItem>> {
   let diff = JsonDiff::diff_str(&old_json, &new_json)
