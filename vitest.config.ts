@@ -1,6 +1,8 @@
 import { configDefaults, defineConfig } from 'vitest/config'
 import { entries } from './scripts/aliases.js'
 
+const isCi = Boolean(process.env.CI)
+
 const unitIgnore = [
   '**/e2e/**',
   'packages/cli/__tests__/e2e/**',
@@ -19,6 +21,7 @@ export default defineConfig({
   test: {
     globals: true,
     pool: 'threads',
+    fileParallelism: !isCi,
     setupFiles: 'scripts/setup-vitest.ts',
     sequence: {
       hooks: 'list',
