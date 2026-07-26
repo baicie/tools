@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import fs from 'fs-extra'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -19,11 +19,14 @@ import { createLogger } from '../../src/util/logger'
 const logger = createLogger({ debug: false, prefix: '[test-docs]' })
 
 describe('docs command helpers', () => {
-  const testDir = join(tmpdir(), 'baicie-cli-docs-command-test')
+  let testDir: string
+
+  beforeEach(() => {
+    testDir = fs.mkdtempSync(join(tmpdir(), 'baicie-cli-docs-command-test-'))
+  })
 
   afterEach(() => {
     fs.removeSync(testDir)
-    process.exitCode = undefined
   })
 
   it('initializes docs root and manifest', () => {
@@ -37,6 +40,7 @@ describe('docs command helpers', () => {
     const manifest = readManifest(join(testDir, 'docs/project'))
     expect(manifest.schemaVersion).toBe(1)
     expect(manifest.documents).toEqual([])
+    expect(checkDocs(testDir, {}, logger)).toBe(true)
   })
 
   it('creates a phase document and updates manifest', () => {
@@ -87,10 +91,8 @@ describe('docs command helpers', () => {
     expect(manifest.documents[0].type).toBe('bug')
   })
 
-  it('marks check as failed when docs root is missing', () => {
-    checkDocs(testDir, {}, logger)
-
-    expect(process.exitCode).toBe(1)
+  it('returns false when docs root is missing', () => {
+    expect(checkDocs(testDir, {}, logger)).toBe(false)
   })
 
   it('creates an AI context document for a phase', () => {
@@ -171,8 +173,6 @@ describe('docs command helpers', () => {
       logger,
     )
 
-    showDocs(testDir, 'v1', {}, logger)
-
-    expect(process.exitCode).toBeUndefined()
+    expect(() => showDocs(testDir, 'v1', {}, logger)).not.toThrow()
   })
 })

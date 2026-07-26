@@ -84,6 +84,27 @@ interface RunIfNotDry {
 
 export const runIfNotDry: RunIfNotDry = isDryRun ? dryRun : run
 
+interface CommandResult {
+  stdout?: string
+  exitCode?: number
+}
+
+interface CommandRunner {
+  (
+    bin: string,
+    args: string[],
+    opts?: Partial<TinyExecOptions>,
+  ): Promise<CommandResult>
+}
+
+interface CommandExecutor {
+  (
+    bin: string,
+    args: string[],
+    opts?: Partial<TinyExecOptions>,
+  ): Promise<unknown>
+}
+
 export function step(msg: string): void {
   return console.log(colors.cyan(msg))
 }
@@ -237,9 +258,10 @@ export async function publishPackage(
 
 export async function getActiveVersion(
   npmName: string,
+  execute: CommandRunner = run,
 ): Promise<string | undefined> {
   try {
-    const { stdout } = await run(
+    const { stdout } = await execute(
       'npm',
       ['info', npmName, 'version', '--json'],
       { throwOnError: false, nodeOptions: { stdio: 'pipe' } },
@@ -255,25 +277,34 @@ export async function getActiveVersion(
   }
 }
 
-export async function hasTag(tag: string): Promise<boolean> {
-  const { exitCode } = await run('git', ['rev-parse', `refs/tags/${tag}`], {
+export async function hasTag(
+  tag: string,
+  execute: CommandRunner = run,
+): Promise<boolean> {
+  const { exitCode } = await execute('git', ['rev-parse', `refs/tags/${tag}`], {
     throwOnError: false,
     nodeOptions: { stdio: 'pipe' },
   })
   return exitCode === 0
 }
 
-export async function deleteTag(tag: string): Promise<void> {
+export async function deleteTag(
+  tag: string,
+  execute: CommandExecutor = runIfNotDry,
+): Promise<void> {
   try {
-    await runIfNotDry('git', ['tag', '-d', tag])
+    await execute('git', ['tag', '-d', tag])
   } catch {
     // Tag may not exist, ignore error
   }
 }
 
-export async function deleteRemoteTag(tag: string): Promise<void> {
+export async function deleteRemoteTag(
+  tag: string,
+  execute: CommandExecutor = runIfNotDry,
+): Promise<void> {
   try {
-    await runIfNotDry('git', ['push', 'origin', '--delete', `refs/tags/${tag}`])
+    await execute('git', ['push', 'origin', '--delete', `refs/tags/${tag}`])
   } catch {
     // Tag may not exist on remote, ignore error
   }

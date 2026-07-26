@@ -3,13 +3,13 @@ import osLocale from 'os-locale'
 
 export type Locale = 'zh-CN' | 'en-US'
 
+export const resolveLocale = (locale: string): Locale => {
+  return locale.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US'
+}
+
 // 获取系统语言
 const getSystemLocale = (): Locale => {
-  const lang = osLocale()
-  if (lang.startsWith('zh-CN') || lang.startsWith('zh-CN')) {
-    return 'zh-CN'
-  }
-  return 'en-US'
+  return resolveLocale(osLocale())
 }
 
 // 初始化 i18next
@@ -97,7 +97,7 @@ i18next.init({
         },
         exists: {
           title: 'Directory already exists',
-          message: '{dir} already exists. What to do?',
+          message: '{{dir}} already exists. What to do?',
         },
         info: {
           userInterrupted: 'Detected user interruption, exiting...',
@@ -185,9 +185,9 @@ i18next.init({
           cancelTemplateSource: '取消选择模板源',
           cancelTemplate: '取消选择模板',
           cancelAutoInstall: '取消选择自动安装',
-          createFailed: '创建项目失败：{reason}',
-          pkgFailed: '处理 package.json 失败：{reason}',
-          templateNotFound: '找不到模板{sourcePath}',
+          createFailed: '创建项目失败：{{reason}}',
+          pkgFailed: '处理 package.json 失败：{{reason}}',
+          templateNotFound: '找不到模板：{{sourcePath}}',
           invalidRepo: '请输入有效的仓库地址',
           invalidGitRepo: '请输入有效的 Git 仓库地址',
         },

@@ -1,4 +1,5 @@
 dist
+.agents
 pnpm-lock.yaml
 CHANGELOG*.md
 target

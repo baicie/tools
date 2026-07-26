@@ -98,16 +98,12 @@ describe('snapshotPackageChangelogs', () => {
     writeFileSync(fileA, originalContent)
 
     const snapshot = snapshotPackageChangelogs(makeReleaseConfig(dir))
-    const found = Array.from(snapshot.entries()).find(([f]) =>
-      f.endsWith('pkg-a/CHANGELOG.md'),
-    )
+    const item = snapshot.get(fileA)
 
-    expect(found).toBeDefined()
+    expect(item).toBeDefined()
 
-    const [, item] = found!
-
-    expect(item.existed).toBe(true)
-    expect(item.content).toBe(originalContent)
+    expect(item!.existed).toBe(true)
+    expect(item!.content).toBe(originalContent)
   })
 })
 
