@@ -114,7 +114,9 @@ export function dispatchDocsCommand(
   }
 
   if (command === 'check') {
-    checkDocs(cwd, docsOptions, logger)
+    if (!checkDocs(cwd, docsOptions, logger)) {
+      process.exitCode = 1
+    }
     return
   }
 
@@ -310,7 +312,7 @@ export function checkDocs(
   cwd: string,
   options: DocsCommandOptions,
   logger: Logger,
-): void {
+): boolean {
   const rootPath = resolveDocsRoot(cwd, options.root)
   const result = checkManifest(rootPath)
 
@@ -318,11 +320,11 @@ export function checkDocs(
   result.warnings.forEach(warning => logger.warn(warning))
 
   if (result.errors.length > 0) {
-    process.exitCode = 1
-    return
+    return false
   }
 
   logger.success('docs check passed')
+  return true
 }
 
 export function reindexDocs(
