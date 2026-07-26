@@ -44,14 +44,14 @@ export async function npmVersionExists(
   return result.exitCode === 0
 }
 
-function isRetryablePublishError(error: unknown): boolean {
+export function isRetryablePublishError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error)
 
   return (
     message.includes('E409') ||
     message.includes('409 Conflict') ||
-    /\b429\b/.test(message) ||
-    /\b5\d\d\b/.test(message) ||
+    /\bE?429\b/i.test(message) ||
+    /\bE?5\d\d\b/i.test(message) ||
     message.includes('ETIMEDOUT') ||
     message.includes('ECONNRESET') ||
     message.includes('ECONNABORTED') ||

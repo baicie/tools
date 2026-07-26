@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   backupVersion,
   clearBackups,
@@ -324,45 +324,60 @@ describe('getVersionChoices', () => {
 })
 
 describe('hasTag', () => {
-  it('should return boolean', async () => {
-    const result = await hasTag('nonexistent-tag-12345-' + Date.now())
-    expect(typeof result).toBe('boolean')
+  it('returns true when the tag exists', async () => {
+    const execute = vi.fn().mockResolvedValue({ exitCode: 0 })
+
+    await expect(hasTag('v1.0.0', execute)).resolves.toBe(true)
   })
 
-  it('should return false for nonexistent tag', async () => {
-    const result = await hasTag('nonexistent-tag-xyz-' + Date.now() + '-12345')
-    expect(result).toBe(false)
+  it('returns false when the tag does not exist', async () => {
+    const execute = vi.fn().mockResolvedValue({ exitCode: 1 })
+
+    await expect(hasTag('missing-tag', execute)).resolves.toBe(false)
   })
 })
 
 describe('deleteTag', () => {
-  it('should handle nonexistent tag gracefully', async () => {
-    await expect(
-      deleteTag('nonexistent-tag-xyz-' + Date.now()),
-    ).resolves.not.toThrow()
+  it('handles a missing tag without throwing', async () => {
+    const execute = vi.fn().mockRejectedValue(new Error('tag not found'))
+
+    await expect(deleteTag('missing-tag', execute)).resolves.toBeUndefined()
+    expect(execute).toHaveBeenCalledWith('git', ['tag', '-d', 'missing-tag'])
   })
 })
 
 describe('deleteRemoteTag', () => {
-  it('should handle nonexistent remote tag gracefully', async () => {
+  it('handles a missing remote tag without throwing', async () => {
+    const execute = vi.fn().mockRejectedValue(new Error('remote tag not found'))
+
     await expect(
-      deleteRemoteTag('nonexistent-remote-tag-' + Date.now()),
-    ).resolves.not.toThrow()
+      deleteRemoteTag('missing-tag', execute),
+    ).resolves.toBeUndefined()
+    expect(execute).toHaveBeenCalledWith('git', [
+      'push',
+      'origin',
+      '--delete',
+      'refs/tags/missing-tag',
+    ])
   })
 })
 
 describe('getActiveVersion', () => {
-  it('should return string or undefined', async () => {
-    const result = await getActiveVersion(
-      'nonexistent-package-xyz-' + Date.now() + '-12345-abc',
+  it('returns the published version', async () => {
+    const execute = vi.fn().mockResolvedValue({ stdout: '"1.2.3"' })
+
+    await expect(getActiveVersion('example-package', execute)).resolves.toBe(
+      '1.2.3',
     )
-    expect(result === undefined || typeof result === 'string').toBe(true)
   })
 
-  it('should return undefined for nonexistent package', async () => {
-    const result = await getActiveVersion(
-      'nonexistent-npm-package-xyz-' + Date.now() + '-12345-abc-def',
-    )
-    expect(result).toBeUndefined()
+  it('returns undefined for a missing package', async () => {
+    const execute = vi
+      .fn()
+      .mockResolvedValue({ stdout: '{"error":{"code":"E404"}}' })
+
+    await expect(
+      getActiveVersion('missing-package', execute),
+    ).resolves.toBeUndefined()
   })
 })

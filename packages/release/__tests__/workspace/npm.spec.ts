@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { resolveDistTag } from '../../src/workspace/npm'
+import {
+  isRetryablePublishError,
+  resolveDistTag,
+} from '../../src/workspace/npm'
 
 describe('resolveDistTag', () => {
   it('returns latest for stable versions', () => {
@@ -42,31 +45,12 @@ describe('resolveDistTag', () => {
     expect(resolveDistTag('1.0.0-alpha.1', 'custom')).toBe('custom')
   })
 
-  it('prioritzes canary check over alpha when both match', () => {
+  it('prioritizes canary check over alpha when both match', () => {
     expect(resolveDistTag('1.0.0-canary.alpha')).toBe('canary')
   })
 })
 
 describe('isRetryablePublishError', () => {
-  // Expose via the retry path in publishOnePackage by mocking run()
-  // Here we test the error message patterns that trigger retries
-
-  function isRetryablePublishError(message: string): boolean {
-    return (
-      message.includes('E409') ||
-      message.includes('409 Conflict') ||
-      /\b429\b/.test(message) ||
-      /\b5\d\d\b/.test(message) ||
-      message.includes('ETIMEDOUT') ||
-      message.includes('ECONNRESET') ||
-      message.includes('ECONNABORTED') ||
-      message.includes('EAI_AGAIN') ||
-      message.includes('ENOTFOUND') ||
-      message.includes('Failed to save packument') ||
-      message.includes('previous package has been fully processed')
-    )
-  }
-
   it('retries on 5xx HTTP errors', () => {
     expect(isRetryablePublishError('npm error code E500')).toBe(true)
     expect(isRetryablePublishError('npm error code 502')).toBe(true)
