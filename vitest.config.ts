@@ -51,8 +51,11 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'e2e',
-          environment: 'jsdom',
-          include: ['packages/tools/__tests__/e2e/*.spec.ts'],
+          environment: 'node',
+          include: [
+            'packages/tools/__tests__/e2e/*.spec.ts',
+            'packages/cli/__tests__/e2e/*.spec.ts',
+          ],
         },
       },
       {

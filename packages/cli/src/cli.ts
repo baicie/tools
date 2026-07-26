@@ -8,7 +8,6 @@ import { registerDocsCommands } from './docs/commands'
 import type { IPkgOptions } from './pkg'
 import { pkg } from './pkg'
 import type { IProjectConf } from './steps'
-import { DEFAULT_TEMPLATE_SRC } from './util'
 import { CancelError } from './util/cancel'
 import type { Locale } from './util/i18n'
 import { setLocale, t } from './util/i18n'
@@ -91,19 +90,16 @@ cli
 cli
   .command('[root]', 'start a new project')
   .option('-des, --description <description>', 'description of the project')
-  .option('-n, --npm <npm>', 'npm of the project', { default: 'pnpm' })
+  .option('-n, --npm <npm>', 'npm of the project')
   .option(
     '-ts, --template-source <template-source>',
     'template source of the project',
-    {
-      default: DEFAULT_TEMPLATE_SRC,
-    },
   )
   .option('-t, --template <template>', 'template of the project')
-  .option('-i, --auto-install [auto-install]', 'auto install of the project', {
+  .option('-i, --auto-install', 'auto install project dependencies', {
     default: false,
   })
-  .option('-gi, --git-init [git-init]', 'git init of the project', {
+  .option('-gi, --git-init', 'initialize a Git repository', {
     default: false,
   })
   .option('-gr, --git-remote <git-remote>', 'git remote of the project')
