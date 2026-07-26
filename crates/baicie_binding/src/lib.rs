@@ -15,6 +15,8 @@ pub struct DiffItem {
 /// 计算两个JSON字符串的差异，直接返回差异对象数组
 #[napi]
 pub fn diff_json(old_json: String, new_json: String) -> Result<Vec<DiffItem>> {
+  let old_json = old_json.into_boxed_str();
+  let new_json = new_json.into_boxed_str();
   let diff = JsonDiff::diff_str(&old_json, &new_json)
     .map_err(|e| Error::from_reason(format!("JSON diff error: {e}")))?;
 

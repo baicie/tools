@@ -31,6 +31,24 @@ jobs:
       - name: Run unit tests
         run: pnpm run test-unit
 
+      - name: Run CLI end-to-end tests
+        run: pnpm run test-e2e
+
+  release-dry-run:
+    if: ${{ inputs.changed && inputs.os == 'ubuntu-latest' }}
+    name: Release Dry Run
+    runs-on: ${{ inputs.os }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - uses: oxc-project/setup-node@141eb77546de6702f92d320926403fe3f9f6a6f2 # v1.0.5
+
+      - name: Build and pack release packages
+        run: pnpm run release:dry-run
+
   lint-and-test-dts:
     if: ${{ inputs.changed }}
     name: Lint and Test DTS

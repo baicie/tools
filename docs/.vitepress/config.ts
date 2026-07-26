@@ -7,6 +7,8 @@ export default defineConfig({
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
+      { text: 'Curated templates', link: '/cli/upstream-templates' },
+      { text: 'Release dry run', link: '/release/dry-run' },
       { text: '首页', link: '/' },
       { text: 'CLI', link: '/cli/' },
       { text: 'Pkg', link: '/pkg/' },

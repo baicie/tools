@@ -24,21 +24,20 @@ export async function createFiles(conf: IProjectConf): Promise<string[]> {
     excludes,
   )
 
-  // 可以换成同步
-  files.map(async file => {
-    if (!conf.sourcePath || !conf.targetPath) return
-    const sourcePath = path.join(conf.sourcePath, file)
-    const targetPath = path.join(conf.targetPath, file)
+  return Promise.all(
+    files.map(async file => {
+      if (!conf.sourcePath || !conf.targetPath) return ''
 
-    if (!fs.existsSync(path.dirname(targetPath)))
-      fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+      const sourcePath = path.join(conf.sourcePath, file)
+      const targetPath = path.join(conf.targetPath, file)
 
-    await fs.copy(sourcePath, targetPath, { overwrite: true })
+      if (!fs.existsSync(path.dirname(targetPath))) {
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+      }
 
-    return `${chalk.green(t('info.creatingFile', { targetPath }))}`
-  })
+      await fs.copy(sourcePath, targetPath, { overwrite: true })
 
-  const res = await Promise.all(files)
-
-  return res
+      return chalk.green(t('info.creatingFile', { targetPath }))
+    }),
+  )
 }

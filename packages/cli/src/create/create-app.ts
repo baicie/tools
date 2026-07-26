@@ -1,5 +1,6 @@
+import { exec, execFile } from 'node:child_process'
 import path from 'node:path'
-import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import { consola } from 'consola'
 import chalk from 'picocolors'
 import fs from 'fs-extra'
@@ -10,8 +11,9 @@ import { createFiles } from './create-files'
 import packagesManagement from './commands'
 import { t } from '../util/i18n'
 
+const execFileAsync = promisify(execFile)
+
 export async function createApp(conf: IProjectConf): Promise<void> {
-  // 目标文件夹 和源文件夹
   const {
     projectName,
     template,
@@ -23,70 +25,33 @@ export async function createApp(conf: IProjectConf): Promise<void> {
   conf.sourcePath = path.join(templateRoot, template)
   conf.targetPath = path.join(process.cwd(), projectName)
 
-  if (!fs.existsSync(conf.sourcePath))
-    return consola.log(
+  if (!fs.existsSync(conf.sourcePath)) {
+    consola.log(
       chalk.red(t('errors.templateNotFound', { sourcePath: conf.sourcePath })),
     )
+    return
+  }
 
   const logs = await createFiles(conf)
+  await updateProjectPackage(conf.targetPath, projectName, conf.description)
 
   consola.log('')
   consola.log(
-    `${chalk.green('✔ ')}${chalk.green(
+    `${chalk.green('OK')} ${chalk.green(
       t('info.projectCreated', { projectName }),
     )}`,
   )
   logs.forEach(log => consola.success(log))
   consola.log('')
 
-  process.chdir(conf.targetPath)
-
-  // 初始化 Git 仓库并关联远程仓库
-  if (gitInit) {
-    // 初始化 Git 仓库
-    const gitInitSpinner = ora(
-      t('info.gitInit', { command: 'git init' }),
-    ).start()
-    const gitInitProcess = exec('git init')
-
-    gitInitProcess.on('close', code => {
-      if (code === 0) {
-        gitInitSpinner.color = 'green'
-        gitInitSpinner.succeed(t('success.gitInitSuccess'))
-
-        // 如果提供了远程仓库地址，则关联远程仓库
-        if (gitRemote) {
-          const gitRemoteSpinner = ora(
-            t('info.linkingRemote', { gitRemote }),
-          ).start()
-          const addRemote = exec(`git remote add origin ${gitRemote}`)
-
-          addRemote.on('close', remoteCode => {
-            if (remoteCode === 0) {
-              gitRemoteSpinner.color = 'green'
-              gitRemoteSpinner.succeed(t('success.gitRemoteSuccess'))
-            } else {
-              gitRemoteSpinner.color = 'red'
-              gitRemoteSpinner.fail(t('info.gitRemoteFailed'))
-              consola.error(addRemote.stderr?.read())
-            }
-          })
-        }
-      } else {
-        gitInitSpinner.color = 'red'
-        gitInitSpinner.fail(t('info.gitInitFailed'))
-        consola.error(gitInitProcess.stderr?.read())
-      }
-    })
+  if (gitInit && conf.targetPath) {
+    await initializeGit(conf.targetPath, gitRemote)
   }
 
   if (autoInstall) {
-    // 安装
     const command: string = packagesManagement[npm].command
     const installSpinner = ora(t('info.installingDeps', { command })).start()
-
-    // 执行命令
-    const child = exec(command, error => {
+    const child = exec(command, { cwd: conf.targetPath }, error => {
       if (error) {
         installSpinner.color = 'red'
         installSpinner.fail(t('info.installFailed'))
@@ -98,18 +63,67 @@ export async function createApp(conf: IProjectConf): Promise<void> {
       callSuccess(conf.targetPath)
     })
 
-    // 输出
-    child.stdout!.on('data', data => {
+    child.stdout?.on('data', data => {
       installSpinner.stop()
       consola.log(data.replace(/\n$/, ''))
       installSpinner.start()
     })
 
-    // 输出 错误信息
-    child.stderr!.on('data', data => {
+    child.stderr?.on('data', data => {
       installSpinner.warn(data.replace(/\n$/, ''))
       installSpinner.start()
     })
+  }
+}
+
+async function updateProjectPackage(
+  targetPath: string | undefined,
+  projectName: string,
+  description: string,
+): Promise<void> {
+  if (!targetPath) return
+
+  const packagePath = path.join(targetPath, 'package.json')
+  if (!fs.existsSync(packagePath)) return
+
+  const pkg = await fs.readJson(packagePath)
+  pkg.name = projectName
+  if (description) {
+    pkg.description = description
+  }
+  await fs.writeJson(packagePath, pkg, { spaces: 2 })
+}
+
+async function initializeGit(
+  targetPath: string,
+  gitRemote?: string,
+): Promise<void> {
+  const gitInitSpinner = ora(t('info.gitInit', { command: 'git init' })).start()
+
+  try {
+    await execFileAsync('git', ['init'], { cwd: targetPath })
+    gitInitSpinner.color = 'green'
+    gitInitSpinner.succeed(t('success.gitInitSuccess'))
+  } catch (error) {
+    gitInitSpinner.color = 'red'
+    gitInitSpinner.fail(t('info.gitInitFailed'))
+    consola.error(error)
+    return
+  }
+
+  if (!gitRemote) return
+
+  const gitRemoteSpinner = ora(t('info.linkingRemote', { gitRemote })).start()
+  try {
+    await execFileAsync('git', ['remote', 'add', 'origin', gitRemote], {
+      cwd: targetPath,
+    })
+    gitRemoteSpinner.color = 'green'
+    gitRemoteSpinner.succeed(t('success.gitRemoteSuccess'))
+  } catch (error) {
+    gitRemoteSpinner.color = 'red'
+    gitRemoteSpinner.fail(t('info.gitRemoteFailed'))
+    consola.error(error)
   }
 }
 
