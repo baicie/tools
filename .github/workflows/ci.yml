@@ -41,7 +41,7 @@ jobs:
               - 'pnpm-workspace.yaml'
               - '.gitattributes'
               - 'justfile'
-            napi-changes:
+            node-changes:
               - *rust-changes
               - 'packages/napi/**'
               - 'packages/napi-browser/**'
