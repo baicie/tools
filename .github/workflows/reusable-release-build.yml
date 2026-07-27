@@ -108,7 +108,7 @@ jobs:
           TARGET_CC: clang # for mimalloc
 
       - name: Upload Binding Artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: bindings-${{ matrix.target }}
@@ -155,7 +155,7 @@ jobs:
             rm -rf node_modules
             rm -rf target
       - name: Upload artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bindings-x86_64-unknown-freebsd
           path: ./packages/napi/src/baicie-binding.*.node
@@ -180,7 +180,7 @@ jobs:
         run: pnpm --filter @baicie/napi build-node
 
       - name: Upload Node Artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: node-artifact
@@ -215,7 +215,7 @@ jobs:
         run: pnpm --filter "@baicie/napi-browser" build:release
 
       - name: Upload `@baicie/napi-browser` Artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           if-no-files-found: error
           name: browser-artifact
