@@ -29,6 +29,8 @@
     "preinstall": "npx only-allow pnpm"
   },
   "dependencies": {
+    "@emnapi/core": "catalog:",
+    "@emnapi/runtime": "catalog:",
     "@napi-rs/wasm-runtime": "catalog:"
   }
 }

@@ -8,8 +8,10 @@ packages:
 shellEmulator: true
 
 catalog:
+  '@emnapi/core': 1.11.1
+  '@emnapi/runtime': 1.11.1
   '@napi-rs/cli': ^3.5.0
-  '@napi-rs/wasm-runtime': 1.1.0
+  '@napi-rs/wasm-runtime': 1.1.5
 
 allowBuilds:
   esbuild: false
